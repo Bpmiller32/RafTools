@@ -1,0 +1,284 @@
+﻿
+✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧
+
+09/28/21 17:58:09.073 03b00 [A] SMI              Smart Match-i on SERENITY - Version 3.0.0.336
+09/28/21 17:58:09.080 00334 [I] SMI              Creating, validating or previewing directory that requires a license
+09/28/21 17:58:09.080 03b00 [I] SMI              Creating, validating or previewing directory that requires a license
+09/28/21 17:58:09.477 00334 [I] SMI              Loading directory definition UK_RM_CM
+09/28/21 17:58:09.479 00334 [I] SMI              Directory data will be compiled using definition file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM.xml
+09/28/21 17:58:09.479 00334 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\BFPO.txt
+09/28/21 17:58:09.479 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 17:58:09.484 03b00 [I] SMI              Loading directory definition UK_RM_CM
+09/28/21 17:58:09.485 03b00 [I] SMI              Directory data will be compiled using definition file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM.xml
+09/28/21 17:58:09.486 03b00 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\BFPO.txt
+09/28/21 17:58:09.486 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 17:58:09.486 00334 [I] SMI              Using character encoding Windows-1252
+09/28/21 17:58:09.487 00334 [I] SMI              Read 1 address records from 2 lines
+09/28/21 17:58:09.487 00334 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK.txt
+09/28/21 17:58:09.493 03b00 [I] SMI              Using character encoding Windows-1252
+09/28/21 17:58:09.493 03b00 [I] SMI              Read 1 address records from 2 lines
+09/28/21 17:58:09.493 03b00 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK.txt
+09/28/21 17:58:09.606 00334 [I] SMI              File size 2153833 kB, last modified on 9/29/2021 at 00:58 UTC
+09/28/21 17:58:09.684 03b00 [I] SMI              File size 2153833 kB, last modified on 9/29/2021 at 00:58 UTC
+09/28/21 17:58:10.151 00334 [I] SMI              Using character encoding Windows-1252
+09/28/21 17:58:10.229 03b00 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:08:36.930 00334 [I] SMI              Read 31193898 address records from 31193913 lines
+09/28/21 18:08:36.930 00334 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\Country.txt
+09/28/21 18:08:36.930 00334 [I] SMI              File size 9 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.937 00334 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:08:36.942 00334 [I] SMI              Read 247 address records from 250 lines
+09/28/21 18:08:36.943 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\County.txt for field County
+09/28/21 18:08:36.943 00334 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.944 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.945 00334 [I] SMI              Read 39 alias records from 43 lines
+09/28/21 18:08:36.945 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\PostTown.txt for field PostTown
+09/28/21 18:08:36.945 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.945 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.945 00334 [I] SMI              Read 10 alias records from 10 lines
+09/28/21 18:08:36.946 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\StreetDescriptor.txt for field StreetDescriptor
+09/28/21 18:08:36.946 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.946 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.946 00334 [I] SMI              Read 6 alias records from 6 lines
+09/28/21 18:08:36.946 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\StreetName.txt for field StreetName
+09/28/21 18:08:36.946 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.947 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.947 00334 [I] SMI              Read 11 alias records from 11 lines
+09/28/21 18:08:36.947 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\PoBoxName.txt for field PoBoxName
+09/28/21 18:08:36.947 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.947 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.948 00334 [I] SMI              Read 1 alias records from 1 lines
+09/28/21 18:08:36.948 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\SubBuildingDesignator.txt for field SubBuildingDesignator
+09/28/21 18:08:36.948 00334 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.948 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.948 00334 [I] SMI              Read 3 alias records from 3 lines
+09/28/21 18:08:36.948 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\OrganizationName.txt for field OrganizationName
+09/28/21 18:08:36.949 00334 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.949 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.950 00334 [I] SMI              Read 25 alias records from 29 lines
+09/28/21 18:08:36.950 00334 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\Country_Alias.txt for field Country
+09/28/21 18:08:36.950 00334 [I] SMI              File size 2 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:36.950 00334 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:36.951 00334 [I] SMI              Read 62 alias records from 63 lines
+09/28/21 18:08:36.953 00334 [I] SMI              Directory data were successfully compiled
+09/28/21 18:08:36.954 00334 [I] SMI              Address and/or alias data contained non-OCR characters
+09/28/21 18:08:36.954 00334 [I] SMI              Created character match table file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM_CharMatchTable.txt
+09/28/21 18:08:36.954 00334 [I] SMI              Address patterns file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM_Patterns.xml will be validated using directory data
+09/28/21 18:08:37.071 00334 [I] SMI              Address patterns were successfully validated
+09/28/21 18:08:37.072 00334 [I] SMI              Creating indexes for address records table
+09/28/21 18:08:37.757 03b00 [I] SMI              Read 31193898 address records from 31193913 lines
+09/28/21 18:08:37.757 03b00 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\Country.txt
+09/28/21 18:08:37.757 03b00 [I] SMI              File size 9 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.763 03b00 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:08:37.768 03b00 [I] SMI              Read 247 address records from 250 lines
+09/28/21 18:08:37.769 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\County.txt for field County
+09/28/21 18:08:37.770 03b00 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.770 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.771 03b00 [I] SMI              Read 39 alias records from 43 lines
+09/28/21 18:08:37.771 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\PostTown.txt for field PostTown
+09/28/21 18:08:37.771 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.771 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.772 03b00 [I] SMI              Read 10 alias records from 10 lines
+09/28/21 18:08:37.772 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\StreetDescriptor.txt for field StreetDescriptor
+09/28/21 18:08:37.772 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.772 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.772 03b00 [I] SMI              Read 6 alias records from 6 lines
+09/28/21 18:08:37.772 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\StreetName.txt for field StreetName
+09/28/21 18:08:37.773 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.773 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.773 03b00 [I] SMI              Read 11 alias records from 11 lines
+09/28/21 18:08:37.773 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\PoBoxName.txt for field PoBoxName
+09/28/21 18:08:37.773 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.774 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.774 03b00 [I] SMI              Read 1 alias records from 1 lines
+09/28/21 18:08:37.774 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\SubBuildingDesignator.txt for field SubBuildingDesignator
+09/28/21 18:08:37.774 03b00 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.774 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.774 03b00 [I] SMI              Read 3 alias records from 3 lines
+09/28/21 18:08:37.775 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\OrganizationName.txt for field OrganizationName
+09/28/21 18:08:37.775 03b00 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.775 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.776 03b00 [I] SMI              Read 25 alias records from 29 lines
+09/28/21 18:08:37.776 03b00 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\Country_Alias.txt for field Country
+09/28/21 18:08:37.776 03b00 [I] SMI              File size 2 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:08:37.776 03b00 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:08:37.777 03b00 [I] SMI              Read 62 alias records from 63 lines
+09/28/21 18:08:37.780 03b00 [I] SMI              Directory data were successfully compiled
+09/28/21 18:08:37.780 03b00 [I] SMI              Address and/or alias data contained non-OCR characters
+09/28/21 18:08:37.780 03b00 [I] SMI              Created character match table file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM_CharMatchTable.txt
+09/28/21 18:08:37.780 03b00 [I] SMI              Address patterns file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM_Patterns.xml will be validated using directory data
+09/28/21 18:08:37.893 03b00 [I] SMI              Address patterns were successfully validated
+09/28/21 18:08:37.895 03b00 [I] SMI              Creating indexes for address records table
+09/28/21 18:08:38.190 00334 [I] SMI              Created index for BFPO
+09/28/21 18:08:39.013 03b00 [I] SMI              Created index for BFPO
+09/28/21 18:08:39.572 00334 [I] SMI              Created index for Outcode and Incode
+09/28/21 18:08:40.391 03b00 [I] SMI              Created index for Outcode and Incode
+09/28/21 18:08:41.345 00334 [I] SMI              Created index for Incode and PostTown
+09/28/21 18:08:42.159 03b00 [I] SMI              Created index for Incode and PostTown
+09/28/21 18:08:42.809 00334 [I] SMI              Created index for Outcode and PostTown
+09/28/21 18:08:43.626 03b00 [I] SMI              Created index for Outcode and PostTown
+09/28/21 18:08:44.240 00334 [I] SMI              Created index for Outcode and LargeUserIncode
+09/28/21 18:08:45.061 03b00 [I] SMI              Created index for Outcode and LargeUserIncode
+09/28/21 18:08:45.622 00334 [I] SMI              Created index for OutcodeLC and IncodeLC
+09/28/21 18:08:46.440 03b00 [I] SMI              Created index for OutcodeLC and IncodeLC
+09/28/21 18:08:47.376 00334 [I] SMI              Created index for IncodeLC and PostTown
+09/28/21 18:08:48.181 03b00 [I] SMI              Created index for IncodeLC and PostTown
+09/28/21 18:08:48.839 00334 [I] SMI              Created index for OutcodeLC and PostTown
+09/28/21 18:08:49.649 03b00 [I] SMI              Created index for OutcodeLC and PostTown
+09/28/21 18:08:50.567 00334 [I] SMI              Created index for LargeUserIncode and PostTown
+09/28/21 18:08:51.371 03b00 [I] SMI              Created index for LargeUserIncode and PostTown
+09/28/21 18:08:51.929 00334 [I] SMI              Created index for Outcode and Sector
+09/28/21 18:08:52.730 03b00 [I] SMI              Created index for Outcode and Sector
+09/28/21 18:08:53.634 00334 [I] SMI              Created index for Sector and PostTown
+09/28/21 18:08:54.430 03b00 [I] SMI              Created index for Sector and PostTown
+09/28/21 18:08:54.780 00334 [I] SMI              Created index for Country
+09/28/21 18:08:55.595 03b00 [I] SMI              Created index for Country
+09/28/21 18:08:56.094 00334 [I] SMI              Created index for PostTown
+09/28/21 18:08:56.894 03b00 [I] SMI              Created index for PostTown
+09/28/21 18:09:12.394 00334 [I] SMI              Created index for table linking
+09/28/21 18:09:12.394 00334 [I] SMI              Indexes created
+09/28/21 18:09:13.051 03b00 [I] SMI              Created index for table linking
+09/28/21 18:09:13.051 03b00 [I] SMI              Indexes created
+
+✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧
+
+09/28/21 18:23:09.489 03224 [A] SMI              Smart Match-i on SERENITY - Version 3.0.0.336
+09/28/21 18:23:09.489 03224 [I] SMI              Creating, validating or previewing directory that requires a license
+09/28/21 18:23:09.507 03224 [I] SMI              Loading directory definition UK_RM_CM
+09/28/21 18:23:09.509 03224 [I] SMI              Directory data will be compiled using definition file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM.xml
+09/28/21 18:23:09.509 03224 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\BFPO.txt
+09/28/21 18:23:09.509 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:23:09.511 03224 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:23:09.511 03224 [I] SMI              Read 1 address records from 2 lines
+09/28/21 18:23:09.511 03224 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK.txt
+
+✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧✦✧
+
+09/28/21 18:23:09.568 0112c [A] SMI              Smart Match-i on SERENITY - Version 3.0.0.336
+09/28/21 18:23:09.568 0112c [I] SMI              Creating, validating or previewing directory that requires a license
+09/28/21 18:23:09.587 0112c [I] SMI              Loading directory definition UK_RM_CM
+09/28/21 18:23:09.588 0112c [I] SMI              Directory data will be compiled using definition file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM.xml
+09/28/21 18:23:09.588 0112c [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\BFPO.txt
+09/28/21 18:23:09.588 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:23:09.590 0112c [I] SMI              Using character encoding Windows-1252
+09/28/21 18:23:09.590 0112c [I] SMI              Read 1 address records from 2 lines
+09/28/21 18:23:09.590 0112c [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK.txt
+09/28/21 18:23:09.635 03224 [I] SMI              File size 2153833 kB, last modified on 9/29/2021 at 01:23 UTC
+09/28/21 18:23:09.743 0112c [I] SMI              File size 2153833 kB, last modified on 9/29/2021 at 01:23 UTC
+09/28/21 18:23:10.181 03224 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:23:10.181 0112c [I] SMI              Using character encoding Windows-1252
+09/28/21 18:33:31.201 03224 [I] SMI              Read 31193898 address records from 31193913 lines
+09/28/21 18:33:31.201 03224 [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\Country.txt
+09/28/21 18:33:31.201 03224 [I] SMI              File size 9 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.208 03224 [I] SMI              Using character encoding Windows-1252
+09/28/21 18:33:31.212 03224 [I] SMI              Read 247 address records from 250 lines
+09/28/21 18:33:31.214 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\County.txt for field County
+09/28/21 18:33:31.214 03224 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.214 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.215 03224 [I] SMI              Read 39 alias records from 43 lines
+09/28/21 18:33:31.215 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\PostTown.txt for field PostTown
+09/28/21 18:33:31.215 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.215 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.216 03224 [I] SMI              Read 10 alias records from 10 lines
+09/28/21 18:33:31.216 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\StreetDescriptor.txt for field StreetDescriptor
+09/28/21 18:33:31.216 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.216 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.216 03224 [I] SMI              Read 6 alias records from 6 lines
+09/28/21 18:33:31.216 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\StreetName.txt for field StreetName
+09/28/21 18:33:31.217 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.217 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.217 03224 [I] SMI              Read 11 alias records from 11 lines
+09/28/21 18:33:31.217 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\PoBoxName.txt for field PoBoxName
+09/28/21 18:33:31.217 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.218 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.218 03224 [I] SMI              Read 1 alias records from 1 lines
+09/28/21 18:33:31.218 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\SubBuildingDesignator.txt for field SubBuildingDesignator
+09/28/21 18:33:31.218 03224 [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.218 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.218 03224 [I] SMI              Read 3 alias records from 3 lines
+09/28/21 18:33:31.219 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\OrganizationName.txt for field OrganizationName
+09/28/21 18:33:31.219 03224 [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.219 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.220 03224 [I] SMI              Read 25 alias records from 29 lines
+09/28/21 18:33:31.220 03224 [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\Country_Alias.txt for field Country
+09/28/21 18:33:31.220 03224 [I] SMI              File size 2 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:31.220 03224 [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:31.221 03224 [I] SMI              Read 62 alias records from 63 lines
+09/28/21 18:33:31.223 03224 [I] SMI              Directory data were successfully compiled
+09/28/21 18:33:31.223 03224 [I] SMI              Address and/or alias data contained non-OCR characters
+09/28/21 18:33:31.228 03224 [I] SMI              Created character match table file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM_CharMatchTable.txt
+09/28/21 18:33:31.228 03224 [I] SMI              Address patterns file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\1.9\UK_RM_CM_Patterns.xml will be validated using directory data
+09/28/21 18:33:31.342 03224 [I] SMI              Address patterns were successfully validated
+09/28/21 18:33:31.343 03224 [I] SMI              Creating indexes for address records table
+09/28/21 18:33:32.453 03224 [I] SMI              Created index for BFPO
+09/28/21 18:33:33.285 0112c [I] SMI              Read 31193898 address records from 31193913 lines
+09/28/21 18:33:33.285 0112c [I] SMI              Loading delimited address file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\Country.txt
+09/28/21 18:33:33.285 0112c [I] SMI              File size 9 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.291 0112c [I] SMI              Using character encoding Windows-1252
+09/28/21 18:33:33.296 0112c [I] SMI              Read 247 address records from 250 lines
+09/28/21 18:33:33.297 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\County.txt for field County
+09/28/21 18:33:33.297 0112c [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.297 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.298 0112c [I] SMI              Read 39 alias records from 43 lines
+09/28/21 18:33:33.298 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\PostTown.txt for field PostTown
+09/28/21 18:33:33.298 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.299 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.299 0112c [I] SMI              Read 10 alias records from 10 lines
+09/28/21 18:33:33.299 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\StreetDescriptor.txt for field StreetDescriptor
+09/28/21 18:33:33.299 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.299 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.300 0112c [I] SMI              Read 6 alias records from 6 lines
+09/28/21 18:33:33.300 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\StreetName.txt for field StreetName
+09/28/21 18:33:33.300 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.300 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.300 0112c [I] SMI              Read 11 alias records from 11 lines
+09/28/21 18:33:33.300 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\PoBoxName.txt for field PoBoxName
+09/28/21 18:33:33.301 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.301 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.301 0112c [I] SMI              Read 1 alias records from 1 lines
+09/28/21 18:33:33.301 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\SubBuildingDesignator.txt for field SubBuildingDesignator
+09/28/21 18:33:33.301 0112c [I] SMI              File size <1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.302 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.302 0112c [I] SMI              Read 3 alias records from 3 lines
+09/28/21 18:33:33.302 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\OrganizationName.txt for field OrganizationName
+09/28/21 18:33:33.302 0112c [I] SMI              File size 1 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.302 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.303 0112c [I] SMI              Read 25 alias records from 29 lines
+09/28/21 18:33:33.303 0112c [I] SMI              Loading delimited alias file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\Country_Alias.txt for field Country
+09/28/21 18:33:33.303 0112c [I] SMI              File size 2 kB, last modified on 9/29/2021 at 00:39 UTC
+09/28/21 18:33:33.303 0112c [I] SMI              Detected character encoding Windows-1252
+09/28/21 18:33:33.305 0112c [I] SMI              Read 62 alias records from 63 lines
+09/28/21 18:33:33.307 0112c [I] SMI              Directory data were successfully compiled
+09/28/21 18:33:33.307 0112c [I] SMI              Address and/or alias data contained non-OCR characters
+09/28/21 18:33:33.311 0112c [I] SMI              Created character match table file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM_CharMatchTable.txt
+09/28/21 18:33:33.312 0112c [I] SMI              Address patterns file C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\3.0\UK_RM_CM_Patterns.xml will be validated using directory data
+09/28/21 18:33:33.424 0112c [I] SMI              Address patterns were successfully validated
+09/28/21 18:33:33.425 0112c [I] SMI              Creating indexes for address records table
+09/28/21 18:33:33.818 03224 [I] SMI              Created index for Outcode and Incode
+09/28/21 18:33:34.547 0112c [I] SMI              Created index for BFPO
+09/28/21 18:33:35.569 03224 [I] SMI              Created index for Incode and PostTown
+09/28/21 18:33:35.920 0112c [I] SMI              Created index for Outcode and Incode
+09/28/21 18:33:37.026 03224 [I] SMI              Created index for Outcode and PostTown
+09/28/21 18:33:37.680 0112c [I] SMI              Created index for Incode and PostTown
+09/28/21 18:33:38.449 03224 [I] SMI              Created index for Outcode and LargeUserIncode
+09/28/21 18:33:39.141 0112c [I] SMI              Created index for Outcode and PostTown
+09/28/21 18:33:39.821 03224 [I] SMI              Created index for OutcodeLC and IncodeLC
+09/28/21 18:33:40.584 0112c [I] SMI              Created index for Outcode and LargeUserIncode
+09/28/21 18:33:41.552 03224 [I] SMI              Created index for IncodeLC and PostTown
+09/28/21 18:33:41.967 0112c [I] SMI              Created index for OutcodeLC and IncodeLC
+09/28/21 18:33:43.009 03224 [I] SMI              Created index for OutcodeLC and PostTown
+09/28/21 18:33:43.718 0112c [I] SMI              Created index for IncodeLC and PostTown
+09/28/21 18:33:44.734 03224 [I] SMI              Created index for LargeUserIncode and PostTown
+09/28/21 18:33:45.180 0112c [I] SMI              Created index for OutcodeLC and PostTown
+09/28/21 18:33:46.102 03224 [I] SMI              Created index for Outcode and Sector
+09/28/21 18:33:46.899 0112c [I] SMI              Created index for LargeUserIncode and PostTown
+09/28/21 18:33:47.812 03224 [I] SMI              Created index for Sector and PostTown
+09/28/21 18:33:48.256 0112c [I] SMI              Created index for Outcode and Sector
+09/28/21 18:33:48.955 03224 [I] SMI              Created index for Country
+09/28/21 18:33:49.954 0112c [I] SMI              Created index for Sector and PostTown
+09/28/21 18:33:50.246 03224 [I] SMI              Created index for PostTown
+09/28/21 18:33:51.101 0112c [I] SMI              Created index for Country
+09/28/21 18:33:52.400 0112c [I] SMI              Created index for PostTown
+09/28/21 18:34:06.292 03224 [I] SMI              Created index for table linking
+09/28/21 18:34:06.292 03224 [I] SMI              Indexes created
+09/28/21 18:34:08.463 0112c [I] SMI              Created index for table linking
+09/28/21 18:34:08.463 0112c [I] SMI              Indexes created

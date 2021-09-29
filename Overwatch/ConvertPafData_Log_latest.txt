@@ -1,0 +1,105 @@
+
+*******************************************************************************
+
+09/28/21 17:46:09.435 038f0 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+09/28/21 17:46:09.435 038f0 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+09/28/21 17:46:09.438 038f0 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\aliasfle.c01
+09/28/21 17:46:09.438 038f0 [I] SM-i             File identifier: ALIASFLE
+09/28/21 17:46:09.438 038f0 [I] SM-i             Edition: Y21M09
+09/28/21 17:46:11.983 038f0 [I] SM-i             Read 1751933 alias records
+09/28/21 17:46:11.987 038f0 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c01
+09/28/21 17:46:11.987 038f0 [I] SM-i             File identifier: CSTANDRD
+09/28/21 17:46:11.987 038f0 [I] SM-i             Edition: Y21M09
+09/28/21 17:46:52.806 038f0 [I] SM-i             Read 2401196 address records
+09/28/21 17:46:52.810 038f0 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c02
+09/28/21 17:47:33.489 038f0 [I] SM-i             Read 2399095 address records
+09/28/21 17:47:33.494 038f0 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c03
+
+*******************************************************************************
+
+09/28/21 17:48:11.450 009ec [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+09/28/21 17:48:11.450 009ec [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+09/28/21 17:48:11.455 009ec [I] SM-i             Reading alias records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\aliasfle.c01
+09/28/21 17:48:11.455 009ec [I] SM-i             File identifier: ALIASFLE
+09/28/21 17:48:11.455 009ec [I] SM-i             Edition: Y21M09
+09/28/21 17:48:13.943 009ec [I] SM-i             Read 1751933 alias records
+09/28/21 17:48:13.951 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c01
+09/28/21 17:48:13.951 009ec [I] SM-i             File identifier: CSTANDRD
+09/28/21 17:48:13.951 009ec [I] SM-i             Edition: Y21M09
+09/28/21 17:48:54.824 009ec [I] SM-i             Read 2401196 address records
+09/28/21 17:48:54.828 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c02
+09/28/21 17:49:35.740 009ec [I] SM-i             Read 2399095 address records
+09/28/21 17:49:35.743 009ec [W] SM-i             Renaming C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\UK.c03.txt to C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\UK.c03_old.txt
+09/28/21 17:49:35.744 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c03
+09/28/21 17:50:16.470 009ec [I] SM-i             Read 2398971 address records
+09/28/21 17:50:16.473 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c04
+09/28/21 17:50:57.019 009ec [I] SM-i             Read 2398888 address records
+09/28/21 17:50:57.023 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c05
+09/28/21 17:51:37.755 009ec [I] SM-i             Read 2398961 address records
+09/28/21 17:51:37.759 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c06
+09/28/21 17:52:18.165 009ec [I] SM-i             Read 2399012 address records
+09/28/21 17:52:18.168 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c07
+09/28/21 17:52:58.689 009ec [I] SM-i             Read 2398956 address records
+09/28/21 17:52:58.693 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c08
+09/28/21 17:53:39.222 009ec [I] SM-i             Read 2398951 address records
+09/28/21 17:53:39.226 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c09
+09/28/21 17:54:19.884 009ec [I] SM-i             Read 2398923 address records
+09/28/21 17:54:19.887 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c10
+09/28/21 17:55:00.288 009ec [I] SM-i             Read 2398957 address records
+09/28/21 17:55:00.293 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c11
+09/28/21 17:55:41.131 009ec [I] SM-i             Read 2398893 address records
+09/28/21 17:55:41.135 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c12
+09/28/21 17:56:21.707 009ec [I] SM-i             Read 2398987 address records
+09/28/21 17:56:21.711 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c13
+09/28/21 17:57:02.091 009ec [I] SM-i             Read 2398938 address records
+09/28/21 17:57:02.095 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c14
+09/28/21 17:57:42.471 009ec [I] SM-i             Read 2398918 address records
+09/28/21 17:57:42.476 009ec [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c15
+09/28/21 17:58:02.302 009ec [I] SM-i             Read 1174039 address records
+09/28/21 17:58:02.302 009ec [I] SM-i             Concatenating files 1-15 to C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\UK.txt
+09/28/21 17:58:03.997 009ec [I] SM-i             Address data file created
+09/28/21 17:58:03.997 009ec [I] SM-i             Version string for directory definition file: "PAF Y21M09"
+
+*******************************************************************************
+
+09/28/21 18:13:16.576 03128 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+09/28/21 18:13:16.576 03128 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+09/28/21 18:13:16.578 03128 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\aliasfle.c01
+09/28/21 18:13:16.579 03128 [I] SM-i             File identifier: ALIASFLE
+09/28/21 18:13:16.579 03128 [I] SM-i             Edition: Y21M09
+09/28/21 18:13:19.034 03128 [I] SM-i             Read 1751933 alias records
+09/28/21 18:13:19.038 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c01
+09/28/21 18:13:19.038 03128 [I] SM-i             File identifier: CSTANDRD
+09/28/21 18:13:19.038 03128 [I] SM-i             Edition: Y21M09
+09/28/21 18:13:59.927 03128 [I] SM-i             Read 2401196 address records
+09/28/21 18:13:59.931 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c02
+09/28/21 18:14:40.409 03128 [I] SM-i             Read 2399095 address records
+09/28/21 18:14:40.414 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c03
+09/28/21 18:15:20.909 03128 [I] SM-i             Read 2398971 address records
+09/28/21 18:15:20.912 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c04
+09/28/21 18:16:01.431 03128 [I] SM-i             Read 2398888 address records
+09/28/21 18:16:01.435 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c05
+09/28/21 18:16:42.007 03128 [I] SM-i             Read 2398961 address records
+09/28/21 18:16:42.011 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c06
+09/28/21 18:17:22.372 03128 [I] SM-i             Read 2399012 address records
+09/28/21 18:17:22.375 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c07
+09/28/21 18:18:02.841 03128 [I] SM-i             Read 2398956 address records
+09/28/21 18:18:02.846 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c08
+09/28/21 18:18:43.354 03128 [I] SM-i             Read 2398951 address records
+09/28/21 18:18:43.358 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c09
+09/28/21 18:19:23.961 03128 [I] SM-i             Read 2398923 address records
+09/28/21 18:19:23.969 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c10
+09/28/21 18:20:04.330 03128 [I] SM-i             Read 2398957 address records
+09/28/21 18:20:04.334 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c11
+09/28/21 18:20:44.876 03128 [I] SM-i             Read 2398893 address records
+09/28/21 18:20:44.880 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c12
+09/28/21 18:21:25.420 03128 [I] SM-i             Read 2398987 address records
+09/28/21 18:21:25.424 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c13
+09/28/21 18:22:05.821 03128 [I] SM-i             Read 2398938 address records
+09/28/21 18:22:05.825 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c14
+09/28/21 18:22:46.095 03128 [I] SM-i             Read 2398918 address records
+09/28/21 18:22:46.099 03128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c15
+09/28/21 18:23:05.957 03128 [I] SM-i             Read 1174039 address records
+09/28/21 18:23:05.957 03128 [I] SM-i             Concatenating files 1-15 to C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\UK.txt
+09/28/21 18:23:06.996 03128 [I] SM-i             Address data file created
+09/28/21 18:23:06.996 03128 [I] SM-i             Version string for directory definition file: "PAF Y21M09"
