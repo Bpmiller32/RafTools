@@ -103,3 +103,21 @@
 09/28/21 18:23:05.957 03128 [I] SM-i             Concatenating files 1-15 to C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\UK.txt
 09/28/21 18:23:06.996 03128 [I] SM-i             Address data file created
 09/28/21 18:23:06.996 03128 [I] SM-i             Version string for directory definition file: "PAF Y21M09"
+
+*******************************************************************************
+
+09/28/21 20:19:47.027 02128 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+09/28/21 20:19:47.027 02128 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+09/28/21 20:19:47.030 02128 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\aliasfle.c01
+09/28/21 20:19:47.030 02128 [I] SM-i             File identifier: ALIASFLE
+09/28/21 20:19:47.030 02128 [I] SM-i             Edition: Y21M09
+09/28/21 20:19:49.557 02128 [I] SM-i             Read 1751933 alias records
+09/28/21 20:19:49.561 02128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c01
+09/28/21 20:19:49.561 02128 [I] SM-i             File identifier: CSTANDRD
+09/28/21 20:19:49.561 02128 [I] SM-i             Edition: Y21M09
+09/28/21 20:20:30.921 02128 [I] SM-i             Read 2401196 address records
+09/28/21 20:20:30.924 02128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c02
+09/28/21 20:21:11.692 02128 [I] SM-i             Read 2399095 address records
+09/28/21 20:21:11.695 02128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c03
+09/28/21 20:21:52.394 02128 [I] SM-i             Read 2398971 address records
+09/28/21 20:21:52.398 02128 [I] SM-i             Reading address records from C:\Users\billy\Desktop\RafTools\trunk\Overwatch\RM-Working\Db\fpcompst.c04
