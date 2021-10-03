@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace OverwatchApi.Data
@@ -14,8 +15,8 @@ namespace OverwatchApi.Data
     // ✔ add compress functionality to output folder
     // ✔ add cleanup function (redo and recall prep to cleanup?)
     // ✔ add Progress<T> functionality and think about how this object will be exported and work with API
-    // - Check for Utils folder in Cleanup()
-    // - Change FindDate to use regex for better result, add error checking
+    // ✔ Check for Utils folder
+    // ✔ Change FindDate to use regex for better result, add error checking
     // - Add logic to Cleanup to kill existing process similar to RoyalWorker
     public class ParascriptWorker
     {
@@ -34,6 +35,27 @@ namespace OverwatchApi.Data
             this.progress = progress;
         }
 
+        public bool CheckInput()
+        {
+            try
+            {
+                if (!Directory.EnumerateFileSystemEntries(inputPath).Any())
+                {
+                    throw new Exception("No files to work with in input");
+                }
+                if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\Utils").Any())
+                {
+                    throw new Exception("Utils folder is missing");
+                }
+
+                return true;
+            }
+            catch (System.Exception)
+            {
+                return false;
+            }
+        }
+
         public bool Cleanup()
         {
             try
@@ -42,17 +64,25 @@ namespace OverwatchApi.Data
                 Directory.CreateDirectory(workingPath);
                 Directory.CreateDirectory(outputPath);
 
-                if (!Directory.EnumerateFileSystemEntries(inputPath).Any())
+                DirectoryInfo wp = new DirectoryInfo(workingPath);
+                DirectoryInfo op = new DirectoryInfo(outputPath);
+
+                foreach (var file in wp.GetFiles())
                 {
-                    throw new Exception("No files to work with in input");
+                    file.Delete();
                 }
-                foreach (var dir in Directory.GetDirectories(workingPath))
+                foreach (var dir in wp.GetDirectories())
                 {
-                    Directory.Delete(dir, true);
+                    dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
+                    dir.Delete(true);
                 }
-                foreach (var dir in Directory.GetDirectories(outputPath))
+                foreach (var file in op.GetFiles())
                 {
-                    Directory.Delete(dir, true);
+                    file.Delete();
+                }
+                foreach (var dir in op.GetDirectories())
+                {
+                    dir.Delete(true);
                 }
 
                 progress.Report(1);
@@ -70,10 +100,24 @@ namespace OverwatchApi.Data
             {
                 using (StreamReader sr = new StreamReader(inputPath + @"\ads6\readme.txt"))
                 {
-                    sr.ReadLine();
-                    string output = sr.ReadLine();
-                    month = output.Substring(19, 2);
-                    year = output.Substring(27, 2);
+                    string line;
+                    Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
+
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        Match match = regex.Match(line);
+
+                        if (match.Success == true)
+                        {
+                            year = match.Groups[3].Value.Substring(8, 2);
+                            month = match.Groups[3].Value.Substring(0, 2);
+                        }
+                    }
+                }
+
+                if (month == null || year == null)
+                {
+                    throw new Exception("Month/date not found in input files");
                 }
 
                 progress.Report(1);
