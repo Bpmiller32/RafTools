@@ -19,7 +19,7 @@ namespace OverwatchApi.Data
     // ✔ Check for Utils folder
     // ✔ Change FindDate to use regex for better result, add error checking
     // - Add logic to Cleanup to kill existing process similar to RoyalWorker
-    public class ParascriptWorker
+    public class ParascriptWorker2
     {
         private readonly string inputPath;
         private readonly string workingPath;
@@ -28,7 +28,7 @@ namespace OverwatchApi.Data
         private string month;
         private string year;
 
-        public ParascriptWorker(string inputPath, string workingPath, string outputPath, IProgress<int> progress)
+        public ParascriptWorker2(string inputPath, string workingPath, string outputPath, IProgress<int> progress)
         {
             this.inputPath = inputPath;
             this.workingPath = workingPath;
@@ -36,98 +36,74 @@ namespace OverwatchApi.Data
             this.progress = progress;
         }
 
-        public bool CheckInput()
+        public void CheckInput()
         {
-            try
+            if (!Directory.EnumerateFileSystemEntries(inputPath).Any())
             {
-                if (!Directory.EnumerateFileSystemEntries(inputPath).Any())
-                {
-                    throw new Exception("No files to work with in input");
-                }
-                if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\Utils").Any())
-                {
-                    throw new Exception("Utils folder is missing");
-                }
-
-                return true;
+                throw new Exception("No files to work with in input");
             }
-            catch (System.Exception)
+            if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\Utils").Any())
             {
-                return false;
+                throw new Exception("Utils folder is missing");
             }
         }
 
-        public bool Cleanup()
+        public void Cleanup()
         {
-            try
+            Directory.CreateDirectory(inputPath);
+            Directory.CreateDirectory(workingPath);
+            Directory.CreateDirectory(outputPath);
+
+            DirectoryInfo wp = new DirectoryInfo(workingPath);
+            DirectoryInfo op = new DirectoryInfo(outputPath);
+
+            foreach (var file in wp.GetFiles())
             {
-                Directory.CreateDirectory(inputPath);
-                Directory.CreateDirectory(workingPath);
-                Directory.CreateDirectory(outputPath);
-
-                DirectoryInfo wp = new DirectoryInfo(workingPath);
-                DirectoryInfo op = new DirectoryInfo(outputPath);
-
-                foreach (var file in wp.GetFiles())
-                {
-                    file.Delete();
-                }
-                foreach (var dir in wp.GetDirectories())
-                {
-                    dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
-                    dir.Delete(true);
-                }
-                foreach (var file in op.GetFiles())
-                {
-                    file.Delete();
-                }
-                foreach (var dir in op.GetDirectories())
-                {
-                    dir.Delete(true);
-                }
-
-                progress.Report(1);
-                return true;
+                file.Delete();
             }
-            catch (System.Exception)
+            foreach (var dir in wp.GetDirectories())
             {
-                return false;
+                dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
+                dir.Delete(true);
             }
+            foreach (var file in op.GetFiles())
+            {
+                file.Delete();
+            }
+            foreach (var dir in op.GetDirectories())
+            {
+                dir.Delete(true);
+            }
+
+            progress.Report(1);
         }
 
         public bool FindDate()
         {
-            try
+            using (StreamReader sr = new StreamReader(inputPath + @"\ads6\readme.txt"))
             {
-                using (StreamReader sr = new StreamReader(inputPath + @"\ads6\readme.txt"))
+                string line;
+                Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
+
+                while ((line = sr.ReadLine()) != null)
                 {
-                    string line;
-                    Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
+                    Match match = regex.Match(line);
 
-                    while ((line = sr.ReadLine()) != null)
+                    if (match.Success == true)
                     {
-                        Match match = regex.Match(line);
-
-                        if (match.Success == true)
-                        {
-                            year = match.Groups[3].Value.Substring(8, 2);
-                            month = match.Groups[3].Value.Substring(0, 2);
-                        }
+                        year = match.Groups[3].Value.Substring(8, 2);
+                        month = match.Groups[3].Value.Substring(0, 2);
                     }
                 }
-
-                if (month == null || year == null)
-                {
-                    throw new Exception("Month/date not found in input files");
-                }
-
-                progress.Report(1);
-                return true;
             }
-            catch (System.Exception)
+
+            if (month == null || year == null)
             {
-                return false;
+                throw new Exception("Month/date not found in input files");
             }
+
+            progress.Report(1);
+            return true;
         }
 
         public async Task<bool> Extract()

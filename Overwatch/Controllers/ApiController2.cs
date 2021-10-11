@@ -16,7 +16,7 @@ namespace OverwatchApi.Controllers
 
     [ApiController]
     [Route("api/[controller]")]
-    public class DirBuildController : ControllerBase
+    public class DirBuild2Controller : ControllerBase
     {
         private static object lockObj = new object();
 
@@ -64,34 +64,16 @@ namespace OverwatchApi.Controllers
                         string psWorkingPath = Directory.GetCurrentDirectory() + @"\PS-Working";
                         string psOutputPath = Directory.GetCurrentDirectory() + @"\PS-Output";
 
-                        ParascriptWorker ps = new ParascriptWorker(psInputPath, psWorkingPath, psOutputPath, TaskBucket.PsProgress);
+                        ParascriptWorker2 ps = new ParascriptWorker2(psInputPath, psWorkingPath, psOutputPath, TaskBucket.PsProgress);
 
                         try
-                        {
-                            if (!ps.CheckInput())
-                            {
-                                throw new Exception("PS Failed Input files/Utils");
-                            }
-                            if (!ps.Cleanup())
-                            {
-                                throw new Exception("PS Failed Cleanup");
-                            }
-                            if (!ps.FindDate())
-                            {
-                                throw new Exception("PS Failed FindDate");
-                            }
-                            if (!ps.Extract().Result)
-                            {
-                                throw new Exception("PS Failed Extract");
-                            }
-                            if (!ps.Archive().Result)
-                            {
-                                throw new Exception("PS Failed Archive");
-                            }
+                        {                       
+                            Task.Run(ps.CheckInput).Wait();
+                            Task.Run(ps.Cleanup).Wait();
                         }
                         catch (System.Exception e)
                         {
-                            System.Console.WriteLine(e.Message);
+                            System.Console.WriteLine(e.InnerException.Message);
                         }
                     }));
 

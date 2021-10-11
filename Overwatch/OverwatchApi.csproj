@@ -11,6 +11,10 @@
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
 
+  <Target Name="PostBuild-Billy" AfterTargets="ComputeFilesToPublish">
+    <Exec Command="winver"/>
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
   </ItemGroup>
