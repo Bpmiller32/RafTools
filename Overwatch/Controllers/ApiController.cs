@@ -1,19 +1,17 @@
-﻿using System.Threading;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using OverwatchApi.Data;
-using OverwatchApi.Controllers;
+using OverwatchApi.Workers;
 
 namespace OverwatchApi.Controllers
 {
-    // - Redesign: add everything to a task and .Wait() for the task to finish, this allows for cancelationTokens to be introduced
-    // - Rename DirectoryBuilder to DirBuild, setting up for DirTest and DirBurn
+    // / Redesign: add everything to a task and .Wait() for the task to finish, this allows for cancelationTokens to be introduced
+    // / Better redesign: instead add CancelationTokens to TaskBucket.Bucket, logic to deal with a cancel (logic from Cleanup()?) 
+    // ✔ Better redesign: removed try/catch inside the workers and bool if statements in controller. After thinking: these are a leftover from when the workers were developed standalone and no longer needed. Exceptions should always be caught and stop the procedure flow
+    // ✔ Rename DirectoryBuilder to DirBuild, setting up for DirTest and DirBurn
     // - Create interface for Workers, add them to scoped services for dependency inversion
-
-
     [ApiController]
     [Route("api/[controller]")]
     public class DirBuildController : ControllerBase
@@ -40,58 +38,43 @@ namespace OverwatchApi.Controllers
                 };
                 foreach (var task in tasks)
                 {
-                    if (TaskBucket.Bucket.ContainsKey(task))
+                    if (Jobs.Bucket.ContainsKey(task))
                     {
-                        if (TaskBucket.Bucket[task].Status == TaskStatus.RanToCompletion)
+                        if (Jobs.Bucket[task].Status != TaskStatus.Running)
                         {
-                            TaskBucket.Bucket.Remove(task);
+                            Jobs.Bucket.Remove(task);
                         }
                     }
                 }
 
                 // Parascript task
-                if ((bundle.Parascript == true) && (TaskBucket.Bucket.ContainsKey("Parascript") == true))
+                if ((bundle.Parascript == true) && (Jobs.Bucket.ContainsKey("Parascript") == true))
                 {
                     System.Console.WriteLine("Parascript task already exists");
                 }
-                if ((bundle.Parascript == true) && (TaskBucket.Bucket.ContainsKey("Parascript") == false))
+                if ((bundle.Parascript == true) && (Jobs.Bucket.ContainsKey("Parascript") == false))
                 {
-                    TaskBucket.PsPercent = 0;
+                    Jobs.PsPercent = 0;
 
-                    TaskBucket.Bucket.Add("Parascript", Task.Run(() =>
+                    Jobs.Bucket.Add("Parascript", Task.Run(async () =>
                     {
                         string psInputPath = Directory.GetCurrentDirectory() + @"\PS-Input";
                         string psWorkingPath = Directory.GetCurrentDirectory() + @"\PS-Working";
                         string psOutputPath = Directory.GetCurrentDirectory() + @"\PS-Output";
 
-                        ParascriptWorker ps = new ParascriptWorker(psInputPath, psWorkingPath, psOutputPath, TaskBucket.PsProgress);
+                        ParascriptWorker ps = new ParascriptWorker(psInputPath, psWorkingPath, psOutputPath, Jobs.PsProgress);
 
                         try
                         {
-                            if (!ps.CheckInput())
-                            {
-                                throw new Exception("PS Failed Input files/Utils");
-                            }
-                            if (!ps.Cleanup())
-                            {
-                                throw new Exception("PS Failed Cleanup");
-                            }
-                            if (!ps.FindDate())
-                            {
-                                throw new Exception("PS Failed FindDate");
-                            }
-                            if (!ps.Extract().Result)
-                            {
-                                throw new Exception("PS Failed Extract");
-                            }
-                            if (!ps.Archive().Result)
-                            {
-                                throw new Exception("PS Failed Archive");
-                            }
+                            ps.CheckInput();
+                            ps.Cleanup();
+                            ps.FindDate();
+                            await ps.Extract();
+                            await ps.Archive();
                         }
                         catch (System.Exception e)
                         {
-                            System.Console.WriteLine(e.Message);
+                            System.Console.WriteLine(DateTime.Now + " [PS] " + e.Message);
                         }
                     }));
 
@@ -100,56 +83,35 @@ namespace OverwatchApi.Controllers
                 }
 
                 // RoyalMail task
-                if ((bundle.RoyalMail == true) && (TaskBucket.Bucket.ContainsKey("RoyalMail") == true))
+                if ((bundle.RoyalMail == true) && (Jobs.Bucket.ContainsKey("RoyalMail") == true))
                 {
                     System.Console.WriteLine("RoyalMail task already exists");
                 }
-                if ((bundle.RoyalMail == true) && (TaskBucket.Bucket.ContainsKey("RoyalMail") == false))
+                if ((bundle.RoyalMail == true) && (Jobs.Bucket.ContainsKey("RoyalMail") == false))
                 {
-                    TaskBucket.RmPercent = 0;
+                    Jobs.RmPercent = 0;
 
-                    TaskBucket.Bucket.Add("RoyalMail", Task.Run(() =>
+                    Jobs.Bucket.Add("RoyalMail", Task.Run(async () =>
                     {
                         string rmInputPath = Directory.GetCurrentDirectory() + @"\RM-Input";
                         string rmWorkingPath = Directory.GetCurrentDirectory() + @"\RM-Working";
                         string rmOutputPath = Directory.GetCurrentDirectory() + @"\RM-Output";
 
-                        RoyalWorker rm = new RoyalWorker(rmInputPath, rmWorkingPath, rmOutputPath, TaskBucket.RmProgress);
+                        RoyalWorker rm = new RoyalWorker(rmInputPath, rmWorkingPath, rmOutputPath, Jobs.RmProgress);
 
                         try
                         {
-                            if (!rm.CheckInput())
-                            {
-                                throw new Exception("RM Failed Input files/Utils");
-                            }
-                            if (!rm.Cleanup())
-                            {
-                                throw new Exception("RM Failed Cleanup");
-                            }
-                            if (!rm.FindDate())
-                            {
-                                throw new Exception("RM Failed FindDate");
-                            }
-                            if (!rm.UpdateSmiFiles())
-                            {
-                                throw new Exception("RM Failed UpdateSmiFiles");
-                            }
-                            if (!rm.ConvertPafData())
-                            {
-                                throw new Exception("RM Failed ConvertPafData");
-                            }
-                            if (!rm.Compile().Result)
-                            {
-                                throw new Exception("RM Failed Compile");
-                            }
-                            if (!rm.Output().Result)
-                            {
-                                throw new Exception("RM Failed Output");
-                            }
+                            rm.CheckInput();
+                            rm.Cleanup();
+                            rm.FindDate();
+                            rm.UpdateSmiFiles();
+                            rm.ConvertPafData();
+                            await rm.Compile();
+                            await rm.Output();
                         }
                         catch (System.Exception e)
                         {
-                            System.Console.WriteLine(e.Message);
+                            System.Console.WriteLine(DateTime.Now + " [RM] " + e.Message);
                         }
                     }));
 
