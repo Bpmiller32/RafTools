@@ -1,0 +1,67 @@
+11-08-2021 23:00:12 [INF] Starting up the service
+11-08-2021 23:00:13 [FTL] There was a problem starting the service
+11-08-2021 23:00:58 [INF] Starting up the service
+11-08-2021 23:06:34 [INF] Starting up the service
+11-08-2021 23:06:34 [FTL] There was a problem starting the service
+11-08-2021 23:06:52 [INF] Starting up the service
+11-08-2021 23:15:00 [INF] Starting up the service
+11-08-2021 23:15:01 [INF] Worker running at: 11/08/2021 23:15:01 -08:00
+11-08-2021 23:15:05 [INF] test
+11-08-2021 23:20:03 [INF] Starting up the service
+11-08-2021 23:22:50 [INF] Starting up the service
+11-08-2021 23:23:32 [INF] Starting up the service
+11-08-2021 23:25:58 [INF] Starting up the service
+11-08-2021 23:26:19 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-08-2021 23:26:47 [ERR] Failed executing DbCommand ("5"ms) [Parameters=["@p0='10' (DbType = String), @p1='0001-01-01T00:00:00.0000000' (DbType = String), @p2='True' (DbType = String), @p3='6479046' (Size = 7), @p4='dpvfl2.tar' (Size = 10), @p5='False' (DbType = String), @p6='70255' (Size = 5), @p7='1.6 GB' (Size = 6), @p8='2021-10-15T00:00:00.0000000' (DbType = String), @p9=NULL"], CommandType='Text', CommandTimeout='30']"
+""INSERT INTO \"UspsFiles\" (\"DataMonth\", \"DateDownloaded\", \"Downloaded\", \"FileId\", \"FileName\", \"OnDisk\", \"ProductKey\", \"Size\", \"UploadDate\", \"UspsBundleId\")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9);
+SELECT \"Id\"
+FROM \"UspsFiles\"
+WHERE changes() = 1 AND \"rowid\" = last_insert_rowid();"
+11-08-2021 23:26:47 [ERR] An exception occurred in the database while saving changes for context type '"Crawler.Data.DatabaseContext"'."
+""Microsoft.EntityFrameworkCore.DbUpdateException: An error occurred while updating the entries. See the inner exception for details.
+ ---> Microsoft.Data.Sqlite.SqliteException (0x80004005): SQLite Error 1: 'no such table: UspsFiles'.
+   at Microsoft.Data.Sqlite.SqliteException.ThrowExceptionForRC(Int32 rc, sqlite3 db)
+   at Microsoft.Data.Sqlite.SqliteCommand.PrepareAndEnumerateStatements(Stopwatch timer)+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteCommand.GetStatements(Stopwatch timer)+MoveNext()
+   at Microsoft.Data.Sqlite.SqliteDataReader.NextResult()
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteReader(CommandBehavior behavior)
+   at Microsoft.Data.Sqlite.SqliteCommand.ExecuteDbDataReader(CommandBehavior behavior)
+   at System.Data.Common.DbCommand.ExecuteReader()
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReader(RelationalCommandParameterObject parameterObject)
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.Execute(IRelationalConnection connection)
+   --- End of inner exception stack trace ---
+   at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.Execute(IRelationalConnection connection)
+   at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.Execute(IEnumerable`1 commandBatches, IRelationalConnection connection)
+   at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChanges(IList`1 entries)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChanges(IList`1 entriesToSave)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChanges(DbContext _, Boolean acceptAllChangesOnSuccess)
+   at Microsoft.EntityFrameworkCore.Storage.NonRetryingExecutionStrategy.Execute[TState,TResult](TState state, Func`3 operation, Func`3 verifySucceeded)
+   at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChanges(Boolean acceptAllChangesOnSuccess)
+   at Microsoft.EntityFrameworkCore.DbContext.SaveChanges(Boolean acceptAllChangesOnSuccess)"
+11-08-2021 23:29:31 [INF] Starting up the service
+11-08-2021 23:29:32 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-08-2021 23:49:49 [INF] Starting up the service
+11-08-2021 23:49:50 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-08-2021 23:50:22 [INF] Starting up the service
+11-08-2021 23:50:24 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-08-2021 23:57:33 [INF] Starting up the service
+11-08-2021 23:57:34 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-08-2021 23:59:42 [INF] Starting up the service
+11-08-2021 23:59:43 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:00:36 [INF] Starting up the service
+11-09-2021 00:00:37 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:08:55 [INF] Starting up the service
+11-09-2021 00:08:56 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:23:06 [INF] Starting up the service
+11-09-2021 00:23:07 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:25:21 [INF] Starting up the service
+11-09-2021 00:25:22 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:26:06 [INF] Starting up the service
+11-09-2021 00:26:07 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:34:30 [INF] Starting up the service
+11-09-2021 00:34:31 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 00:36:22 [INF] Starting up the service
+11-09-2021 00:36:23 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+11-09-2021 01:04:03 [INF] Starting up the service
+11-09-2021 01:04:04 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
