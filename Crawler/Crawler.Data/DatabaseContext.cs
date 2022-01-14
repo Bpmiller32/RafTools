@@ -1,26 +1,18 @@
-using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Crawler.Data
 {
     public class DatabaseContext : DbContext
     {
-        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options)
-        {
-        }
+        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options){}
 
         public DbSet<UspsBundle> UspsBundles { get; set; }
         public DbSet<UspsFile> UspsFiles { get; set; }
-        public DbSet<UspsFile> TempFiles { get; set; }
 
-        // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        // {
-        //     optionsBuilder.UseSqlite(@"Filename=.\DirectoryCollection.db")
-        //         .LogTo(Console.WriteLine, new[] { DbLoggerCategory.Database.Command.Name }, LogLevel.Information)
-        //         .EnableSensitiveDataLogging();
+        public DbSet<ParaBundle> ParaBundles { get; set; }
+        public DbSet<ParaFile> ParaFiles { get; set; }
 
-        //     base.OnConfiguring(optionsBuilder);
-        // }
+        public DbSet<RoyalBundle> RoyalBundles { get; set; }
+        public DbSet<RoyalFile> RoyalFiles { get; set; }
     }
 }
