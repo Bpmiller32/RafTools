@@ -47,8 +47,8 @@ namespace Crawler.App
                 .UseSerilog()
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<SmartmatchCrawler>();
-                    services.AddHostedService<ParascriptCrawler>();
+                    // services.AddHostedService<SmartmatchCrawler>();
+                    // services.AddHostedService<ParascriptCrawler>();
                     services.AddHostedService<RoyalCrawler>();
                     services.AddDbContext<DatabaseContext>(opt =>
                     {
