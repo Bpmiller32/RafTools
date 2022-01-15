@@ -11,18 +11,22 @@ using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.IO.Compression;
+using Microsoft.Extensions.Configuration;
 
 namespace Crawler.App
 {
     public class ParascriptCrawler : BackgroundService
     {
         private readonly ILogger<ParascriptCrawler> logger;
+        private readonly IConfiguration config;
         private readonly DatabaseContext context;
         private List<ParaFile> TempFiles = new List<ParaFile>();
+        private AppSettings settings = new AppSettings();
 
-        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IServiceScopeFactory factory)
+        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IServiceScopeFactory factory, IConfiguration config)
         {
             this.logger = logger;
+            this.config = config;
             this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
@@ -30,6 +34,21 @@ namespace Crawler.App
         {
             logger.LogInformation("Hello from ParaCrawler!");
             context.Database.EnsureCreated();
+
+            // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
+            if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+            {
+                settings.ServiceEnabled = config.GetValue<bool>("settings:ServiceEnabled:Parascript");
+                // Should probably also add a valid check to these values later
+                if (config.GetValue<string>("settings:DownloadPath:Parascript") != "")
+                {
+                    settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:Parascript");
+                }
+                settings.ExecDay = config.GetValue<int>("settings:ExecTime:Parascript:Day");
+                settings.ExecHour = config.GetValue<int>("settings:ExecTime:Parascript:Hour");
+                settings.ExecMinute = config.GetValue<int>("settings:ExecTime:Parascript:Minute");
+                settings.ExecSecond = config.GetValue<int>("settings:ExecTime:Parascript:Second");
+            }
 
             return base.StartAsync(cancellationToken);
         }
@@ -43,13 +62,23 @@ namespace Crawler.App
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 27, 7, 59, 59);
+            if (settings.ServiceEnabled == false)
+            {
+                CancellationTokenSource ts = new CancellationTokenSource();
+                stoppingToken = ts.Token;
+                ts.Cancel();
+
+                logger.LogWarning("ParaCrawler service disabled");
+            }
+
+            // Set values for service sleep time
+            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
             DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
             TimeSpan waitTime = execTime - DateTime.Now;
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                Cleanup(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\", stoppingToken);
+                Cleanup(settings.DownloadPath + @"\Parascript\Temp\", stoppingToken);
                 await DownloadFiles(stoppingToken);
                 Inspect(stoppingToken);
                 CheckFiles(stoppingToken);
@@ -79,10 +108,10 @@ namespace Crawler.App
             }
 
             // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-            Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp");
+            Directory.CreateDirectory(path);
 
             // Cleanup from previous run
-            DirectoryInfo op = new DirectoryInfo(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\");
+            DirectoryInfo op = new DirectoryInfo(path);
 
             foreach (var file in op.GetFiles())
             {
@@ -92,7 +121,6 @@ namespace Crawler.App
             {
                 dir.Delete(true);
             }
-
         }
 
         private async Task DownloadFiles(CancellationToken stoppingToken)
@@ -107,7 +135,7 @@ namespace Crawler.App
             await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
             // Set launchoptions, create browser instance
-            LaunchOptions options = new LaunchOptions() { Headless = false };
+            LaunchOptions options = new LaunchOptions() { Headless = true };
 
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))
@@ -116,19 +144,21 @@ namespace Crawler.App
                 {
                     try
                     {
-                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp" });
+                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = settings.DownloadPath + @"\Parascript\Temp" });
 
                         // Navigate to download portal page
                         await page.GoToAsync(@"https://parascript.sharefile.com/share/view/s80765117d4441b88");
 
                         await page.WaitForSelectorAsync(@"#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.gridHeader_ubbr06 > label > label > span > span");
-                        await Task.Delay(3000);
+                        await Task.Delay(TimeSpan.FromSeconds(3));
                         await page.ClickAsync(@"#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.gridHeader_ubbr06 > label > label > span > span");
-                        await Task.Delay(3000);
+                        await Task.Delay(TimeSpan.FromSeconds(3));
 
                         await page.ClickAsync(@"#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div:nth-child(6) > div.footer_1pnvz17 > div > div > div.downloadButton_4mfu3n > button > div");
-                        await Task.Delay(3000);
+                        await Task.Delay(TimeSpan.FromSeconds(3));
 
+                        logger.LogInformation("Currently downloading: Parascript files");
+                        // Cancellation closes page and browser using statement, clears crdownload so no cleanup there
                         await WaitForDownload(stoppingToken);
                     }
                     catch (System.Exception e)
@@ -142,14 +172,14 @@ namespace Crawler.App
         private void Inspect(CancellationToken stoppingToken)
         {
             // Check if you were able to download anything from the website
-            if (!File.Exists(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\Files.zip"))
+            if (!File.Exists(settings.DownloadPath + @"\Parascript\Temp\Files.zip"))
             {
                 return;
             }
 
             // Extract zip file
-            ZipFile.ExtractToDirectory(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\Files.zip", Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp");
-            var dirs = Directory.GetDirectories(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp");
+            ZipFile.ExtractToDirectory(settings.DownloadPath + @"\Parascript\Temp\Files.zip", settings.DownloadPath + @"\Parascript\Temp");
+            var dirs = Directory.GetDirectories(settings.DownloadPath + @"\Parascript\Temp");
 
             foreach (var dir in dirs)
             {
@@ -157,7 +187,7 @@ namespace Crawler.App
                 file.FileName = dir.Split(Path.DirectorySeparatorChar).Last();
 
                 // Find the month and date in the downloaded file
-                using (StreamReader sr = new StreamReader(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\ads6\readme.txt"))
+                using (StreamReader sr = new StreamReader(settings.DownloadPath + @"\Parascript\Temp\ads6\readme.txt"))
                 {
                     string line;
                     Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
@@ -188,7 +218,7 @@ namespace Crawler.App
                 if (!fileInDb)
                 {
                     // Check if the folder exists on the disk
-                    if (!Directory.Exists(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.FileName))
+                    if (!Directory.Exists(settings.DownloadPath + @"\Parascript\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.FileName))
                     {
                         file.OnDisk = false;
                     }
@@ -238,16 +268,17 @@ namespace Crawler.App
                 return;
             }
 
+            // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
+            Directory.CreateDirectory(settings.DownloadPath + @"\Parascript\" + offDisk[0].DataYear + @"\" + offDisk[0].DataMonth);
+            // Cleanup if a files happen to be left over from partial move or user put files in
+            Cleanup(settings.DownloadPath + @"\Parascript\" + offDisk[0].DataYear + @"\" + offDisk[0].DataMonth, stoppingToken);
+
             foreach (var file in offDisk)
             {
-                // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-                Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\" + file.DataYear + @"\" + file.DataMonth);
-                // Cleanup if a file happens to be left over?
-                Cleanup(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\" + file.DataYear + @"\" + file.DataMonth, stoppingToken);
-
-                Directory.Move(Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp\" + file.FileName, Directory.GetCurrentDirectory() + @"\Downloads\Parascript\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.FileName);
+                Directory.Move(settings.DownloadPath + @"\Parascript\Temp\" + file.FileName, settings.DownloadPath + @"\Parascript\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.FileName);
                 logger.LogInformation(@"File stored: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear);
 
+                // Files are confirmed moved by this point, update the db
                 file.OnDisk = true;
                 file.DateDownloaded = DateTime.Now;
                 context.ParaFiles.Update(file);
@@ -279,22 +310,20 @@ namespace Crawler.App
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
+                logger.LogInformation("Download in progress was stopped due to cancellation");
                 return;
             }
 
-            string path = Directory.GetCurrentDirectory() + @"\Downloads\Parascript\Temp";
+            string path = settings.DownloadPath + @"\Parascript\Temp";
             string[] files = Directory.GetFiles(path, @"*.CRDOWNLOAD");
 
             if (files.Length < 1)
             {
-                logger.LogInformation("Finished downloading");
+                // logger.LogInformation("Finished downloading");
                 return;
             }
-            else
-            {
-                await Task.Delay(180000);
-            }
 
+            await Task.Delay(TimeSpan.FromSeconds(5));
             await WaitForDownload(stoppingToken);
         }
     }
