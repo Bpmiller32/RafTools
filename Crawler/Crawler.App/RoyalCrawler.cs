@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Crawler.Data;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,12 +17,15 @@ namespace Crawler.App
     public class RoyalCrawler : BackgroundService
     {
         private readonly ILogger<RoyalCrawler> logger;
+        private readonly IConfiguration config;
         private readonly DatabaseContext context;
         private RoyalFile TempFile = new RoyalFile();
+        private AppSettings settings = new AppSettings();
 
-        public RoyalCrawler(ILogger<RoyalCrawler> logger, IServiceScopeFactory factory)
+        public RoyalCrawler(ILogger<RoyalCrawler> logger, IServiceScopeFactory factory, IConfiguration config)
         {
             this.logger = logger;
+            this.config = config;
             this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
@@ -29,6 +33,21 @@ namespace Crawler.App
         {
             logger.LogInformation("Hello from RoyalCrawler!");
             context.Database.EnsureCreated();
+
+            // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
+            if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+            {
+                settings.ServiceEnabled = config.GetValue<bool>("settings:ServiceEnabled:RoyalMail");
+                // Should probably also add a valid check to these values later
+                if (config.GetValue<string>("settings:DownloadPath:RoyalMail") != "")
+                {
+                    settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:RoyalMail");
+                }
+                settings.ExecDay = config.GetValue<int>("settings:ExecTime:RoyalMail:Day");
+                settings.ExecHour = config.GetValue<int>("settings:ExecTime:RoyalMail:Hour");
+                settings.ExecMinute = config.GetValue<int>("settings:ExecTime:RoyalMail:Minute");
+                settings.ExecSecond = config.GetValue<int>("settings:ExecTime:RoyalMail:Second");
+            }
 
             return base.StartAsync(cancellationToken);
         }
@@ -42,7 +61,17 @@ namespace Crawler.App
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 15, 7, 59, 59);
+            if (settings.ServiceEnabled == false)
+            {
+                CancellationTokenSource ts = new CancellationTokenSource();
+                stoppingToken = ts.Token;
+                ts.Cancel();
+                                
+                logger.LogWarning("RoyalCrawler service disabled");
+            }
+
+            // Set values for service sleep time
+            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
             DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
             TimeSpan waitTime = execTime - DateTime.Now;
 
@@ -112,7 +141,7 @@ namespace Crawler.App
             if (!fileInDb)
             {
                 // Check if the folder exists on the disk
-                if (!Directory.Exists(Directory.GetCurrentDirectory() + @"\Downloads\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\" + TempFile.FileName))
+                if (!Directory.Exists(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\" + TempFile.FileName))
                 {
                     TempFile.OnDisk = false;
                 }
@@ -172,9 +201,9 @@ namespace Crawler.App
                         fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe"); 
                     }
 
-                    Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\Downloads\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth);
+                    Directory.CreateDirectory(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth);
 
-                    using (FileStream file = File.Create(Directory.GetCurrentDirectory() + @"\Downloads\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\SetupRM.exe"))
+                    using (FileStream file = File.Create(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\SetupRM.exe"))
                     {
                         file.Write(fileData, 0, fileData.Length);
                         file.Close();
