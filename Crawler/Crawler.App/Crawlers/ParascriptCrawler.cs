@@ -33,23 +33,35 @@ namespace Crawler.App
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             logger.LogInformation("Hello from ParaCrawler!");
+
             context.Database.EnsureCreated();
 
             // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
             if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
             {
-                settings.ServiceEnabled = config.GetValue<bool>("settings:ServiceEnabled:Parascript");
-                // Should probably also add a valid check to these values later
-                if (config.GetValue<string>("settings:DownloadPath:Parascript") != "")
-                {
-                    settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:Parascript");
-                }
-                settings.ExecDay = config.GetValue<int>("settings:ExecTime:Parascript:Day");
-                settings.ExecHour = config.GetValue<int>("settings:ExecTime:Parascript:Hour");
-                settings.ExecMinute = config.GetValue<int>("settings:ExecTime:Parascript:Minute");
-                settings.ExecSecond = config.GetValue<int>("settings:ExecTime:Parascript:Second");
+                logger.LogError(@"File not found: appsettings.json");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
+            }
+            
+            if (!config.GetValue<bool>("settings:Parascript:ServiceEnabled"))
+            {
+                logger.LogWarning("ParaCrawler service disabled");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
             }
 
+            // Should probably also add a valid check to these values later
+            if (config.GetValue<string>("settings:Parascript:DownloadPath") != "")
+            {
+                settings.DownloadPath = config.GetValue<string>("settings:Parascript:DownloadPath");
+            }
+
+            settings.ExecDay = config.GetValue<int>("settings:Parascript:ExecTime:Day");
+            settings.ExecHour = config.GetValue<int>("settings:Parascript:ExecTime:Hour");
+            settings.ExecMinute = config.GetValue<int>("settings:Parascript:ExecTime:Minute");
+            settings.ExecSecond = config.GetValue<int>("settings:Parascript:ExecTime:Second");
+            
             return base.StartAsync(cancellationToken);
         }
 
@@ -64,11 +76,7 @@ namespace Crawler.App
         {
             if (settings.ServiceEnabled == false)
             {
-                CancellationTokenSource ts = new CancellationTokenSource();
-                stoppingToken = ts.Token;
-                ts.Cancel();
-
-                logger.LogWarning("ParaCrawler service disabled");
+                return;
             }
 
             // Set values for service sleep time
@@ -163,6 +171,7 @@ namespace Crawler.App
                     }
                     catch (System.Exception e)
                     {
+                        settings.ServiceEnabled = false;
                         logger.LogError(e.Message);
                     }
                 }
@@ -174,6 +183,7 @@ namespace Crawler.App
             // Check if you were able to download anything from the website
             if (!File.Exists(settings.DownloadPath + @"\Parascript\Temp\Files.zip"))
             {
+                settings.ServiceEnabled = false;
                 return;
             }
 
@@ -210,6 +220,12 @@ namespace Crawler.App
 
         private void CheckFiles(CancellationToken stoppingToken)
         {
+            // Cancellation requested or PullFile failed
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            {
+                return;
+            }
+            
             foreach (var file in TempFiles)
             {
                 // Check if file is unique against the db
@@ -260,13 +276,13 @@ namespace Crawler.App
             // Find files to keep
             List<ParaFile> offDisk = context.ParaFiles.Where(x => x.OnDisk == false).ToList();
 
-            logger.LogInformation("New files found for storing: " + offDisk.Count);
-
-            // if all files are downloaded, no need to do anything
-            if (offDisk.Count == 0)
+            // if all files are downloaded, no need to kick open new browser
+            if ((settings.ServiceEnabled == false) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
+
+            logger.LogInformation("New files found for storing: " + offDisk.Count);
 
             // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
             Directory.CreateDirectory(settings.DownloadPath + @"\Parascript\" + offDisk[0].DataYear + @"\" + offDisk[0].DataMonth);
@@ -288,6 +304,11 @@ namespace Crawler.App
 
         private void CheckBuildReady(CancellationToken stoppingToken)
         {
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            {
+                return;
+            }
+
             List<ParaBundle> bundles = context.ParaBundles.ToList();
 
             foreach (var bundle in bundles)

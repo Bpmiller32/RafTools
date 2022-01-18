@@ -32,22 +32,38 @@ namespace Crawler.App
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             logger.LogInformation("Hello from SmCrawler!");
+
             context.Database.EnsureCreated();
 
             // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
             if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
             {
-                settings.ServiceEnabled = config.GetValue<bool>("settings:ServiceEnabled:SmartMatch");
-                // Should probably also add a valid check to these values later
-                if (config.GetValue<string>("settings:DownloadPath:SmartMatch") != "")
-                {
-                    settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:SmartMatch");
-                }
-                settings.ExecDay = config.GetValue<int>("settings:ExecTime:SmartMatch:Day");
-                settings.ExecHour = config.GetValue<int>("settings:ExecTime:SmartMatch:Hour");
-                settings.ExecMinute = config.GetValue<int>("settings:ExecTime:SmartMatch:Minute");
-                settings.ExecSecond = config.GetValue<int>("settings:ExecTime:SmartMatch:Second");
+                logger.LogError(@"File not found: appsettings.json");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
             }
+            
+            if(!config.GetValue<bool>("settings:ServiceEnabled:SmartMatch"))
+            {
+                logger.LogWarning("SmCrawler service disabled");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
+            }
+
+            // Should probably also add a valid check to these values later
+            if (config.GetValue<string>("settings:DownloadPath:SmartMatch") != "")
+            {
+                settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:SmartMatch");
+            }
+
+            settings.UserName = config.GetValue<string>("settings:Logins:SmartMatch:User");
+            settings.Password = config.GetValue<string>("settings:Logins:SmartMatch:Pass");
+
+            settings.ExecDay = config.GetValue<int>("settings:ExecTime:SmartMatch:Day");
+            settings.ExecHour = config.GetValue<int>("settings:ExecTime:SmartMatch:Hour");
+            settings.ExecMinute = config.GetValue<int>("settings:ExecTime:SmartMatch:Minute");
+            settings.ExecSecond = config.GetValue<int>("settings:ExecTime:SmartMatch:Second");
+            
 
             return base.StartAsync(cancellationToken);
         }
@@ -63,11 +79,7 @@ namespace Crawler.App
         {
             if (settings.ServiceEnabled == false)
             {
-                CancellationTokenSource ts = new CancellationTokenSource();
-                stoppingToken = ts.Token;
-                ts.Cancel();
-
-                logger.LogWarning("SmCrawler service disabled");
+                return;
             }
 
             // Set values for service sleep time
@@ -109,7 +121,7 @@ namespace Crawler.App
             await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
             // Set launchoptions, create browser instance
-            LaunchOptions options = new LaunchOptions() { Headless = true };
+            LaunchOptions options = new LaunchOptions() { Headless = false };
 
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))
@@ -123,9 +135,9 @@ namespace Crawler.App
 
                         await page.WaitForSelectorAsync(@"#email");
                         await page.FocusAsync(@"#email");
-                        await page.Keyboard.TypeAsync("billy.miller@raf.com");
+                        await page.Keyboard.TypeAsync(settings.UserName);
                         await page.FocusAsync(@"#password");
-                        await page.Keyboard.TypeAsync("Trixiedog10021002$");
+                        await page.Keyboard.TypeAsync(settings.Password);
 
                         await page.ClickAsync(@"#login");
 
@@ -172,6 +184,7 @@ namespace Crawler.App
                     }
                     catch (System.Exception e)
                     {
+                        settings.ServiceEnabled = false;
                         logger.LogError(e.Message);
                     }
                 }
@@ -180,7 +193,8 @@ namespace Crawler.App
 
         private void CheckFiles(CancellationToken stoppingToken)
         {
-            if (stoppingToken.IsCancellationRequested == true)
+            // Cancellation requested or PullFile failed
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
             {
                 return;
             }
@@ -233,13 +247,13 @@ namespace Crawler.App
         {
             List<UspsFile> offDisk = context.UspsFiles.Where(x => x.OnDisk == false).ToList();
 
-            logger.LogInformation("New files found for download: " + offDisk.Count);
-            
             // if all files are downloaded, no need to kick open new browser
-            if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested == true)
+            if ((settings.ServiceEnabled == false) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
+
+            logger.LogInformation("New files found for download: " + offDisk.Count);
 
             foreach (var file in offDisk)
             {
@@ -298,6 +312,7 @@ namespace Crawler.App
                     }
                     catch (System.Exception e)
                     {
+                        settings.ServiceEnabled = false;
                         logger.LogError(e.Message);
                     }
                 }
@@ -306,7 +321,7 @@ namespace Crawler.App
 
         private void CheckBuildReady(CancellationToken stoppingToken)
         {
-            if (stoppingToken.IsCancellationRequested == true)
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
             {
                 return;
             }

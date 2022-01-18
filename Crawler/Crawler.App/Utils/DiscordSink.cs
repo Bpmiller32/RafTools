@@ -1,7 +1,5 @@
-using System;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Templates;
 using JNogueira.Discord.Webhook.Client;
 
 namespace Crawler.App
@@ -20,7 +18,6 @@ namespace Crawler.App
 
             client.SendToDiscord(message).GetAwaiter().GetResult();
         }
-
 
         private static bool ShouldLogMessage(LogEventLevel minimumLogEventLevel, LogEventLevel messageLogEventLevel)
         {

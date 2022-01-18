@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -19,8 +18,8 @@ namespace Crawler.App
         private readonly ILogger<RoyalCrawler> logger;
         private readonly IConfiguration config;
         private readonly DatabaseContext context;
-        private RoyalFile TempFile = new RoyalFile();
         private AppSettings settings = new AppSettings();
+        private RoyalFile TempFile = new RoyalFile();
 
         public RoyalCrawler(ILogger<RoyalCrawler> logger, IServiceScopeFactory factory, IConfiguration config)
         {
@@ -32,22 +31,38 @@ namespace Crawler.App
         public override Task StartAsync(CancellationToken cancellationToken)
         {
             logger.LogInformation("Hello from RoyalCrawler!");
+
             context.Database.EnsureCreated();
 
             // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
-            if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+            if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
             {
-                settings.ServiceEnabled = config.GetValue<bool>("settings:ServiceEnabled:RoyalMail");
-                // Should probably also add a valid check to these values later
-                if (config.GetValue<string>("settings:DownloadPath:RoyalMail") != "")
-                {
-                    settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:RoyalMail");
-                }
-                settings.ExecDay = config.GetValue<int>("settings:ExecTime:RoyalMail:Day");
-                settings.ExecHour = config.GetValue<int>("settings:ExecTime:RoyalMail:Hour");
-                settings.ExecMinute = config.GetValue<int>("settings:ExecTime:RoyalMail:Minute");
-                settings.ExecSecond = config.GetValue<int>("settings:ExecTime:RoyalMail:Second");
+                logger.LogError(@"File not found: appsettings.json");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
             }
+            
+            // Check if service is disabled
+            if (!config.GetValue<bool>("settings:RoyalMail:ServiceEnabled"))
+            {
+                logger.LogWarning("RoyalCrawler service disabled");
+                settings.ServiceEnabled = false;
+                return base.StartAsync(cancellationToken);
+            }
+            
+            // Should probably also add a valid check to these values later
+            if (config.GetValue<string>("settings:RoyalMail:DownloadPath") != "")
+            {
+                settings.DownloadPath = config.GetValue<string>("settings:RoyalMail:DownloadPath");
+            }
+
+            settings.UserName = config.GetValue<string>("settings:RoyalMail:Login:User");
+            settings.Password = config.GetValue<string>("settings:RoyalMail:Login:Pass");
+
+            settings.ExecDay = config.GetValue<int>("settings:RoyalMail:ExecTime:Day");
+            settings.ExecHour = config.GetValue<int>("settings:RoyalMail:ExecTime:Hour");
+            settings.ExecMinute = config.GetValue<int>("settings:RoyalMail:ExecTime:Minute");
+            settings.ExecSecond = config.GetValue<int>("settings:RoyalMail:ExecTime:Second");
 
             return base.StartAsync(cancellationToken);
         }
@@ -63,11 +78,7 @@ namespace Crawler.App
         {
             if (settings.ServiceEnabled == false)
             {
-                CancellationTokenSource ts = new CancellationTokenSource();
-                stoppingToken = ts.Token;
-                ts.Cancel();
-                                
-                logger.LogWarning("RoyalCrawler service disabled");
+                return;         
             }
 
             // Set values for service sleep time
@@ -105,7 +116,7 @@ namespace Crawler.App
             }
 
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
-            request.Credentials = new NetworkCredential(@"S30145074-138", @"N49LB0TjJhLQhdoY");
+            request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
             request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
             
             DateTime lastModified;
@@ -124,13 +135,15 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
+                settings.ServiceEnabled = false;
                 logger.LogError(e.Message);
             }
         }
 
         private void CheckFile(CancellationToken stoppingToken)
         {
-            if ((TempFile.FileName == null) || (stoppingToken.IsCancellationRequested == true))
+            // Cancellation requested or PullFile failed
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
             {
                 return;
             }
@@ -179,7 +192,8 @@ namespace Crawler.App
         {
             List<RoyalFile> offDisk = context.RoyalFiles.Where(x => x.OnDisk == false).ToList();
 
-            if ((TempFile.FileName == null) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
+            // Cancellation requested, CheckFile sees that nothing is offDisk, PullFile failed
+            if ((settings.ServiceEnabled == false) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
@@ -190,9 +204,8 @@ namespace Crawler.App
             {
                 using (WebClient request = new WebClient())
                 {
-                    request.Credentials = new NetworkCredential(@"S30145074-138", @"N49LB0TjJhLQhdoY");
+                    request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
                     byte[] fileData;
-
 
                     using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
                     {
@@ -218,17 +231,19 @@ namespace Crawler.App
             }
             catch (System.Net.WebException)
             {
+                settings.ServiceEnabled = false;
                 logger.LogInformation("Download in progress was stopped due to cancellation");
             }
             catch (System.Exception e)
             {
+                settings.ServiceEnabled = false;
                 logger.LogError(e.Message);
             }
         }
     
         private void CheckBuildReady(CancellationToken stoppingToken)
         {
-            if (stoppingToken.IsCancellationRequested == true)
+            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
             {
                 return;
             }
