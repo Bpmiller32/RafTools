@@ -36,14 +36,14 @@ namespace Crawler.App
             context.Database.EnsureCreated();
 
             // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
-            if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+            if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
             {
                 logger.LogError(@"File not found: appsettings.json");
                 settings.ServiceEnabled = false;
                 return base.StartAsync(cancellationToken);
             }
             
-            if(!config.GetValue<bool>("settings:ServiceEnabled:SmartMatch"))
+            if(!config.GetValue<bool>("settings:SmartMatch:ServiceEnabled"))
             {
                 logger.LogWarning("SmCrawler service disabled");
                 settings.ServiceEnabled = false;
@@ -51,18 +51,18 @@ namespace Crawler.App
             }
 
             // Should probably also add a valid check to these values later
-            if (config.GetValue<string>("settings:DownloadPath:SmartMatch") != "")
+            if (config.GetValue<string>("settings:SmartMatch:DownloadPath") != "")
             {
-                settings.DownloadPath = config.GetValue<string>("settings:DownloadPath:SmartMatch");
+                settings.DownloadPath = config.GetValue<string>("settings:SmartMatch:DownloadPath");
             }
 
-            settings.UserName = config.GetValue<string>("settings:Logins:SmartMatch:User");
-            settings.Password = config.GetValue<string>("settings:Logins:SmartMatch:Pass");
+            settings.UserName = config.GetValue<string>("settings:SmartMatch:Login:User");
+            settings.Password = config.GetValue<string>("settings:SmartMatch:Login:Pass");
 
-            settings.ExecDay = config.GetValue<int>("settings:ExecTime:SmartMatch:Day");
-            settings.ExecHour = config.GetValue<int>("settings:ExecTime:SmartMatch:Hour");
-            settings.ExecMinute = config.GetValue<int>("settings:ExecTime:SmartMatch:Minute");
-            settings.ExecSecond = config.GetValue<int>("settings:ExecTime:SmartMatch:Second");
+            settings.ExecDay = config.GetValue<int>("settings:SmartMatch:ExecTime:Day");
+            settings.ExecHour = config.GetValue<int>("settings:SmartMatch:ExecTime:Hour");
+            settings.ExecMinute = config.GetValue<int>("settings:SmartMatch:ExecTime:Minute");
+            settings.ExecSecond = config.GetValue<int>("settings:SmartMatch:ExecTime:Second");
             
 
             return base.StartAsync(cancellationToken);
@@ -121,7 +121,9 @@ namespace Crawler.App
             await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
             // Set launchoptions, create browser instance
-            LaunchOptions options = new LaunchOptions() { Headless = false };
+            LaunchOptions options = new LaunchOptions() { Headless = true };
+
+            // TODO: Register cancellationToken to browser.Close() like in Builder's SocketServer
 
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))

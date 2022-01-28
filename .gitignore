@@ -5,3 +5,13 @@ Crawler/Crawler.App/obj/
 Crawler/Crawler.App/bin/
 Crawler/Crawler.App/.local-chromium/
 Crawler/.vscode/
+
+Builder/Builder.App/obj/
+Builder/Builder.App/bin/
+Builder/.vscode/
+
+IsleBuilder/IsleBuilder.App/obj/
+IsleBuilder/IsleBuilder.App/bin/
+IsleBuilder/IsleBuilder.App/SmiBuildFiles/
+IsleBuilder/IsleBuilder.App/SmiBuildTools/
+IsleBuilder/.vscode/

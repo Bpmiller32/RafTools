@@ -37,8 +37,9 @@ namespace Crawler.App
             context.Database.EnsureCreated();
 
             // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
-            if (File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+            if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
             {
+                System.Console.WriteLine(Directory.GetCurrentDirectory());
                 logger.LogError(@"File not found: appsettings.json");
                 settings.ServiceEnabled = false;
                 return base.StartAsync(cancellationToken);

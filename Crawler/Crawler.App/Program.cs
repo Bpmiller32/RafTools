@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Threading;
 using Crawler.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,27 +15,36 @@ namespace Crawler.App
     {
         public static void Main(string[] args)
         {
-            // Crucially important for Windows Service, otherwise working directory runs out of Windows\System32
-            System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
-
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("System", LogEventLevel.Warning)
-                .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"))
-                .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), @".\LogFile.txt")
-                .WriteTo.DiscordSink()
-                .CreateLogger();
             try
             {
-                Log.Information("Starting up the services");
-                CreateHostBuilder(args).Build().Run();
-                return;
+                using (var mutex = new Mutex(false, "DirCrawler"))
+                {
+                    Log.Logger = new LoggerConfiguration()
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                        .MinimumLevel.Override("System", LogEventLevel.Warning)
+                        .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"))
+                        .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), @".\Log\CrawlerLog.txt")
+                        .WriteTo.DiscordSink()
+                        .CreateLogger();
+
+                    // Crucially important for Windows Service, otherwise working directory runs out of Windows\System32
+                    System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
+                    Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Log"));
+
+                    // Single instance of application check
+                    bool isAnotherInstanceOpen = !mutex.WaitOne(TimeSpan.Zero);
+                    if (isAnotherInstanceOpen)
+                    {
+                        throw new Exception("Only one instance of the application allowed");
+                    }
+
+                    CreateHostBuilder(args).Build().Run();
+                }
             }
             catch (System.Exception e)
             {
                 Log.Fatal("There was a problem with a service");
                 Log.Fatal(e.Message);
-                return;
             }
             finally
             {
