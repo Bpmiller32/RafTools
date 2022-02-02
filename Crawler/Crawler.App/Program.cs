@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Principal;
 using System.Threading;
 using Crawler.Data;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
+
+#pragma warning disable CA1416 // ignore that calls to manipulate services and check for admin are Windows only 
 
 namespace Crawler.App
 {
@@ -29,13 +32,31 @@ namespace Crawler.App
 
                     // Crucially important for Windows Service, otherwise working directory runs out of Windows\System32
                     System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
-                    Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Log"));
+                    // Not needed, Serilog can punch through and create folders
+                    // Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Log"));
 
                     // Single instance of application check
                     bool isAnotherInstanceOpen = !mutex.WaitOne(TimeSpan.Zero);
                     if (isAnotherInstanceOpen)
                     {
                         throw new Exception("Only one instance of the application allowed");
+                    }
+
+                    // Attach method to application closing event handler to kill all spawned subprocess. Put it after singleton check in case another instance is open
+                    // AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
+
+                    // Check for admin
+                    bool isElevated;
+                    using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+                    {
+                        WindowsPrincipal principal = new WindowsPrincipal(identity);
+                        isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+                    }
+
+                    // Error if admin isn't present
+                    if (!isElevated)
+                    {
+                        throw new Exception("Application does not have administrator privledges");
                     }
 
                     CreateHostBuilder(args).Build().Run();

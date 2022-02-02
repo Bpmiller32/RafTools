@@ -179,6 +179,22 @@ namespace Crawler.App
                                 file.Downloaded = true;
                             }
 
+                            // New logic needed because epf behavior change, cannot G00424KL files because of access change + Cycle O added
+                            string productDescription = fileRow.ChildNodes[2].InnerText.Trim();
+                            if (productDescription.Contains(@"Cycle O"))
+                            {
+                                file.Cycle = "Cycle-O";
+                            }
+                            else
+                            {
+                                file.Cycle = "Cycle-N";
+                            }
+
+                            if (file.FileName == "G00424KL.ERZ.ZIP" || file.FileName == "G00424KL.ZIP")
+                            {
+                                continue;
+                            }
+
                             TempFiles.Add(file);
                         }
 
@@ -209,15 +225,15 @@ namespace Crawler.App
                 if (!fileInDb)
                 {
                     // Check if file exists on the disk 
-                    if (!File.Exists(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.FileName))
+                    if (!File.Exists(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle + @"\" + file.FileName))
                     {
                         file.OnDisk = false;
                     }
                     // regardless of check file is unique, add to db
                     context.UspsFiles.Add(file);
-                    logger.LogDebug("Discovered and not on disk: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear);
+                    logger.LogDebug("Discovered and not on disk: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear + " " + file.Cycle);
 
-                    bool bundleExists = context.UspsBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
+                    bool bundleExists = context.UspsBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear) && (file.Cycle == x.Cycle));
 
                     if (!bundleExists)
                     {
@@ -225,6 +241,7 @@ namespace Crawler.App
                         {
                             DataMonth = file.DataMonth,
                             DataYear = file.DataYear,
+                            Cycle = file.Cycle,
                             IsReadyForBuild = false
                         };
 
@@ -233,7 +250,7 @@ namespace Crawler.App
                     }
                     else
                     {
-                        UspsBundle existingBundle = context.UspsBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear)).FirstOrDefault();
+                        UspsBundle existingBundle = context.UspsBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear) && (file.Cycle == x.Cycle)).FirstOrDefault();
 
                         existingBundle.BuildFiles.Add(file);
                     }
@@ -260,8 +277,8 @@ namespace Crawler.App
             foreach (var file in offDisk)
             {
                 // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-                Directory.CreateDirectory(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth);
-                Cleanup(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth, stoppingToken);
+                Directory.CreateDirectory(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle);
+                Cleanup(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle, stoppingToken);
             }
 
             // Download local chromium binary to launch browser
@@ -302,13 +319,13 @@ namespace Crawler.App
                         // Changed behavior, start download and wait for indivdual file to download. USPS website corrupts downloads if you do them all at once sometimes
                         foreach (var file in offDisk)
                         {
-                            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth;
+                            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle;
                             await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = path });
                             
                             await page.EvaluateExpressionAsync(@"getFileForDownload(" + file.ProductKey + "," + file.FileId + ",rw_" + file.FileId + ");");
                             await Task.Delay(TimeSpan.FromSeconds(5));
                         
-                            logger.LogInformation("Currently downloading: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear);
+                            logger.LogInformation("Currently downloading: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear + " " + file.Cycle);
                             await WaitForDownload(file, stoppingToken);
                         }
                     }
@@ -334,12 +351,12 @@ namespace Crawler.App
             {
                 // idk why but you need to do some linq query to populate bundle.buildfiles? 
                 // Something to do with one -> many relationship between the tables, investigate
-                List<UspsFile> files = context.UspsFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
+                List<UspsFile> files = context.UspsFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear) && (x.Cycle == bundle.Cycle)).ToList();
 
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 6)
                 {
                     bundle.IsReadyForBuild = true;
-                    logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear);
+                    logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear + " " + bundle.Cycle);
                 }
 
                 context.SaveChanges();
@@ -354,7 +371,7 @@ namespace Crawler.App
                 return;
             }
 
-            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth;
+            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle;
             if (!File.Exists(path + @"\" + file.FileName + @".CRDOWNLOAD"))
             {
                 // logger.LogInformation("Finished downloading");

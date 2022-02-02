@@ -69,11 +69,16 @@ public class Settings
             throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
         }
         // SM specific
-        if (String.IsNullOrEmpty(settings.DataYear) || String.IsNullOrEmpty(settings.DataMonth))
+        if (settings.Name == "SM" && (String.IsNullOrEmpty(settings.DataYear) || String.IsNullOrEmpty(settings.DataMonth)))
         {
             string[] addressDataPathSplits = settings.AddressDataPath.Split(@"\");
             settings.DataMonth = addressDataPathSplits[addressDataPathSplits.Count()];
             settings.DataYear = addressDataPathSplits[addressDataPathSplits.Count() - 1];
+
+            if (int.Parse(settings.DataMonth) < 10)
+            {
+                settings.DataMonth = @"0" + settings.DataMonth;
+            }
         }
 
         if (settings.Name == "SM")

@@ -46,10 +46,12 @@ public class RoyalBuilder
             // 1st page
             AutomationElement beginButton = windows[0].FindFirstDescendant(cf => cf.ByClassName("TButton"));
             beginButton.AsButton().Click();
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             // 2nd page
             AutomationElement nextButton = windows[0].FindFirstDescendant(cf => cf.ByClassName("TButton"));
             nextButton.AsButton().Click();
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
             // 3rd page
             AutomationElement extractText = windows[0].FindFirstDescendant(cf => cf.ByClassName("TEdit"));
@@ -138,17 +140,11 @@ public class RoyalBuilder
     {
         Directory.CreateDirectory(Path.Combine(workingPath, @"Smi"));
 
-        // Process smiCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
-        // smiCheckout.WaitForExit();
+        Process smiCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
+        smiCheckout.WaitForExit();
 
-        DirectoryInfo checkoutFiles = new DirectoryInfo(@"C:\Users\billy\Desktop\MockSmiCheckout");
-        foreach (FileInfo file in checkoutFiles.GetFiles())
-        {
-            File.Copy(file.FullName, Path.Combine(workingPath, @"Smi", file.Name), true);
-        }
-
-        // Process dongleCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
-        // dongleCheckout.WaitForExit();
+        Process dongleCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
+        dongleCheckout.WaitForExit();
 
         // Edit SMi definition xml file with updated date 
         XmlDocument defintionFile = new XmlDocument();
