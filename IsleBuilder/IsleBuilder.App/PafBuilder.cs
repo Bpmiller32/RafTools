@@ -4,7 +4,7 @@ using System.ServiceProcess;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 
-#pragma warning disable CA1416 // ignore that my calls to manipulate services and check for admin are Windows only 
+#pragma warning disable CA1416 // ignore that calls to manipulate services and check for admin are Windows only 
 
 namespace IsleBuilder.App;
 
@@ -13,7 +13,6 @@ public class PafBuilder : BackgroundService
     private readonly ILogger<PafBuilder> logger;
     private readonly IHostApplicationLifetime lifetime;
     private readonly Settings settings;
-    private bool isElevated;
 
     public PafBuilder(ILogger<PafBuilder> logger, IHostApplicationLifetime lifetime, IOptionsMonitor<Settings> settings)
     {
@@ -21,38 +20,11 @@ public class PafBuilder : BackgroundService
         this.lifetime = lifetime;
         this.settings = settings.Get(Settings.IoM);
     }
-    
-    public override Task StartAsync(CancellationToken cancellationToken)
-    {
-        logger.LogInformation("Isle of Man directory builder v0.1");
-
-        // Attach method to application closing event handler to kill all spawned subprocess. Put it after singleton check in case another instance is open
-        AppDomain.CurrentDomain.ProcessExit += Utils.KillProcs;
-
-        // Check for admin
-        using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
-        {
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
-            isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
-
-        // Warn if admin isn't present
-        if (!isElevated)
-        {
-            logger.LogWarning("Application does not have administrator privledges");
-        }
-
-        // Warn if moving compiled files to AP is off
-        if (!settings.MoveToAp)
-        {
-            logger.LogWarning("Application set to not move compiled directory into Argosy Post Sync folder");
-        }
-
-        return base.StartAsync(cancellationToken);
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        logger.LogInformation("Isle of Man directory builder v0.1");
+
         System.Console.WriteLine("\nPlease make sure settings are correct in appsettings.json and folders contain appropriate files\n");
         System.Console.WriteLine("Press enter to continue...");
         System.Console.ReadLine();
@@ -60,6 +32,12 @@ public class PafBuilder : BackgroundService
         try
         {
             Settings.Validate(settings);
+
+            // Warn if moving compiled files to AP is off
+            if (!settings.MoveToAp)
+            {
+                logger.LogWarning("Application set to not move compiled directory into Argosy Post Sync folder");
+            }
 
             Cleanup(fullClean: true);
             EncryptSmiFiles();
@@ -228,6 +206,14 @@ public class PafBuilder : BackgroundService
     private void DeployToAp()
     {
         logger.LogInformation("Shutting down RAFArgosyMaster, moving files to Argosy Post Sync folder");
+
+
+        bool isElevated = false;
+        using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+        {
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
 
         if (!isElevated)
         {

@@ -32,8 +32,6 @@ namespace Crawler.App
 
                     // Crucially important for Windows Service, otherwise working directory runs out of Windows\System32
                     System.IO.Directory.SetCurrentDirectory(System.AppDomain.CurrentDomain.BaseDirectory);
-                    // Not needed, Serilog can punch through and create folders
-                    // Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Log"));
 
                     // Single instance of application check
                     bool isAnotherInstanceOpen = !mutex.WaitOne(TimeSpan.Zero);

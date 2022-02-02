@@ -1,0 +1,2 @@
+[02-02-2022 12:06:10 ]  [WRN] Application does not have administrator privledges
+[02-02-2022 12:06:10 PafBuilder]  [INF] Isle of Man directory builder v0.1
