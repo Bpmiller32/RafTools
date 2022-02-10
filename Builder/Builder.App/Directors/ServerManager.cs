@@ -8,12 +8,12 @@ using Microsoft.Extensions.Options;
 
 namespace Builder.App;
 
-public class BuildServer : BackgroundService
+public class ServerManager : BackgroundService
 {
-    private readonly ILogger<BuildServer> logger;
+    private readonly ILogger<ServerManager> logger;
     private readonly BuildManager buildManager;
 
-    public BuildServer(ILogger<BuildServer> logger, BuildManager buildManager)
+    public ServerManager(ILogger<ServerManager> logger, BuildManager buildManager)
     {
         this.logger = logger;
         this.buildManager = buildManager;
@@ -27,6 +27,11 @@ public class BuildServer : BackgroundService
             data = await SocketServer(stoppingToken);
             logger.LogInformation("Message recieved: " + data);
             
+            if (data.Contains("Status"))
+            {
+                continue;
+            }
+
             buildManager.RunTask(data);
         }
     }

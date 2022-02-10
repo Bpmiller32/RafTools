@@ -15,3 +15,12 @@ IsleBuilder/IsleBuilder.App/bin/
 IsleBuilder/IsleBuilder.App/SmiBuildFiles/
 IsleBuilder/IsleBuilder.App/SmiBuildTools/
 IsleBuilder/.vscode/
+
+Ui/Ui.Web/.DS_Store
+Ui/Ui.Web/node_modules
+Ui/Ui.Web/dist
+
+Ui/Ui.Core/bin
+Ui/Ui.Core/obj
+
+Ui/.vscode

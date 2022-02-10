@@ -6,11 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Builder.App-5E7D360E-3B30-4F48-B7FA-85DFD798E128</UserSecretsId>
 
-    <OutputType>exe</OutputType>
+    <!-- <OutputType>exe</OutputType>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget> -->
   </PropertyGroup>
 
   <Target Name="BeforeBuild">

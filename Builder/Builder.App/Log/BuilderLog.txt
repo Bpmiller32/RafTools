@@ -1,0 +1,172 @@
+[02-09-2022 19:07:31 ]  [FTL] There was a problem with a service
+[02-09-2022 19:07:31 ]  [FTL] Application does not have administrator privledges
+[02-09-2022 19:08:18 BuildServer]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 19:08:57 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 19:20:56 ]  [FTL] There was a problem with a service
+[02-09-2022 19:20:56 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.BuildManager'.
+[02-09-2022 19:21:19 ]  [FTL] There was a problem with a service
+[02-09-2022 19:21:19 ]  [FTL] A circular dependency was detected for the service of type 'Builder.App.BuildManager'.
+System.Collections.Generic.IEnumerable<Microsoft.Extensions.Hosting.IHostedService> -> Microsoft.Extensions.Hosting.IHostedService(Builder.App.ServerManager) -> Builder.App.BuildManager -> Builder.App.StatusManager -> Builder.App.BuildManager
+[02-09-2022 19:23:28 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 19:23:37 BuildManager]  [INF] Builder not running: SmartMatch
+[02-09-2022 19:23:37 BuildManager]  [INF] Builder not running: Parascript
+[02-09-2022 19:23:37 BuildManager]  [INF] Builder not running: RoyalMail
+[02-09-2022 19:23:55 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 19:23:55 BuildManager]  [INF] Builder not running: SmartMatch
+[02-09-2022 19:23:55 BuildManager]  [INF] Builder not running: Parascript
+[02-09-2022 19:23:55 BuildManager]  [INF] Builder not running: RoyalMail
+[02-09-2022 19:25:35 ]  [FTL] There was a problem with a service
+[02-09-2022 19:25:35 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.BuildManager'.
+[02-09-2022 19:26:05 ]  [FTL] There was a problem with a service
+[02-09-2022 19:26:05 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.BuildManager'.
+[02-09-2022 19:26:44 ]  [FTL] There was a problem with a service
+[02-09-2022 19:26:44 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.ServerManager'.
+[02-09-2022 19:31:28 ]  [FTL] There was a problem with a service
+[02-09-2022 19:31:28 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.BuildManager'.
+[02-09-2022 19:32:42 ]  [FTL] There was a problem with a service
+[02-09-2022 19:32:42 ]  [FTL] Unable to resolve service for type 'Builder.App.StatusManager' while attempting to activate 'Builder.App.ServerManager'.
+[02-09-2022 20:44:40 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 20:59:25 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:31:50 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:32:00 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:32:38 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:32:40 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:32:50 ServerManager]  [INF] Message recieved: Parascript 1 <EOF>
+[02-09-2022 21:32:50 BuildManager]  [INF] Starting builder: Parascript
+[02-09-2022 21:32:50 BuildManager]  [ERR] Parascript: Could not find a part of the path 'C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\bin\Debug\net6.0-windows\Utils'.
+[02-09-2022 21:32:57 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 21:32:58 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 22:08:37 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 22:08:39 Host]  [ERR] BackgroundService failed
+System.Net.Internals.SocketExceptionFactory+ExtendedSocketException (10061): No connection could be made because the target machine actively refused it. 127.0.0.1:11000
+   at System.Net.Sockets.Socket.DoConnect(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Connect(EndPoint remoteEP)
+   at System.Net.Sockets.Socket.Connect(IPAddress address, Int32 port)
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+--- End of stack trace from previous location ---
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+   at System.Net.Sockets.TcpClient..ctor(String hostname, Int32 port)
+   at Builder.App.StatusManager.PullStatus(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\StatusManager.cs:line 26
+   at Builder.App.ServerManager.ExecuteAsync(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\ServerManager.cs:line 34
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+[02-09-2022 22:08:39 Host]  [FTL] The HostOptions.BackgroundServiceExceptionBehavior is configured to StopHost. A BackgroundService has thrown an unhandled exception, and the IHost instance is stopping. To avoid this behavior, configure this to Ignore; however the BackgroundService will not be restarted.
+System.Net.Internals.SocketExceptionFactory+ExtendedSocketException (10061): No connection could be made because the target machine actively refused it. 127.0.0.1:11000
+   at System.Net.Sockets.Socket.DoConnect(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Connect(EndPoint remoteEP)
+   at System.Net.Sockets.Socket.Connect(IPAddress address, Int32 port)
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+--- End of stack trace from previous location ---
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+   at System.Net.Sockets.TcpClient..ctor(String hostname, Int32 port)
+   at Builder.App.StatusManager.PullStatus(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\StatusManager.cs:line 26
+   at Builder.App.ServerManager.ExecuteAsync(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\ServerManager.cs:line 34
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+[02-09-2022 22:09:03 ServerManager]  [INF] Message recieved: Status 1 <EOF>
+[02-09-2022 22:09:08 Host]  [ERR] BackgroundService failed
+System.Net.Internals.SocketExceptionFactory+ExtendedSocketException (10061): No connection could be made because the target machine actively refused it. 127.0.0.1:11000
+   at System.Net.Sockets.Socket.DoConnect(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Connect(EndPoint remoteEP)
+   at System.Net.Sockets.Socket.Connect(IPAddress address, Int32 port)
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+--- End of stack trace from previous location ---
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+   at System.Net.Sockets.TcpClient..ctor(String hostname, Int32 port)
+   at Builder.App.StatusManager.PullStatus(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\StatusManager.cs:line 26
+   at Builder.App.ServerManager.ExecuteAsync(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\ServerManager.cs:line 34
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+[02-09-2022 22:09:08 Host]  [FTL] The HostOptions.BackgroundServiceExceptionBehavior is configured to StopHost. A BackgroundService has thrown an unhandled exception, and the IHost instance is stopping. To avoid this behavior, configure this to Ignore; however the BackgroundService will not be restarted.
+System.Net.Internals.SocketExceptionFactory+ExtendedSocketException (10061): No connection could be made because the target machine actively refused it. 127.0.0.1:11000
+   at System.Net.Sockets.Socket.DoConnect(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Connect(EndPoint remoteEP)
+   at System.Net.Sockets.Socket.Connect(IPAddress address, Int32 port)
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+--- End of stack trace from previous location ---
+   at System.Net.Sockets.TcpClient.Connect(String hostname, Int32 port)
+   at System.Net.Sockets.TcpClient..ctor(String hostname, Int32 port)
+   at Builder.App.StatusManager.PullStatus(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\StatusManager.cs:line 26
+   at Builder.App.ServerManager.ExecuteAsync(CancellationToken stoppingToken) in C:\Users\billy\Desktop\Github\RafTools\Builder\Builder.App\Directors\ServerManager.cs:line 34
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+[02-09-2022 22:11:36 ServerManager]  [INF] Message recieved: asdf 1 <EOF>
+[02-09-2022 22:11:40 ServerManager]  [INF] Message recieved: asdf 1 <EOF>
+[02-09-2022 22:11:40 ServerManager]  [INF] Message recieved: asdf 2 <EOF>
+[02-09-2022 22:11:40 ServerManager]  [INF] Message recieved: asdf 3 <EOF>
+[02-09-2022 22:11:41 ServerManager]  [INF] Message recieved: asdf 4 <EOF>
+[02-09-2022 22:11:41 ServerManager]  [INF] Message recieved: asdf 5 <EOF>
+[02-09-2022 22:11:42 ServerManager]  [INF] Message recieved: asdf 6 <EOF>
+[02-09-2022 22:11:42 ServerManager]  [INF] Message recieved: asdf 7 <EOF>
+[02-09-2022 22:11:43 ServerManager]  [INF] Message recieved: asdf 8 <EOF>
+[02-09-2022 22:11:43 ServerManager]  [INF] Message recieved: asdf 9 <EOF>
+[02-09-2022 22:11:44 ServerManager]  [INF] Message recieved: asdf 10 <EOF>
+[02-09-2022 22:11:44 ServerManager]  [INF] Message recieved: asdf 11 <EOF>
+[02-09-2022 22:11:44 ServerManager]  [INF] Message recieved: asdf 20 <EOF>
+[02-09-2022 22:11:45 ServerManager]  [INF] Message recieved: asdf 21 <EOF>
+[02-09-2022 22:11:45 ServerManager]  [INF] Message recieved: asdf 22 <EOF>
+[02-09-2022 22:11:46 ServerManager]  [INF] Message recieved: asdf 23 <EOF>
+[02-09-2022 22:11:46 ServerManager]  [INF] Message recieved: asdf 24 <EOF>
+[02-09-2022 22:11:47 ServerManager]  [INF] Message recieved: asdf 25 <EOF>
+[02-09-2022 22:11:47 ServerManager]  [INF] Message recieved: asdf 26 <EOF>
+[02-09-2022 22:11:47 ServerManager]  [INF] Message recieved: asdf 27 <EOF>
+[02-09-2022 22:11:48 ServerManager]  [INF] Message recieved: asdf 28 <EOF>
+[02-09-2022 22:11:48 ServerManager]  [INF] Message recieved: asdf 29 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 30 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 31 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 32 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 33 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 34 <EOF>
+[02-09-2022 22:11:49 ServerManager]  [INF] Message recieved: asdf 35 <EOF>
+[02-09-2022 22:11:50 ServerManager]  [INF] Message recieved: asdf 36 <EOF>
+[02-09-2022 22:11:50 ServerManager]  [INF] Message recieved: asdf 37 <EOF>
+[02-09-2022 22:11:51 ServerManager]  [INF] Message recieved: asdf 38 <EOF>
+[02-09-2022 22:11:51 ServerManager]  [INF] Message recieved: asdf 39 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 40 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 41 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 42 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 43 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 44 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 45 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 46 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 47 <EOF>
+[02-09-2022 22:11:52 ServerManager]  [INF] Message recieved: asdf 57 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 58 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 59 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 60 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 61 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 62 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 63 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 64 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 65 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 66 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 67 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 68 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 69 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 70 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 71 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 72 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 73 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 74 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 75 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 76 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 77 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 78 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 79 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 80 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 81 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 82 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 83 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 84 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 85 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 86 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 87 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 88 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 89 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 90 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 91 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 92 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 93 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 94 <EOF>
+[02-09-2022 22:11:53 ServerManager]  [INF] Message recieved: asdf 95 <EOF>
+[02-09-2022 22:11:54 ServerManager]  [INF] Message recieved: asdf 96 <EOF>
+[02-09-2022 22:11:54 ServerManager]  [INF] Message recieved: asdf 97 <EOF>
+[02-09-2022 22:11:54 ServerManager]  [INF] Message recieved: asdf 98 <EOF>
+[02-09-2022 22:11:54 ServerManager]  [INF] Message recieved: asdf 99 <EOF>
+[02-09-2022 22:11:54 ServerManager]  [INF] Message recieved: asdf 100 <EOF>

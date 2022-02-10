@@ -1,11 +1,14 @@
+using Builder.App.Builders;
 using Builder.App.Utils;
 using Microsoft.Extensions.Options;
 
-namespace Builder.App.Builders;
+namespace Builder.App;
 
 public class BuildManager
 {
-    public Dictionary<string, Task> TaskList { get; set; } = new Dictionary<string, Task>();
+    public BuildTask SmBuild { get; set; } = new BuildTask() {Name = "SmartMatch"};
+    public BuildTask PsBuild { get; set; } = new BuildTask() {Name = "Parascript"};
+    public BuildTask RmBuild { get; set; } = new BuildTask() {Name = "RoyalMail"};
     
     private readonly ILogger<BuildManager> logger;
     private Dictionary<string, bool> errors = new Dictionary<string, bool>() {{@"SmartMatch", false}, {@"Parascript", false}, {@"RoyalMail", false}};
@@ -23,16 +26,12 @@ public class BuildManager
 
     public void RunTask(string data)
     {
-        if (data.Contains("PING"))
-        {
-            StatusPong(TaskList);
-        }
-
-        if (data.Contains("SmartMatch") && !TaskList.ContainsKey("SmartMatch") && !errors["SmartMatch"])
+        if (data.Contains("SmartMatch") && SmBuild.Status == BuildStatus.Ready)
         {
             logger.LogInformation("Starting builder: SmartMatch");
+            SmBuild.Status = BuildStatus.InProgress;
 
-            TaskList.Add("SmartMatch", Task.Run(async () =>
+            SmBuild.Task = Task.Run(async () =>
             {
                 try
                 {
@@ -40,21 +39,25 @@ public class BuildManager
                     SmBuilder sm = new SmBuilder(smSettings.AddressDataPath, smSettings.OutputPath, smSettings.DataMonth, smSettings.DataYear, smSettings.User, smSettings.Pass);
 
                     sm.Cleanup();
-                    await sm.Build();                    
+                    await sm.Build();
+
+                    SmBuild.Status = BuildStatus.Ready;                    
                 }
                 catch (System.Exception e)
                 {
-                    logger.LogError("SmartMatch: " + e.Message);          
-                    errors["SmartMatch"] = true;          
+                    logger.LogError("SmartMatch: " + e.Message);
+                    SmBuild.Status = BuildStatus.Error;          
                 }
-            }));
+            });
         }
 
-        if (data.Contains("Parascript") && !TaskList.ContainsKey("Parascript") && !errors["Parascript"])
+        if (data.Contains("Parascript") && PsBuild.Status == BuildStatus.Ready)
         {
             logger.LogInformation("Starting builder: Parascript");
+            System.Console.WriteLine(DateTime.Now);
+            PsBuild.Status = BuildStatus.InProgress;
 
-            TaskList.Add("Parascript", Task.Run(async () =>
+            PsBuild.Task = Task.Run(async () =>
             {
                 try
                 {                    
@@ -66,20 +69,23 @@ public class BuildManager
                     ps.FindDate();
                     await ps.Extract();
                     await ps.Archive();
+                
+                    PsBuild.Status = BuildStatus.Ready;
                 }
                 catch (System.Exception e)
                 {
                     logger.LogError("Parascript: " + e.Message);
-                    errors["Parascript"] = true;          
+                    PsBuild.Status = BuildStatus.Error;
                 }
-            }));
+            });
         }
 
-        if (data.Contains("RoyalMail") && !TaskList.ContainsKey("RoyalMail") && !errors["RoyalMail"])
+        if (data.Contains("RoyalMail") && RmBuild.Status == BuildStatus.Ready)
         {
             logger.LogInformation("Starting builder: RoyalMail");
+            RmBuild.Status = BuildStatus.InProgress;
 
-            TaskList.Add("RoyalMail", Task.Run(async () =>
+            RmBuild.Task = Task.Run(async () =>
             {
                 try
                 {
@@ -100,38 +106,7 @@ public class BuildManager
                     logger.LogError("RoyalMail: " + e.Message);
                     errors["RoyalMail"] = true;          
                 }
-            }));
+            });
         }
-    }
-
-    public void StatusPong(Dictionary<string, Task> TaskList)
-    {
-        List<string> tasks = new List<string>() {@"SmartMatch", @"Parascript", @"RoyalMail"};
-    
-        foreach (string task in tasks)
-        {
-            // Check if TaskList has the key
-            if (!TaskList.ContainsKey(task))
-            {
-                logger.LogInformation("Builder not running: " + task);
-                continue;
-            }
-
-            // Otherwise it contains the task, check if the task is running (success or fail because of the try/catch it will always RanToCompletion)
-            if (TaskList[task].Status == TaskStatus.RanToCompletion)
-            {
-                if (errors[task] == true)
-                {
-                    logger.LogError("Builder error, check log: " + task);
-                    continue;
-                }
-
-                TaskList.Remove(task);
-                logger.LogInformation("Builder not running: " + task);
-                continue;
-            }
-
-            logger.LogInformation("Builder running: " + task);            
-        }
-    }
+    }  
 }

@@ -55,8 +55,8 @@ try
                 services.Configure<Settings>(Settings.SmartMatch, context.Configuration.GetSection("Settings:SmartMatch"));
                 services.Configure<Settings>(Settings.Parascript, context.Configuration.GetSection("Settings:Parascript"));
                 services.Configure<Settings>(Settings.RoyalMail, context.Configuration.GetSection("Settings:RoyalMail"));
+                services.AddHostedService<ServerManager>();
                 services.AddSingleton<BuildManager>();
-                services.AddHostedService<BuildServer>();
             })
             .Build();
 
