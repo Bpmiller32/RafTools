@@ -14,19 +14,33 @@ public class RoyalBuilder
     private readonly string workingPath;
     private readonly string outputPath;
     private readonly string key;
+    private readonly Settings settings;
+    private readonly DatabaseContext context;
+    private readonly Action<int> progress;
     private string year;
     private string month;
 
-    public RoyalBuilder(string inputPath, string workingPath, string outputPath, string key)
+    private Stopwatch sw;
+
+    public RoyalBuilder(Settings settings, DatabaseContext context, Action<int> progress)
     {
-        this.inputPath = inputPath;
-        this.workingPath = workingPath;
-        this.outputPath = outputPath;
-        this.key = key;
+        this.inputPath = settings.AddressDataPath;
+        this.workingPath = settings.WorkingPath;
+        this.outputPath = settings.OutputPath;
+        this.key = settings.Key;
+        this.settings = settings;
+        this.context = context;
+        this.progress = progress;
+    
+        this.sw = new Stopwatch();
+        sw.Start();
     }
 
     public async Task Extract()
     {
+        System.Console.WriteLine("Before extract:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         using (UIA2Automation automation = new UIA2Automation())
         {
             Application app = FlaUI.Core.Application.Launch(Path.Combine(inputPath, @"SetupRM.exe"));
@@ -67,6 +81,9 @@ public class RoyalBuilder
 
     public void Cleanup(bool fullClean)
     {
+        System.Console.WriteLine("Before Cleanup:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         // Kill process that may be running in the background from previous runs
         foreach (Process process in Process.GetProcessesByName("ConvertPafData"))
         {
@@ -113,6 +130,9 @@ public class RoyalBuilder
 
     public void FindDate()
     {
+        System.Console.WriteLine("Before FindDate:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"PAF COMPRESSED STD", @"README.txt")))
         {
             string line;
@@ -138,6 +158,9 @@ public class RoyalBuilder
 
     public void UpdateSmiFiles()
     {
+        System.Console.WriteLine("Before UpdateSmiFiles:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         Directory.CreateDirectory(Path.Combine(workingPath, @"Smi"));
 
         Process smiCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
@@ -194,6 +217,9 @@ public class RoyalBuilder
 
     public void ConvertPafData()
     {
+        System.Console.WriteLine("Before ConvertPafData:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         // Move address data files to working folder "Db"
         Utils.Utils.CopyFiles(Path.Combine(inputPath, "PAF COMPRESSED STD"), Path.Combine(workingPath, "Db"));
         Utils.Utils.CopyFiles(Path.Combine(inputPath, "ALIAS"), Path.Combine(workingPath, "Db"));
@@ -232,6 +258,9 @@ public class RoyalBuilder
 
     public async Task Compile()
     {
+        System.Console.WriteLine("Before Compile:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
@@ -242,6 +271,9 @@ public class RoyalBuilder
 
     public async Task Output()
     {
+        System.Console.WriteLine("Before Output:");
+        System.Console.WriteLine(sw.ElapsedMilliseconds);
+
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));

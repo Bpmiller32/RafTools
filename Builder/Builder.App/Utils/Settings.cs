@@ -8,18 +8,20 @@ public class Settings
 
     public string Name { get; set; }
     public string AddressDataPath { get; set; }
+    // Can optionally set WorkingPath and OutputPath in appsettings
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
+    // Will be overridden every time by BE SocketMessage
     public string User { get; set; }
     public string Pass { get; set; }
     public string Key { get; set; }
     public string DataMonth { get; set; }
     public string DataYear { get; set; }
 
-    public static Settings Validate(Settings settings)
+    public static Settings Validate(Settings settings, SocketMessage message)
     {
         // Check that appsettings.json exists at all
-        if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
+        if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"appsettings.json")))
         {
             throw new Exception("appsettings.json is missing, make sure there is a valid appsettings.json file in the same directory as the application");
         }
@@ -41,25 +43,39 @@ public class Settings
 
 
 
+        // Set input path from base directory path
+        if (int.Parse(message.Month) < 10)
+        {
+            message.Month = "0" + message.Month;
+        }
+        settings.DataMonth = message.Month;
+        settings.DataYear = message.Year;
+        string dataYearMonth = message.Year + message.Month;
+        
+        settings.AddressDataPath = Path.Combine(settings.AddressDataPath, dataYearMonth);
         // If WorkingPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.WorkingPath))
         {
             if (settings.Name != "SM")
             {
-                Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\" + settings.Name + @"-Working");
-                settings.WorkingPath = Directory.GetCurrentDirectory() + @"\" + settings.Name + @"-Working";                
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), settings.Name + @"-Working"));
+                settings.WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), settings.Name + @"-Working");                
             }
         }
         // If OutputPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.OutputPath))
         {
-            Directory.CreateDirectory(Directory.GetCurrentDirectory() + @"\" + settings.Name + @"-Output");
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), settings.Name, @"-Output", dataYearMonth));
             settings.OutputPath = Directory.GetCurrentDirectory() + @"\" + settings.Name + @"-Output";
         }
 
 
 
         // Directory specific
+        settings.User = message.SmUser;
+        settings.Pass = message.SmPass;
+        settings.Key = message.Key;
+
         if (settings.Name == "SM" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
         {   
             throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
@@ -68,19 +84,10 @@ public class Settings
         {
             throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
         }
-        // SM specific
-        if (settings.Name == "SM" && (String.IsNullOrEmpty(settings.DataYear) || String.IsNullOrEmpty(settings.DataMonth)))
-        {
-            string[] addressDataPathSplits = settings.AddressDataPath.Split(@"\");
-            settings.DataMonth = addressDataPathSplits[addressDataPathSplits.Count()];
-            settings.DataYear = addressDataPathSplits[addressDataPathSplits.Count() - 1];
 
-            if (int.Parse(settings.DataMonth) < 10)
-            {
-                settings.DataMonth = @"0" + settings.DataMonth;
-            }
-        }
 
+
+        // Check for any missing files
         if (settings.Name == "SM")
         {
             CheckMissingSmFiles(settings);
@@ -172,7 +179,7 @@ public class Settings
 
         foreach (var file in toolFiles)
         {
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"Utils", "3.0" , file)))
+            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"BuildUtils", "3.0" , file)))
             {
                 missingFiles += file + ", ";
             }

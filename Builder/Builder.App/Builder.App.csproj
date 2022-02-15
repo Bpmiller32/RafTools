@@ -13,15 +13,17 @@
     <PlatformTarget>x64</PlatformTarget> -->
   </PropertyGroup>
 
-  <Target Name="BeforeBuild">
-    <Exec Command="C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -NonInteractive -executionpolicy Unrestricted -command &quot;&amp; { .\MyScript.ps1 } &quot;" LogStandardErrorAsError="True" ContinueOnError="False" WorkingDirectory="$(MSBuildProjectDirectory)" />
-  </Target>
-
   <ItemGroup>
     <PackageReference Include="FlaUI.UIA2" Version="3.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="3.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Builder.Data\Builder.Data.csproj" />
   </ItemGroup>
 </Project>

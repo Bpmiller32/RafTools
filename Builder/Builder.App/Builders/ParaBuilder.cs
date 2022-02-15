@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
+using Builder.App.Utils;
 
 namespace Builder.App.Builders;
 
@@ -9,14 +10,20 @@ public class ParaBuilder
     private readonly string inputPath;
     private readonly string workingPath;
     private readonly string outputPath;
+    private readonly Settings settings;
+    private readonly DatabaseContext context;
+    private readonly Action<int> progress;
     private string month;
     private string year;
 
-    public ParaBuilder(string inputPath, string workingPath, string outputPath)
+    public ParaBuilder(Settings settings, DatabaseContext context, Action<int> progress)
     {
-        this.inputPath = inputPath;
-        this.workingPath = workingPath;
-        this.outputPath = outputPath;
+        this.inputPath = settings.AddressDataPath;
+        this.workingPath = settings.WorkingPath;
+        this.outputPath = settings.OutputPath;
+        this.settings = settings;
+        this.context = context;
+        this.progress = progress;
     }
 
     public void CheckInput()
@@ -25,22 +32,41 @@ public class ParaBuilder
         {
             throw new Exception("No files to work with in input");
         }
-        if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\Utils").Any())
+        if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\BuildUtils").Any())
         {
-            throw new Exception("Utils folder is missing");
+            throw new Exception("BuildUtils folder is missing");
         }
+
+        progress(1);
     }
 
-    public void Cleanup()
+    public void Cleanup(bool fullClean)
     {
         Utils.Utils.KillPsProcs();
 
-        Directory.CreateDirectory(inputPath);
         Directory.CreateDirectory(workingPath);
         Directory.CreateDirectory(outputPath);
 
         DirectoryInfo wp = new DirectoryInfo(workingPath);
         DirectoryInfo op = new DirectoryInfo(outputPath);
+
+        if (!fullClean)
+        {
+            foreach (FileInfo file in wp.GetFiles())
+            {
+                file.Delete();
+            }
+            foreach (DirectoryInfo dir in wp.GetDirectories())
+            {
+                dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
+                dir.Delete(true);
+            }
+
+            Directory.Delete(workingPath, true);
+
+            progress(2);
+            return;
+        }
 
         foreach (var file in wp.GetFiles())
         {
@@ -59,6 +85,8 @@ public class ParaBuilder
         {
             dir.Delete(true);
         }
+
+        progress(1);
     }
 
     public void FindDate()
@@ -84,6 +112,8 @@ public class ParaBuilder
         {
             throw new Exception("Month/date not found in input files");
         }
+
+        progress(1);
     }
 
     public async Task Extract()
@@ -112,7 +142,7 @@ public class ParaBuilder
 
             ProcessStartInfo startInfo = new ProcessStartInfo()
             {
-                FileName = Directory.GetCurrentDirectory() + @"\Utils\PDBIntegrity.exe",
+                FileName = Directory.GetCurrentDirectory() + @"\BuildUtils\PDBIntegrity.exe",
                 Arguments = Path.Combine(workingPath, @"dpv", @"fileinfo_log.txt"),
                 UseShellExecute = false,
                 CreateNoWindow = true,
@@ -136,6 +166,8 @@ public class ParaBuilder
         }));
 
         await Task.WhenAll(tasks.Values);
+
+        progress(17);
     }
 
     public async Task Archive()
@@ -167,5 +199,15 @@ public class ParaBuilder
         }));
 
         await Task.WhenAll(tasks.Values);
+
+        progress(78);
+    }
+
+    public void CheckBuildComplete()
+    {
+        ParaBundle bundle = context.ParaBundles.Where(x => (month == x.DataMonth) && (year == x.DataYear)).FirstOrDefault();
+        bundle.IsBuildComplete = true;
+
+        context.SaveChanges();
     }
 }

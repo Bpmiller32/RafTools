@@ -8,6 +8,9 @@ Crawler/.vscode/
 
 Builder/Builder.App/obj/
 Builder/Builder.App/bin/
+Builder/Builder.App/BuildUtils/
+Builder/Builder.Data/obj/
+Builder/Builder.Data/bin/
 Builder/.vscode/
 
 IsleBuilder/IsleBuilder.App/obj/

@@ -4,5 +4,6 @@ public enum BuildStatus
 {
     Ready,
     InProgress,
-    Error
+    Error,
+    Disabled
 }

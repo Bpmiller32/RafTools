@@ -3,6 +3,7 @@ using System.Security.Principal;
 using Builder.App;
 using Builder.App.Builders;
 using Builder.App.Utils;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
@@ -33,19 +34,19 @@ try
         // Attach method to application closing event handler to kill all spawned subprocess. Put it after singleton check in case another instance is open
         AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
 
-        // Check for admin
-        bool isElevated;
-        using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
-        {
-            WindowsPrincipal principal = new WindowsPrincipal(identity);
-            isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
-        }
+        // // Check for admin
+        // bool isElevated;
+        // using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+        // {
+        //     WindowsPrincipal principal = new WindowsPrincipal(identity);
+        //     isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+        // }
 
-        // Error if admin isn't present
-        if (!isElevated)
-        {
-            throw new Exception("Application does not have administrator privledges");
-        }
+        // // Error if admin isn't present
+        // if (!isElevated)
+        // {
+        //     throw new Exception("Application does not have administrator privledges");
+        // }
 
         IHost host = Host.CreateDefaultBuilder(args)
             .UseWindowsService()
@@ -55,8 +56,13 @@ try
                 services.Configure<Settings>(Settings.SmartMatch, context.Configuration.GetSection("Settings:SmartMatch"));
                 services.Configure<Settings>(Settings.Parascript, context.Configuration.GetSection("Settings:Parascript"));
                 services.Configure<Settings>(Settings.RoyalMail, context.Configuration.GetSection("Settings:RoyalMail"));
+                services.AddDbContext<DatabaseContext>(opt => 
+                {
+                    opt.UseSqlite(@"FileName=.\DirectoryCollection.db");
+                });
                 services.AddHostedService<ServerManager>();
                 services.AddSingleton<BuildManager>();
+                services.AddSingleton<CacheManager>();
             })
             .Build();
 

@@ -144,7 +144,7 @@ namespace Crawler.App
             await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
             // Set launchoptions, create browser instance
-            LaunchOptions options = new LaunchOptions() { Headless = true };
+            LaunchOptions options = new LaunchOptions() { Headless = false };
 
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))

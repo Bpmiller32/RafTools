@@ -14,19 +14,31 @@ public class SmBuilder
     private readonly string year;
     private readonly string user;
     private readonly string pass;
+    private readonly DatabaseContext context;
+    private readonly Action<int> progress;
 
-    public SmBuilder(string inputPath, string outputPath, string month, string year, string user, string pass)
+    public SmBuilder(Settings settings, DatabaseContext context, Action<int> progress)
     {
-        this.inputPath = inputPath;
-        this.outputPath = outputPath;
-        this.month = month;
-        this.year = year;
-        this.user = user;
-        this.pass = pass;
+        this.inputPath = settings.AddressDataPath;
+        this.outputPath = settings.OutputPath;
+        this.month = settings.DataMonth;
+        this.year = settings.DataYear;
+        this.user = settings.User;
+        this.pass = settings.Pass;
+        this.context = context;
+        this.progress = progress;
     }
 
     public void Cleanup()
     {
+        progress(2);
+        Thread.Sleep(10000);
+        progress(2);
+        Thread.Sleep(10000);
+        progress(2);
+        Thread.Sleep(10000);
+        
+
         Utils.KillSmProcs();
 
         // Ensure working and output directories are created and clear them if they already exist
@@ -56,6 +68,21 @@ public class SmBuilder
             Utils.KillSmProcs();
             throw new Exception("Build process took longer than 30 minutes, error likely, check logs");
         }
+        if (await Task.WhenAny(tasks.Values) == tasks["Build"])
+        {
+            if (tasks["Build"].Status == TaskStatus.Faulted)
+            {
+                throw new Exception("Build process ran into an error");
+            }
+        }
+    }
+
+    public void CheckBuildComplete()
+    {
+        UspsBundle bundle = context.UspsBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear) && ("Cycle-N" == x.Cycle)).FirstOrDefault();
+        bundle.IsBuildComplete = true;
+
+        context.SaveChanges();
     }
 
     private async Task BuildRunner()
@@ -103,6 +130,8 @@ public class SmBuilder
             await WaitForBuild(newWindows[0]);
 
             newWindows[0].Close();
+
+            progress(2);
         }
 
     }
@@ -124,17 +153,17 @@ public class SmBuilder
 
             if (matchStage.Success == true)
             {
-                // System.Console.WriteLine("--- Found a stage: {0}", log.Name);
+                progress(10);
             }
 
             if (matchPackaging.Success == true)
             {
-                // System.Console.WriteLine("--- Found a packaging: {0}", log.Name);
+                progress(9);
             }
 
             if (matchfinish.Success == true)
             {
-                System.Console.WriteLine("--- Found the finish: {0}", log.Name);
+                progress(2);
                 return;
             }
         }
