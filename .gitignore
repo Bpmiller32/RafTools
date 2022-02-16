@@ -3,11 +3,14 @@ Crawler/Crawler.Data/obj/
 Crawler/Crawler.Data/bin/
 Crawler/Crawler.App/obj/
 Crawler/Crawler.App/bin/
+Crawler/Crawler.App/Log/
 Crawler/Crawler.App/.local-chromium/
 Crawler/.vscode/
 
 Builder/Builder.App/obj/
 Builder/Builder.App/bin/
+Builder/Builder.App/Log/
+Builder/Builder.App/Log
 Builder/Builder.App/BuildUtils/
 Builder/Builder.Data/obj/
 Builder/Builder.Data/bin/

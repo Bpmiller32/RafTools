@@ -13,102 +13,25 @@ using Microsoft.Extensions.Logging;
 
 namespace Crawler.App
 {
-    public class RoyalCrawler : BackgroundService
+    public class RoyalCrawler
     {
-        private readonly ILogger<RoyalCrawler> logger;
-        private readonly IConfiguration config;
+        private readonly ILogger logger;
+        private readonly CancellationToken stoppingToken;
+        private readonly Settings settings;
         private readonly DatabaseContext context;
-        private AppSettings settings = new AppSettings();
-        private RoyalFile TempFile = new RoyalFile();
 
-        public RoyalCrawler(ILogger<RoyalCrawler> logger, IServiceScopeFactory factory, IConfiguration config)
+        private RoyalFile TempFile = new RoyalFile();
+        private string dataYearMonth = "";
+
+        public RoyalCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
         {
             this.logger = logger;
-            this.config = config;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.stoppingToken = stoppingToken;
+            this.settings = settings;
+            this.context = context;
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken)
-        {
-            logger.LogInformation("Hello from RoyalCrawler!");
-
-            context.Database.EnsureCreated();
-
-            // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
-            if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
-            {
-                logger.LogError(@"File not found: appsettings.json");
-                settings.ServiceEnabled = false;
-                return base.StartAsync(cancellationToken);
-            }
-            
-            // Check if service is disabled
-            if (!config.GetValue<bool>("settings:RoyalMail:ServiceEnabled"))
-            {
-                logger.LogWarning("RoyalCrawler service disabled");
-                settings.ServiceEnabled = false;
-                return base.StartAsync(cancellationToken);
-            }
-            
-            // Should probably also add a valid check to these values later
-            if (config.GetValue<string>("settings:RoyalMail:DownloadPath") != "")
-            {
-                settings.DownloadPath = config.GetValue<string>("settings:RoyalMail:DownloadPath");
-            }
-
-            settings.UserName = config.GetValue<string>("settings:RoyalMail:Login:User");
-            settings.Password = config.GetValue<string>("settings:RoyalMail:Login:Pass");
-
-            settings.ExecDay = config.GetValue<int>("settings:RoyalMail:ExecTime:Day");
-            settings.ExecHour = config.GetValue<int>("settings:RoyalMail:ExecTime:Hour");
-            settings.ExecMinute = config.GetValue<int>("settings:RoyalMail:ExecTime:Minute");
-            settings.ExecSecond = config.GetValue<int>("settings:RoyalMail:ExecTime:Second");
-
-            return base.StartAsync(cancellationToken);
-        }
-
-        public override Task StopAsync(CancellationToken cancellationToken)
-        {
-            logger.LogInformation("Successfully stopped RoyalCrawler");
-
-            return base.StopAsync(cancellationToken);
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            if (settings.ServiceEnabled == false)
-            {
-                return;         
-            }
-
-            // Set values for service sleep time
-            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
-            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
-            TimeSpan waitTime = execTime - DateTime.Now;
-
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                PullFile(stoppingToken);
-                CheckFile(stoppingToken);
-                await DownloadFile(stoppingToken);
-                CheckBuildReady(stoppingToken);
-
-                waitTime = execTime - DateTime.Now;
-                if (waitTime.TotalSeconds <= 0)
-                {
-                    waitTime = (endOfMonth - DateTime.Now) + TimeSpan.FromSeconds(5);
-                    logger.LogInformation("Pass completed, starting sleep until: " + endOfMonth);
-                }
-                else
-                {
-                    logger.LogInformation("Waiting for pass, starting sleep until: " + execTime);                    
-                }
-
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-            }
-        }
-
-        private void PullFile(CancellationToken stoppingToken)
+        public void PullFile()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -118,35 +41,30 @@ namespace Crawler.App
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
             request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
             request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
-            
+
             DateTime lastModified;
 
-            try
+            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                {
-                    lastModified = response.LastModified;             
-                }
-            
-                TempFile.FileName = "SetupRM.exe";
-                TempFile.DataMonth = lastModified.Month;
-                TempFile.DataDay = lastModified.Day;
-                TempFile.DataYear = lastModified.Year;
+                lastModified = response.LastModified;
             }
-            catch (System.Exception e)
-            {
-                settings.ServiceEnabled = false;
-                logger.LogError(e.Message);
-            }
+
+            TempFile.FileName = "SetupRM.exe";
+            TempFile.DataMonth = lastModified.Month;
+            TempFile.DataDay = lastModified.Day;
+            TempFile.DataYear = lastModified.Year;
         }
 
-        private void CheckFile(CancellationToken stoppingToken)
+        public void CheckFile()
         {
             // Cancellation requested or PullFile failed
-            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            if (stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
+
+            // Set dataYearMonth here in case the file is in db but not on disk
+            dataYearMonth = SetDataYearMonth(TempFile);
 
             // Check if file is unique against the db
             bool fileInDb = context.RoyalFiles.Any(x => (TempFile.FileName == x.FileName) && (TempFile.DataMonth == x.DataMonth) && (TempFile.DataYear == x.DataYear));
@@ -154,7 +72,7 @@ namespace Crawler.App
             if (!fileInDb)
             {
                 // Check if the folder exists on the disk
-                if (!Directory.Exists(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\" + TempFile.FileName))
+                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, dataYearMonth, TempFile.FileName)))
                 {
                     TempFile.OnDisk = false;
                 }
@@ -188,62 +106,49 @@ namespace Crawler.App
             }
         }
 
-        private async Task DownloadFile(CancellationToken stoppingToken)
+        public async Task DownloadFile()
         {
             List<RoyalFile> offDisk = context.RoyalFiles.Where(x => x.OnDisk == false).ToList();
 
             // Cancellation requested, CheckFile sees that nothing is offDisk, PullFile failed
-            if ((settings.ServiceEnabled == false) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
+            if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
 
             logger.LogInformation("New files found for download: " + offDisk.Count);
 
-            try
+            using (WebClient request = new WebClient())
             {
-                using (WebClient request = new WebClient())
+                request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
+                byte[] fileData;
+
+                using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
                 {
-                    request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
-                    byte[] fileData;
+                    logger.LogInformation("Currently downloading: " + TempFile.FileName + " " + TempFile.DataMonth + "/" + TempFile.DataYear);
+                    // Throws error is request is canceled, caught in catch
+                    fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
+                }
 
-                    using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
-                    {
-                        logger.LogInformation("Currently downloading: " + TempFile.FileName + " " + TempFile.DataMonth + "/" + TempFile.DataYear);
-                        // Throws error is request is canceled, caught in catch
-                        fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe"); 
-                    }
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, dataYearMonth));
 
-                    Directory.CreateDirectory(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth);
+                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, dataYearMonth, @"SetupRM.exe")))
+                {
+                    file.Write(fileData, 0, fileData.Length);
+                    file.Close();
+                    fileData = null;
 
-                    using (FileStream file = File.Create(settings.DownloadPath + @"\RoyalMail\" + TempFile.DataYear + @"\" + TempFile.DataMonth + @"\SetupRM.exe"))
-                    {
-                        file.Write(fileData, 0, fileData.Length);
-                        file.Close();
-                        fileData = null;
-
-                        TempFile.OnDisk = true;
-                        TempFile.DateDownloaded = DateTime.Now;
-                        context.RoyalFiles.Update(TempFile);
-                        context.SaveChanges();
-                    }
-                }                 
-            }
-            catch (System.Net.WebException)
-            {
-                settings.ServiceEnabled = false;
-                logger.LogInformation("Download in progress was stopped due to cancellation");
-            }
-            catch (System.Exception e)
-            {
-                settings.ServiceEnabled = false;
-                logger.LogError(e.Message);
+                    TempFile.OnDisk = true;
+                    TempFile.DateDownloaded = DateTime.Now;
+                    context.RoyalFiles.Update(TempFile);
+                    context.SaveChanges();
+                }
             }
         }
-    
-        private void CheckBuildReady(CancellationToken stoppingToken)
+
+        public void CheckBuildReady()
         {
-            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            if (stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
@@ -264,6 +169,16 @@ namespace Crawler.App
 
                 context.SaveChanges();
             }
+        }
+
+        private string SetDataYearMonth(RoyalFile file)
+        {
+            if (file.DataMonth < 10)
+            {
+                return file.DataYear.ToString() + "0" + file.DataMonth.ToString();
+            }
+
+            return file.DataYear.ToString() + file.DataMonth.ToString();
         }
     }
 }

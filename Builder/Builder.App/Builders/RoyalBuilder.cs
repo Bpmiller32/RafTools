@@ -20,8 +20,6 @@ public class RoyalBuilder
     private string year;
     private string month;
 
-    private Stopwatch sw;
-
     public RoyalBuilder(Settings settings, DatabaseContext context, Action<int> progress)
     {
         this.inputPath = settings.AddressDataPath;
@@ -31,16 +29,10 @@ public class RoyalBuilder
         this.settings = settings;
         this.context = context;
         this.progress = progress;
-    
-        this.sw = new Stopwatch();
-        sw.Start();
     }
 
     public async Task Extract()
     {
-        System.Console.WriteLine("Before extract:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         using (UIA2Automation automation = new UIA2Automation())
         {
             Application app = FlaUI.Core.Application.Launch(Path.Combine(inputPath, @"SetupRM.exe"));
@@ -77,13 +69,12 @@ public class RoyalBuilder
 
             windows[0].Close();
         }
+
+        progress(22);
     }
 
     public void Cleanup(bool fullClean)
     {
-        System.Console.WriteLine("Before Cleanup:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         // Kill process that may be running in the background from previous runs
         foreach (Process process in Process.GetProcessesByName("ConvertPafData"))
         {
@@ -115,6 +106,8 @@ public class RoyalBuilder
 
             Directory.Delete(workingPath, true);
 
+            progress(1);
+
             return;
         }
 
@@ -126,13 +119,12 @@ public class RoyalBuilder
         {
             dir.Delete(true);
         }
+
+        progress(1);
     }
 
     public void FindDate()
     {
-        System.Console.WriteLine("Before FindDate:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"PAF COMPRESSED STD", @"README.txt")))
         {
             string line;
@@ -154,20 +146,21 @@ public class RoyalBuilder
         {
             throw new Exception("Month/date not found in input files");
         }
+
+        progress(1);
     }
 
     public void UpdateSmiFiles()
     {
-        System.Console.WriteLine("Before UpdateSmiFiles:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         Directory.CreateDirectory(Path.Combine(workingPath, @"Smi"));
 
-        Process smiCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
-        smiCheckout.WaitForExit();
+        // Process smiCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
+        // smiCheckout.WaitForExit();
 
-        Process dongleCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
-        dongleCheckout.WaitForExit();
+        // Process dongleCheckout = Utils.Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(workingPath, @"Smi") + " --force");
+        // dongleCheckout.WaitForExit();
+
+        Utils.Utils.CopyFiles(@"C:\Users\billy\Desktop\Testing\DirectoryCreationFiles", Path.Combine(workingPath, @"Smi"));
 
         // Edit SMi definition xml file with updated date 
         XmlDocument defintionFile = new XmlDocument();
@@ -195,14 +188,14 @@ public class RoyalBuilder
         File.Move(Path.Combine(workingPath, @"Smi", @"DongleTemp.txt"), Path.Combine(workingPath, @"Smi", @"UK_RM_CM.txt"));
 
         // Encrypt new Uk dongle list, but first wrap the combined paths in quotes to get around spaced directories
-        string encryptRepFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Utils", "EncryptREP.exe"));
+        string encryptRepFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptREP.exe"));
         string encryptRepArgs = @"-x lcs " + Utils.Utils.WrapQuotes(Path.Combine(workingPath, "Smi", "UK_RM_CM.txt"));
 
         Process encryptRep = Utils.Utils.RunProc(encryptRepFileName, encryptRepArgs);
         encryptRep.WaitForExit();
 
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
-        string encryptPatternsFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Utils", "EncryptPatterns.exe"));
+        string encryptPatternsFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptPatterns.exe"));
         string encryptPatternsArgs = @"--patterns " + Utils.Utils.WrapQuotes(Path.Combine(workingPath, "Smi", "UK_RM_CM_Patterns.xml")) + @" --clickCharge";
         
         Process encryptPatterns = Utils.Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
@@ -213,19 +206,18 @@ public class RoyalBuilder
         {
             throw new Exception("Missing C++ 2010 x86 redistributable, EncryptPatterns and DirectoryDataCompiler 1.9 won't work. Also check that SQL CE is installed for 1.9");
         }
+
+        progress(1);
     }
 
     public void ConvertPafData()
     {
-        System.Console.WriteLine("Before ConvertPafData:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         // Move address data files to working folder "Db"
         Utils.Utils.CopyFiles(Path.Combine(inputPath, "PAF COMPRESSED STD"), Path.Combine(workingPath, "Db"));
         Utils.Utils.CopyFiles(Path.Combine(inputPath, "ALIAS"), Path.Combine(workingPath, "Db"));
 
         // Start ConvertPafData tool, listen for output
-        string convertPafDataFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Utils", "ConvertPafData.exe"));
+        string convertPafDataFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "ConvertPafData.exe"));
         string convertPafDataArgs = @"--pafPath " + Utils.Utils.WrapQuotes(Path.Combine(workingPath, "Db")) + @" --lastPafFileNum 15";
 
         Process convertPafData = Utils.Utils.RunProc(convertPafDataFileName, convertPafDataArgs);
@@ -254,32 +246,40 @@ public class RoyalBuilder
 
         // Copy CovertPafData finished result to SMi build files folder
         File.Copy(Path.Combine(workingPath, "Db", "Uk.txt"), Path.Combine(workingPath, "Smi", "Uk.txt"), true);
+
+        progress(23);
     }
 
     public async Task Compile()
     {
-        System.Console.WriteLine("Before Compile:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
         tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
+
+        progress(50);
     }
 
     public async Task Output()
     {
-        System.Console.WriteLine("Before Output:");
-        System.Console.WriteLine(sw.ElapsedMilliseconds);
-
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));
         tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
+
+        progress(1);
+    }
+
+    public void CheckBuildComplete()
+    {
+        RoyalBundle bundle = context.RoyalBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear)).FirstOrDefault();
+        bundle.IsBuildComplete = true;
+
+        context.SaveChanges();
     }
 
     private async Task WaitForExtract(Window[] windows)
@@ -305,7 +305,7 @@ public class RoyalBuilder
             File.Copy(workingPath + @"\Smi\" + file, workingPath + @"\" + version + @"\" + file, true);
         }
 
-        string directoryDataCompilerFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Utils", version, "DirectoryDataCompiler.exe"));
+        string directoryDataCompilerFileName = Utils.Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", version, "DirectoryDataCompiler.exe"));
         string directoryDataCompilerArgs = @"--definition " + Utils.Utils.WrapQuotes(Path.Combine(workingPath, version, "UK_RM_CM.xml")) + @" --patterns " + Utils.Utils.WrapQuotes(Path.Combine(workingPath, version, "UK_RM_CM_Patterns.xml")) + @" --password M0ntyPyth0n --licensed";
 
         Process directoryDataCompiler = Utils.Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);

@@ -4,112 +4,32 @@ using System.Threading;
 using System.Threading.Tasks;
 using Crawler.Data;
 using HtmlAgilityPack;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System.Linq;
 using System.IO;
-using Microsoft.Extensions.Configuration;
 
 namespace Crawler.App
 {
-    public class SmartmatchCrawler : BackgroundService
+    public class SmartmatchCrawler
     {
-        private readonly ILogger<SmartmatchCrawler> logger;
-        private readonly IConfiguration config;
+        private readonly ILogger logger;
+        private readonly CancellationToken stoppingToken;
+        private readonly Settings settings;
         private readonly DatabaseContext context;
-        private List<UspsFile> TempFiles = new List<UspsFile>();
-        private AppSettings settings = new AppSettings();
 
-        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IServiceScopeFactory factory, IConfiguration config)
+        private List<UspsFile> TempFiles = new List<UspsFile>();
+        private string dataYearMonth = "";
+
+        public SmartmatchCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
         {
             this.logger = logger;
-            this.config = config;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.stoppingToken = stoppingToken;
+            this.settings = settings;
+            this.context = context;
         }
 
-        public override Task StartAsync(CancellationToken cancellationToken)
-        {
-            logger.LogInformation("Hello from SmCrawler!");
-
-            context.Database.EnsureCreated();
-
-            // Check if appsettings.json is present, set values. Also TODO, put this in AppSettings setter?
-            if (!File.Exists(Directory.GetCurrentDirectory() + @"\appsettings.json"))
-            {
-                logger.LogError(@"File not found: appsettings.json");
-                settings.ServiceEnabled = false;
-                return base.StartAsync(cancellationToken);
-            }
-            
-            if(!config.GetValue<bool>("settings:SmartMatch:ServiceEnabled"))
-            {
-                logger.LogWarning("SmCrawler service disabled");
-                settings.ServiceEnabled = false;
-                return base.StartAsync(cancellationToken);
-            }
-
-            // Should probably also add a valid check to these values later
-            if (config.GetValue<string>("settings:SmartMatch:DownloadPath") != "")
-            {
-                settings.DownloadPath = config.GetValue<string>("settings:SmartMatch:DownloadPath");
-            }
-
-            settings.UserName = config.GetValue<string>("settings:SmartMatch:Login:User");
-            settings.Password = config.GetValue<string>("settings:SmartMatch:Login:Pass");
-
-            settings.ExecDay = config.GetValue<int>("settings:SmartMatch:ExecTime:Day");
-            settings.ExecHour = config.GetValue<int>("settings:SmartMatch:ExecTime:Hour");
-            settings.ExecMinute = config.GetValue<int>("settings:SmartMatch:ExecTime:Minute");
-            settings.ExecSecond = config.GetValue<int>("settings:SmartMatch:ExecTime:Second");
-            
-
-            return base.StartAsync(cancellationToken);
-        }
-
-        public override Task StopAsync(CancellationToken cancellationToken)
-        {
-            logger.LogInformation("Successfully stopped SmCrawler");
-
-            return base.StopAsync(cancellationToken);
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            if (settings.ServiceEnabled == false)
-            {
-                return;
-            }
-
-            // Set values for service sleep time
-            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
-            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
-            TimeSpan waitTime = execTime - DateTime.Now;
-
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await PullFiles(stoppingToken);
-                CheckFiles(stoppingToken);
-                await DownloadFiles(stoppingToken);
-                CheckBuildReady(stoppingToken);
-
-                waitTime = execTime - DateTime.Now;
-                if (waitTime.TotalSeconds <= 0)
-                {
-                    waitTime = (endOfMonth - DateTime.Now) + TimeSpan.FromSeconds(5);
-                    logger.LogInformation("Pass completed, starting sleep until: " + endOfMonth);
-                }
-                else
-                {
-                    logger.LogInformation("Waiting for pass, starting sleep until: " + execTime);                    
-                }
-
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-            }
-        }
-
-        private async Task PullFiles(CancellationToken stoppingToken)
+        public async Task PullFiles()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -123,14 +43,12 @@ namespace Crawler.App
             // Set launchoptions, create browser instance
             LaunchOptions options = new LaunchOptions() { Headless = true };
 
-            // TODO: Register cancellationToken to browser.Close() like in Builder's SocketServer
-
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))
             {
-                using (Page page = await browser.NewPageAsync())
+                using (stoppingToken.Register(async () => await browser.CloseAsync()))
                 {
-                    try
+                    using (Page page = await browser.NewPageAsync())
                     {
                         // Navigate to download portal page
                         await page.GoToAsync("https://epf.usps.gov/");
@@ -200,32 +118,30 @@ namespace Crawler.App
 
                         // Exit page, browser
                     }
-                    catch (System.Exception e)
-                    {
-                        settings.ServiceEnabled = false;
-                        logger.LogError(e.Message);
-                    }
                 }
             }
         }
 
-        private void CheckFiles(CancellationToken stoppingToken)
+        public void CheckFiles()
         {
             // Cancellation requested or PullFile failed
-            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            if (stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
 
             foreach (var file in TempFiles)
             {
+                // Set dataYearMonth here in case the file is in db but not on disk
+                dataYearMonth = SetDataYearMonth(file);
+
                 // Check if file is unique against the db
                 bool fileInDb = context.UspsFiles.Any(x => file.FileId == x.FileId);
 
                 if (!fileInDb)
                 {
                     // Check if file exists on the disk 
-                    if (!File.Exists(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle + @"\" + file.FileName))
+                    if (!File.Exists(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle, file.FileName)))
                     {
                         file.OnDisk = false;
                     }
@@ -262,23 +178,23 @@ namespace Crawler.App
             TempFiles.Clear();
         }
 
-        private async Task DownloadFiles(CancellationToken stoppingToken)
+        public async Task DownloadFiles()
         {
             List<UspsFile> offDisk = context.UspsFiles.Where(x => x.OnDisk == false).ToList();
 
             // if all files are downloaded, no need to kick open new browser
-            if ((settings.ServiceEnabled == false) || (offDisk.Count == 0) || stoppingToken.IsCancellationRequested == true)
+            if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
 
             logger.LogInformation("New files found for download: " + offDisk.Count);
 
-            foreach (var file in offDisk)
+            foreach (UspsFile file in offDisk)
             {
                 // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-                Directory.CreateDirectory(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle);
-                Cleanup(settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle, stoppingToken);
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle));
+                Cleanup(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle));
             }
 
             // Download local chromium binary to launch browser
@@ -291,18 +207,18 @@ namespace Crawler.App
             // Create a browser instance, page instance
             using (Browser browser = await Puppeteer.LaunchAsync(options))
             {
-                using (Page page = await browser.NewPageAsync())
+                using (stoppingToken.Register(async () => await browser.CloseAsync()))
                 {
-                    try
+                    using (Page page = await browser.NewPageAsync())
                     {
                         // Navigate to download portal page
                         await page.GoToAsync("https://epf.usps.gov/");
 
                         await page.WaitForSelectorAsync(@"#email");
                         await page.FocusAsync(@"#email");
-                        await page.Keyboard.TypeAsync("billy.miller@raf.com");
+                        await page.Keyboard.TypeAsync(settings.UserName);
                         await page.FocusAsync(@"#password");
-                        await page.Keyboard.TypeAsync("Trixiedog10021002$");
+                        await page.Keyboard.TypeAsync(settings.Password);
 
                         await page.ClickAsync(@"#login");
 
@@ -315,32 +231,26 @@ namespace Crawler.App
 
                         await page.WaitForSelectorAsync(@"#tblFileList > tbody");
 
-
                         // Changed behavior, start download and wait for indivdual file to download. USPS website corrupts downloads if you do them all at once sometimes
                         foreach (var file in offDisk)
                         {
-                            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle;
+                            string path = Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle);
                             await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = path });
-                            
+
                             await page.EvaluateExpressionAsync(@"getFileForDownload(" + file.ProductKey + "," + file.FileId + ",rw_" + file.FileId + ");");
                             await Task.Delay(TimeSpan.FromSeconds(5));
-                        
+
                             logger.LogInformation("Currently downloading: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear + " " + file.Cycle);
-                            await WaitForDownload(file, stoppingToken);
+                            await WaitForDownload(file);
                         }
-                    }
-                    catch (System.Exception e)
-                    {
-                        settings.ServiceEnabled = false;
-                        logger.LogError(e.Message);
                     }
                 }
             }
         }
 
-        private void CheckBuildReady(CancellationToken stoppingToken)
+        public void CheckBuildReady()
         {
-            if ((settings.ServiceEnabled == false) || (stoppingToken.IsCancellationRequested == true))
+            if (stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
@@ -362,8 +272,8 @@ namespace Crawler.App
                 context.SaveChanges();
             }
         }
-    
-        private async Task WaitForDownload(UspsFile file, CancellationToken stoppingToken)
+
+        private async Task WaitForDownload(UspsFile file)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -371,8 +281,8 @@ namespace Crawler.App
                 return;
             }
 
-            string path = settings.DownloadPath + @"\SmartMatch\" + file.DataYear + @"\" + file.DataMonth + @"\" + file.Cycle;
-            if (!File.Exists(path + @"\" + file.FileName + @".CRDOWNLOAD"))
+            string path = Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle);
+            if (!File.Exists(Path.Combine(path, file.FileName + @".CRDOWNLOAD")))
             {
                 // logger.LogInformation("Finished downloading");
                 file.OnDisk = true;
@@ -383,18 +293,15 @@ namespace Crawler.App
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await WaitForDownload(file, stoppingToken);
+            await WaitForDownload(file);
         }
-    
-        private void Cleanup(string path, CancellationToken stoppingToken)
+
+        private void Cleanup(string path)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
                 return;
             }
-
-            // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-            Directory.CreateDirectory(path);
 
             // Cleanup from previous run
             DirectoryInfo op = new DirectoryInfo(path);
@@ -407,6 +314,16 @@ namespace Crawler.App
             {
                 dir.Delete(true);
             }
+        }
+
+        private string SetDataYearMonth(UspsFile file)
+        {
+            if (file.DataMonth < 10)
+            {
+                return file.DataYear.ToString() + "0" + file.DataMonth.ToString();
+            }
+
+            return file.DataYear.ToString() + file.DataMonth.ToString();
         }
     }
 }

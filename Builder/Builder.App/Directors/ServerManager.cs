@@ -89,19 +89,19 @@ public class ServerManager : BackgroundService
         {
             Status = buildManager.SmBuild.Status,
             Progress = buildManager.SmBuild.Progress,
-            AvailableBuilds = cacheManager.smBuilds
+            AvailableBuilds = cacheManager.SmBuilds
         };
         StatusBundle Parascript = new StatusBundle()
         {
             Status = buildManager.PsBuild.Status,
             Progress = buildManager.PsBuild.Progress,
-            AvailableBuilds = cacheManager.psBuilds
+            AvailableBuilds = cacheManager.PsBuilds
         };
         StatusBundle RoyalMail = new StatusBundle()
         {
             Status = buildManager.PsBuild.Status,
             Progress = buildManager.PsBuild.Progress,
-            AvailableBuilds = cacheManager.rmBuilds
+            AvailableBuilds = cacheManager.RmBuilds
         };
 
         string serializedObject = JsonConvert.SerializeObject(new {SmartMatch, Parascript, RoyalMail});

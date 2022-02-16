@@ -14,5 +14,7 @@ namespace Crawler.Data
 
         public DbSet<RoyalBundle> RoyalBundles { get; set; }
         public DbSet<RoyalFile> RoyalFiles { get; set; }
+
+        public DbSet<PafKey> PafKeys { get; set; }
     }
 }

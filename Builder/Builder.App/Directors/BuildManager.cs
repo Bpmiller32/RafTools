@@ -31,7 +31,7 @@ public class BuildManager
         // - SyncronizationContext doesn't exist in .net Core
         // - OutOfBoundsCondition: the BuildManager object will never be disposed before the thread is complete
         // - RaceCondition: There is no 2 resources reading or writing to the BuildTask objects
-        // Because of this where the call is performed (also when in that where) isn't breaking
+        // Because of this where the call is performed (also when in that where) shouldn't* be breaking
         this.smProgress = SmBuild.ChangeProgress;
         this.psProgress = PsBuild.ChangeProgress;
         this.rmProgress = RmBuild.ChangeProgress;
@@ -117,7 +117,10 @@ public class BuildManager
                     rm.ConvertPafData();
                     await rm.Compile();
                     await rm.Output();
-                    rm.Cleanup(fullClean: false);                    
+                    rm.Cleanup(fullClean: false);         
+                    rm.CheckBuildComplete();
+
+                    RmBuild.Status = BuildStatus.Ready;           
                 }
                 catch (System.Exception e)
                 {

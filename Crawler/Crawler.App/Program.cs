@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
+using Microsoft.Extensions.Configuration;
 
 #pragma warning disable CA1416 // ignore that calls to manipulate services and check for admin are Windows only 
 
@@ -39,9 +40,6 @@ namespace Crawler.App
                     {
                         throw new Exception("Only one instance of the application allowed");
                     }
-
-                    // Attach method to application closing event handler to kill all spawned subprocess. Put it after singleton check in case another instance is open
-                    // AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
 
                     // Check for admin
                     bool isElevated;
@@ -75,11 +73,18 @@ namespace Crawler.App
             Host.CreateDefaultBuilder(args)
                 .UseWindowsService()
                 .UseSerilog()
+                .ConfigureAppConfiguration((hostContext, config) =>
+                {
+                    // config.Sources.Clear();
+                    // config.AddJsonFile("CrawlerConfig.json", false, true);
+                })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<SmartmatchCrawler>();
-                    services.AddHostedService<ParascriptCrawler>();
-                    services.AddHostedService<RoyalCrawler>();
+                    services.AddHostedService<Director>();
+                    services.AddSingleton<EmailCrawler>();
+                    services.AddSingleton<SmartmatchCrawler>();
+                    services.AddSingleton<ParascriptCrawler>();
+                    // services.AddHostedService<RoyalCrawler>();
                     services.AddDbContext<DatabaseContext>(opt =>
                     {
                         opt.UseSqlite(@"Filename=.\DirectoryCollection.db");

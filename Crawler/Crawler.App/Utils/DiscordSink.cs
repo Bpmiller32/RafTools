@@ -8,7 +8,7 @@ namespace Crawler.App
     {
         public void Emit(LogEvent logEvent)
         {
-            if ((logEvent.Exception != null) || (ShouldLogMessage(LogEventLevel.Information, logEvent.Level) == false)) 
+            if ((logEvent.Exception != null) || (ShouldLogMessage(LogEventLevel.Warning, logEvent.Level) == false)) 
             {
                 return;
             }

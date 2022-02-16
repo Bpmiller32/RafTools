@@ -1,2 +1,61 @@
 [02-02-2022 12:06:10 ]  [WRN] Application does not have administrator privledges
 [02-02-2022 12:06:10 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:51:30 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:51:31 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:55:12 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:55:12 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:55:12 PafBuilder]  [ERR] Missing SMi build files needed for compile: UK_RM_CM.xml, UK_RM_CM_Patterns.xml, UK_RM_CM_Settings.xml, BFPO.txt, Country.txt, County.txt, PostTown.txt, StreetDescriptor.txt, StreetName.txt, PoBoxName.txt, SubBuildingDesignator.txt, OrganizationName.txt, Country_Alias.txt, UK_IgnorableWordsTable.txt, UK_WordMatchTable.txt, . Check SmiBuildFiles folder
+[02-15-2022 10:56:07 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:56:07 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:56:07 PafBuilder]  [ERR] Missing SMi build files needed for compile: UK_RM_CM.xml, UK_RM_CM_Patterns.xml, UK_RM_CM_Settings.xml, BFPO.txt, Country.txt, County.txt, PostTown.txt, StreetDescriptor.txt, StreetName.txt, PoBoxName.txt, SubBuildingDesignator.txt, OrganizationName.txt, Country_Alias.txt, UK_IgnorableWordsTable.txt, UK_WordMatchTable.txt, . Check SmiBuildFiles folder
+[02-15-2022 10:57:10 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:57:11 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:57:11 PafBuilder]  [ERR] Missing SMi build files needed for compile: UK_RM_CM.xml, UK_RM_CM_Patterns.xml, UK_RM_CM_Settings.xml, BFPO.txt, Country.txt, County.txt, PostTown.txt, StreetDescriptor.txt, StreetName.txt, PoBoxName.txt, SubBuildingDesignator.txt, OrganizationName.txt, Country_Alias.txt, UK_IgnorableWordsTable.txt, UK_WordMatchTable.txt, . Check SmiBuildFiles folder
+[02-15-2022 10:57:55 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:57:55 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:58:48 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 10:58:48 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 10:58:48 PafBuilder]  [INF] Cleaning up from previous runs
+[02-15-2022 10:58:48 PafBuilder]  [INF] Encrypting dongle licensing and pattern files
+[02-15-2022 10:58:49 PafBuilder]  [INF] Converting PAF data
+[02-15-2022 10:58:57 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c01
+[02-15-2022 10:59:40 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c02
+[02-15-2022 11:00:22 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c03
+[02-15-2022 11:01:05 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c04
+[02-15-2022 11:01:47 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c05
+[02-15-2022 11:02:30 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c06
+[02-15-2022 11:03:13 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c07
+[02-15-2022 11:03:57 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c08
+[02-15-2022 11:04:39 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c09
+[02-15-2022 11:05:21 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c10
+[02-15-2022 11:08:40 ]  [WRN] Application does not have administrator privledges
+[02-15-2022 11:08:40 PafBuilder]  [INF] Isle of Man directory builder v0.1
+[02-15-2022 11:08:40 PafBuilder]  [INF] Cleaning up from previous runs
+[02-15-2022 11:08:40 PafBuilder]  [INF] Encrypting dongle licensing and pattern files
+[02-15-2022 11:08:40 PafBuilder]  [INF] Converting PAF data
+[02-15-2022 11:08:48 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c01
+[02-15-2022 11:09:30 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c02
+[02-15-2022 11:10:12 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c03
+[02-15-2022 11:10:55 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c04
+[02-15-2022 11:11:38 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c05
+[02-15-2022 11:12:21 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c06
+[02-15-2022 11:13:03 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c07
+[02-15-2022 11:13:46 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c08
+[02-15-2022 11:14:30 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c09
+[02-15-2022 11:15:13 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c10
+[02-15-2022 11:15:58 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c11
+[02-15-2022 11:16:41 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c12
+[02-15-2022 11:17:24 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c13
+[02-15-2022 11:18:07 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c14
+[02-15-2022 11:18:50 PafBuilder]  [INF] ConvertPafData processing file: fpcompst.c15
+[02-15-2022 11:19:16 PafBuilder]  [INF] Compiling converted PAF data into SMi directory
+[02-15-2022 11:22:51 PafBuilder]  [INF] DirectoryDataCompiler 3.0 addresses processed: 10000
+[02-15-2022 11:24:30 PafBuilder]  [INF] DirectoryDataCompiler 3.0 addresses processed: 15000
+[02-15-2022 11:26:11 PafBuilder]  [INF] DirectoryDataCompiler 3.0 addresses processed: 20000
+[02-15-2022 11:27:49 PafBuilder]  [INF] DirectoryDataCompiler 3.0 addresses processed: 25000
+[02-15-2022 11:30:30 PafBuilder]  [INF] DirectoryDataCompiler 3.0 addresses processed: 30000
+[02-15-2022 11:30:30 PafBuilder]  [INF] Moving files to output directory
+[02-15-2022 11:30:31 PafBuilder]  [INF] Cleaning up from previous runs
+[02-15-2022 11:30:32 PafBuilder]  [INF] Shutting down RAFArgosyMaster, moving files to Argosy Post Sync folder
+[02-15-2022 11:30:32 PafBuilder]  [WRN] Did not move files, application needs administrator privledges to stop RAFArgosyMaster
+[02-15-2022 11:30:32 PafBuilder]  [INF] All done!

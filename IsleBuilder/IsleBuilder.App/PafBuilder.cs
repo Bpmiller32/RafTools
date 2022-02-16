@@ -27,7 +27,7 @@ public class PafBuilder : BackgroundService
 
         System.Console.WriteLine("\nPlease make sure settings are correct in appsettings.json and folders contain appropriate files\n");
         System.Console.WriteLine("Press enter to continue...");
-        System.Console.ReadLine();
+        // System.Console.ReadLine();
 
         try
         {
@@ -127,13 +127,13 @@ public class PafBuilder : BackgroundService
 
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
         string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(settings.BuildToolsPath, "EncryptPatterns.exe"));
-        string encryptPatternsArgs = @"--patterns " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + @" --clickCharge";
+        string encryptPatternsArgs = @"--patterns " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, "Smi", "UK_RM_CM_P_Patterns.xml")) + @" --clickCharge";
         
         Process encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
         encryptPatterns.WaitForExit();
 
         // If this file wasn't created then EncryptPatterns silently failed, likeliest cause is missing a redistributable
-        if (!File.Exists(Path.Combine(settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.exml")))
+        if (!File.Exists(Path.Combine(settings.WorkingPath, "Smi", "UK_RM_CM_P_Patterns.exml")))
         {
             throw new Exception("Missing C++ 2010 x86 redistributable, EncryptPatterns and DirectoryDataCompiler 1.9 won't work. Also check that SQL CE is installed for 1.9");
         }
@@ -186,7 +186,7 @@ public class PafBuilder : BackgroundService
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
+        // tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
     }
@@ -198,7 +198,7 @@ public class PafBuilder : BackgroundService
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
+        // tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
     }
@@ -243,14 +243,14 @@ public class PafBuilder : BackgroundService
     {
         Directory.CreateDirectory(settings.WorkingPath + @"\" + version);
 
-        List<string> smiFiles = new List<string> { @"UK_RM_CM.xml", @"UK_RM_CM_Patterns.xml", @"UK_RM_CM_Patterns.exml", @"UK_RM_CM_Settings.xml", @"UK_RM_CM.lcs", @"BFPO.txt", @"UK.txt", @"Country.txt", @"County.txt", @"PostTown.txt", @"StreetDescriptor.txt", @"StreetName.txt", @"PoBoxName.txt", @"SubBuildingDesignator.txt", @"OrganizationName.txt", @"Country_Alias.txt", @"UK_IgnorableWordsTable.txt", @"UK_WordMatchTable.txt" };
+        List<string> smiFiles = new List<string> { @"UK_RM_CM.xml", @"UK_RM_CM_P_Patterns.xml", @"UK_RM_CM_P_Patterns.exml", @"UK_RM_CM_P_Settings.xml", @"UK_RM_CM.lcs", @"BFPO.txt", @"UK.txt", @"Country.txt", @"County.txt", @"PostTown.txt", @"StreetDescriptor.txt", @"StreetName.txt", @"PoBoxName.txt", @"SubBuildingDesignator.txt", @"OrganizationName.txt", @"Country_Alias.txt", @"UK_IgnorableWordsTable.txt", @"UK_WordMatchTable.txt" };
         foreach (string file in smiFiles)
         {
             File.Copy(settings.WorkingPath + @"\Smi\" + file, settings.WorkingPath + @"\" + version + @"\" + file, true);
         }
 
         string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(settings.BuildToolsPath, version, "DirectoryDataCompiler.exe"));
-        string directoryDataCompilerArgs = @"--definition " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, version, "UK_RM_CM.xml")) + @" --patterns " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, version, "UK_RM_CM_Patterns.xml")) + @" --password M0ntyPyth0n --licensed";
+        string directoryDataCompilerArgs = @"--definition " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, version, "UK_RM_CM.xml")) + @" --patterns " + Utils.WrapQuotes(Path.Combine(settings.WorkingPath, version, "UK_RM_CM_P_Patterns.xml")) + @" --password M0ntyPyth0n --licensed";
 
         Process directoryDataCompiler = Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);
         using (StreamReader sr = directoryDataCompiler.StandardOutput)
@@ -286,11 +286,11 @@ public class PafBuilder : BackgroundService
     {
         Directory.CreateDirectory(Path.Combine(settings.OutputPath, version, "UK_RM_CM"));
 
-        List<string> smiFiles = new List<string> { @"UK_IgnorableWordsTable.txt", @"UK_RM_CM_Patterns.exml", @"UK_WordMatchTable.txt", @"UK_RM_CM.lcs", @"UK_RM_CM.smi" };
+        List<string> smiFiles = new List<string> { @"UK_IgnorableWordsTable.txt", @"UK_RM_CM_P_Patterns.exml", @"UK_WordMatchTable.txt", @"UK_RM_CM.lcs", @"UK_RM_CM.smi" };
         foreach (string file in smiFiles)
         {
             File.Copy(Path.Combine(settings.WorkingPath, version, file), Path.Combine(settings.OutputPath, version, "UK_RM_CM", file), true);
         }
-        File.Copy(Path.Combine(settings.WorkingPath, version, "UK_RM_CM_Settings.xml"), Path.Combine(settings.OutputPath, version, "UK_RM_CM_Settings.xml"), true);
+        File.Copy(Path.Combine(settings.WorkingPath, version, "UK_RM_CM_P_Settings.xml"), Path.Combine(settings.OutputPath, version, "UK_RM_CM_P_Settings.xml"), true);
     }
 }
