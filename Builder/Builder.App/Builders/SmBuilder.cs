@@ -118,11 +118,11 @@ public class SmBuilder
             var editBoxes = newWindows[0].FindAllDescendants(cf => cf.ByLocalizedControlType(@"edit"));
 
             // Have to edit in this order or the rest autofill with values....
-            editBoxes[5].AsTextBox().Enter(year + month + @"1");
+            editBoxes[5].AsTextBox().Enter(year.Substring(2, 2) + month + @"1");
             editBoxes[2].AsTextBox().Enter(inputPath);
             editBoxes[4].AsTextBox().Enter(user);
             editBoxes[3].AsTextBox().Enter(pass);
-            editBoxes[0].AsTextBox().Enter(Path.Combine(outputPath, "20" + year + month + @"_SHA2"));
+            editBoxes[0].AsTextBox().Enter(Path.Combine(outputPath, year + month + @"_SHA2"));
 
             AutomationElement buildButton = newWindows[0].FindFirstDescendant(cf => cf.ByName(@"Build"));
             buildButton.AsButton().Invoke();

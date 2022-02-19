@@ -56,17 +56,17 @@ public class Settings
         // If WorkingPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.WorkingPath))
         {
-            if (settings.Name != "SM")
+            if (settings.Name != "SmartMatch")
             {
-                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), settings.Name + @"-Working"));
-                settings.WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), settings.Name + @"-Working");                
+                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Working", settings.Name));
+                settings.WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), @"Working", settings.Name);                
             }
         }
         // If OutputPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.OutputPath))
         {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), settings.Name, @"-Output", dataYearMonth));
-            settings.OutputPath = Directory.GetCurrentDirectory() + @"\" + settings.Name + @"-Output";
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, dataYearMonth));
+            settings.OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, dataYearMonth);
         }
 
 
@@ -76,11 +76,11 @@ public class Settings
         settings.Pass = message.SmPass;
         settings.Key = message.Key;
 
-        if (settings.Name == "SM" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
+        if (settings.Name == "SmartMatch" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
         {   
             throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
         }
-        if (settings.Name == "RM" && String.IsNullOrEmpty(settings.Key))
+        if (settings.Name == "RoyalMail" && String.IsNullOrEmpty(settings.Key))
         {
             throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
         }
@@ -88,15 +88,15 @@ public class Settings
 
 
         // Check for any missing files
-        if (settings.Name == "SM")
+        if (settings.Name == "SmartMatch")
         {
             CheckMissingSmFiles(settings);
         }
-        if (settings.Name == "PS")
+        if (settings.Name == "Parascript")
         {
             CheckMissingPsFiles(settings);
         }
-        if (settings.Name == "RM")
+        if (settings.Name == "RoyalMail")
         {
             CheckMissingRmFiles(settings);
             CheckMissingToolFiles(settings);
@@ -135,7 +135,100 @@ public class Settings
 
     public static void CheckMissingPsFiles(Settings settings)
     {
-        // TODO: Regex match this
+        List<string> psFiles = new List<string>
+        {
+            @"Files.zip"
+        };
+
+        string missingFiles = "";
+
+        foreach (string file in psFiles)
+        {
+            if (!File.Exists(Path.Combine(settings.AddressDataPath, file)))
+            {
+                missingFiles += file + ", ";
+            }
+        }
+
+        if (!string.IsNullOrEmpty(missingFiles))
+        {
+            throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
+        }
+
+        // string month = settings.DataMonth;
+        // string year = settings.DataYear;
+        // string shortYear = year.Substring(2, 2);
+
+        // string missingFiles = "";
+
+        // // Zip Files
+        // List<string> adsFiles = new List<string>
+        // {
+        //     @"readme.txt",
+        //     @"ads_zip_09_" + month + shortYear + @".exe"
+        // };
+
+        // foreach (string file in adsFiles)
+        // {
+        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"ads6", file)))
+        //     {
+        //         missingFiles += file + ", ";
+        //     }
+        // }
+
+        // // DPV Files
+        // List<string> dpvFiles = new List<string>
+        // {
+        //     @"ads_dpv_09_" + month + shortYear + @".exe"
+        // };
+
+        // foreach (string file in dpvFiles)
+        // {
+        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"DPVfull", file)))
+        //     {
+        //         missingFiles += file + ", ";
+        //     }
+        // }
+        // foreach (string file in dpvFiles)
+        // {
+        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"DPVsplit", file)))
+        //     {
+        //         missingFiles += file + ", ";
+        //     }
+        // }
+
+        // // LACS Files
+        // List<string> lacsFiles = new List<string>
+        // {
+        //     @"ads_lac_09_" + month + shortYear + @".exe"
+        // };
+
+        // foreach (string file in lacsFiles)
+        // {
+        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"LACSLink", file)))
+        //     {
+        //         missingFiles += file + ", ";
+        //     }
+        // }
+
+        // // Suite Files
+        // List<string> suiteFiles = new List<string>
+        // {
+        //     @"ads_slk_09_" + month + shortYear + @".exe"
+        // };
+
+        // foreach (string file in suiteFiles)
+        // {
+        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"SuiteLink", file)))
+        //     {
+        //         missingFiles += file + ", ";
+        //     }
+        // }
+
+        // if (!string.IsNullOrEmpty(missingFiles))
+        // {
+        //     throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
+        // }
     }
 
     public static void CheckMissingRmFiles(Settings settings)

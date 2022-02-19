@@ -93,7 +93,6 @@ namespace Crawler.App
             }
 
             string key = match.Groups[1].Value + match.Groups[3].Value + match.Groups[5].Value + match.Groups[7].Value + match.Groups[9].Value + match.Groups[11].Value + match.Groups[13].Value + match.Groups[15].Value;
-            logger.LogInformation("RoyalMail key found");
 
             return key;
         }

@@ -5,6 +5,7 @@ using FlaUI.Core.AutomationElements;
 using System.Text.RegularExpressions;
 using System.Xml;
 using Builder.App.Utils;
+using System.Linq;
 
 namespace Builder.App.Builders;
 
@@ -29,10 +30,22 @@ public class RoyalBuilder
         this.settings = settings;
         this.context = context;
         this.progress = progress;
+
+        this.month = settings.DataMonth;
+        this.year = settings.DataYear;
     }
 
     public async Task Extract()
     {
+        PafKey key = context.PafKeys.Where(x => (int.Parse(settings.DataMonth) == x.DataMonth) && (int.Parse(settings.DataYear) == x.DataYear)).FirstOrDefault();
+
+        if (key == null)
+        {
+            throw new Exception("Key not found in db");
+        }
+
+        progress(1);
+
         using (UIA2Automation automation = new UIA2Automation())
         {
             Application app = FlaUI.Core.Application.Launch(Path.Combine(inputPath, @"SetupRM.exe"));
@@ -47,7 +60,7 @@ public class RoyalBuilder
                 throw new Exception("Could not find the window elements");
             }
             // TODO: Somehow if key is wrong, look for label maybe?
-            keyText.AsTextBox().Enter(key);
+            keyText.AsTextBox().Enter(key.Value);
 
             // 1st page
             AutomationElement beginButton = windows[0].FindFirstDescendant(cf => cf.ByClassName("TButton"));
@@ -70,7 +83,7 @@ public class RoyalBuilder
             windows[0].Close();
         }
 
-        progress(22);
+        progress(21);
     }
 
     public void Cleanup(bool fullClean)
@@ -123,32 +136,32 @@ public class RoyalBuilder
         progress(1);
     }
 
-    public void FindDate()
-    {
-        using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"PAF COMPRESSED STD", @"README.txt")))
-        {
-            string line;
-            Regex regex = new Regex(@"(Version : )(Y\d\dM\d\d)");
+    // public void FindDate()
+    // {
+    //     using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"PAF COMPRESSED STD", @"README.txt")))
+    //     {
+    //         string line;
+    //         Regex regex = new Regex(@"(Version : )(Y\d\dM\d\d)");
 
-            while ((line = sr.ReadLine()) != null)
-            {
-                Match match = regex.Match(line);
+    //         while ((line = sr.ReadLine()) != null)
+    //         {
+    //             Match match = regex.Match(line);
 
-                if (match.Success == true)
-                {
-                    year = match.Groups[2].Value.Substring(1, 2);
-                    month = match.Groups[2].Value.Substring(4, 2);
-                }
-            }
-        }
+    //             if (match.Success == true)
+    //             {
+    //                 year = match.Groups[2].Value.Substring(1, 2);
+    //                 month = match.Groups[2].Value.Substring(4, 2);
+    //             }
+    //         }
+    //     }
 
-        if (month == null || year == null)
-        {
-            throw new Exception("Month/date not found in input files");
-        }
+    //     if (month == null || year == null)
+    //     {
+    //         throw new Exception("Month/date not found in input files");
+    //     }
 
-        progress(1);
-    }
+    //     progress(1);
+    // }
 
     public void UpdateSmiFiles()
     {
@@ -172,7 +185,7 @@ public class RoyalBuilder
         // Edit Uk dongle list with updated date
         using (StreamWriter sw = new StreamWriter(Path.Combine(workingPath, @"Smi", @"DongleTemp.txt")))
         {
-            sw.WriteLine(@"Date=20" + year + month + @"19");
+            sw.WriteLine(@"Date=" + year + month + @"19");
 
             using (StreamReader sr = new StreamReader(Path.Combine(workingPath, @"Smi", @"UK_RM_CM.txt")))
             {
@@ -185,6 +198,9 @@ public class RoyalBuilder
         }
 
         File.Delete(Path.Combine(workingPath, @"Smi", @"UK_RM_CM.txt"));
+        File.Delete(Path.Combine(workingPath, @"Smi", @"UK_RM_CM.lcs"));
+        File.Delete(Path.Combine(workingPath, @"Smi", @"UK_RM_CM_Patterns.exml"));
+        
         File.Move(Path.Combine(workingPath, @"Smi", @"DongleTemp.txt"), Path.Combine(workingPath, @"Smi", @"UK_RM_CM.txt"));
 
         // Encrypt new Uk dongle list, but first wrap the combined paths in quotes to get around spaced directories

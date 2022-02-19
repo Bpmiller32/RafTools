@@ -253,7 +253,7 @@ namespace Crawler.App
 
             if (files.Length < 1)
             {
-                // logger.LogInformation("Finished downloading");
+                logger.LogDebug("Finished downloading");
                 file.OnDisk = true;
                 file.DateDownloaded = DateTime.Now;
                 context.ParaFiles.Update(file);

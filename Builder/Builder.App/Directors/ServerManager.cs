@@ -10,19 +10,17 @@ public class ServerManager : BackgroundService
 {
     private readonly ILogger<ServerManager> logger;
     private readonly BuildManager buildManager;
-    private readonly CacheManager cacheManager;
+    private readonly DatabaseContext context;
 
-    public ServerManager(ILogger<ServerManager> logger, BuildManager buildManager, CacheManager cacheManager)
+    public ServerManager(ILogger<ServerManager> logger, BuildManager buildManager, IServiceScopeFactory factory)
     {
         this.logger = logger;
         this.buildManager = buildManager;
-        this.cacheManager = cacheManager;
+        this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Task.Run(cacheManager.RunTask);
-
         TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 11000);
         server.Start();
 
@@ -84,29 +82,65 @@ public class ServerManager : BackgroundService
 
     private void SendMessage(NetworkStream stream)
     {
+        List<List<string>> buildBundle = GetAvailableBuilds();
+
         // Create data message here
         StatusBundle SmartMatch = new StatusBundle()
         {
             Status = buildManager.SmBuild.Status,
             Progress = buildManager.SmBuild.Progress,
-            AvailableBuilds = cacheManager.SmBuilds
+            AvailableBuilds = buildBundle[0]
         };
         StatusBundle Parascript = new StatusBundle()
         {
             Status = buildManager.PsBuild.Status,
             Progress = buildManager.PsBuild.Progress,
-            AvailableBuilds = cacheManager.PsBuilds
+            AvailableBuilds = buildBundle[1]
         };
         StatusBundle RoyalMail = new StatusBundle()
         {
-            Status = buildManager.PsBuild.Status,
-            Progress = buildManager.PsBuild.Progress,
-            AvailableBuilds = cacheManager.RmBuilds
+            Status = buildManager.RmBuild.Status,
+            Progress = buildManager.RmBuild.Progress,
+            AvailableBuilds = buildBundle[2]
         };
 
-        string serializedObject = JsonConvert.SerializeObject(new {SmartMatch, Parascript, RoyalMail});
+        string serializedObject = JsonConvert.SerializeObject(new { SmartMatch, Parascript, RoyalMail });
         byte[] data = System.Text.Encoding.UTF8.GetBytes(serializedObject);
 
         stream.Write(data);
+    }
+
+    private List<List<string>> GetAvailableBuilds()
+    {
+        List<string> smBuilds = new List<string>();
+        List<string> psBuilds = new List<string>();
+        List<string> rmBuilds = new List<string>();
+
+        List<UspsBundle> uspsBundles = context.UspsBundles.Where(x => (x.IsBuildComplete == true)).ToList();
+        List<ParaBundle> paraBundles = context.ParaBundles.Where(x => (x.IsBuildComplete == true)).ToList();
+        List<RoyalBundle> royalBundles = context.RoyalBundles.Where(x => (x.IsBuildComplete == true)).ToList();
+
+        foreach (UspsBundle bundle in uspsBundles)
+        {
+            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            smBuilds.Add(dataYearMonth);
+        }
+        foreach (ParaBundle bundle in paraBundles)
+        {
+            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            psBuilds.Add(dataYearMonth);
+        }
+        foreach (RoyalBundle bundle in royalBundles)
+        {
+            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            rmBuilds.Add(dataYearMonth);
+        }
+
+        List<List<string>> buildBundle = new List<List<string>>();
+        buildBundle.Add(smBuilds);
+        buildBundle.Add(psBuilds);
+        buildBundle.Add(rmBuilds);
+
+        return buildBundle;
     }
 }

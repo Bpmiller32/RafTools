@@ -81,10 +81,6 @@ namespace Crawler.App
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<Director>();
-                    services.AddSingleton<EmailCrawler>();
-                    services.AddSingleton<SmartmatchCrawler>();
-                    services.AddSingleton<ParascriptCrawler>();
-                    // services.AddHostedService<RoyalCrawler>();
                     services.AddDbContext<DatabaseContext>(opt =>
                     {
                         opt.UseSqlite(@"Filename=.\DirectoryCollection.db");

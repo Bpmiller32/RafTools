@@ -24,8 +24,11 @@ public class BuildManager
         this.logger = logger;
         this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         this.smSettings = settings.Get(Settings.SmartMatch);
+        this.smSettings.Name = "SmartMatch";
         this.psSettings = settings.Get(Settings.Parascript);
+        this.psSettings.Name = "Parascript";
         this.rmSettings = settings.Get(Settings.RoyalMail);
+        this.rmSettings.Name = "RoyalMail";
 
         // No SyncronizationContext guards because
         // - SyncronizationContext doesn't exist in .net Core
@@ -80,8 +83,8 @@ public class BuildManager
                     ParaBuilder ps = new ParaBuilder(psSettings, context, psProgress);
 
                     ps.CheckInput();
+                    ps.ExtractDownload();
                     ps.Cleanup(fullClean: true);
-                    ps.FindDate();
                     await ps.Extract();
                     await ps.Archive();
                     ps.Cleanup(fullClean: false);
@@ -112,7 +115,6 @@ public class BuildManager
                     
                     await rm.Extract();
                     rm.Cleanup(fullClean: true);
-                    rm.FindDate();
                     rm.UpdateSmiFiles();
                     rm.ConvertPafData();
                     await rm.Compile();

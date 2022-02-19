@@ -24,6 +24,9 @@ public class ParaBuilder
         this.settings = settings;
         this.context = context;
         this.progress = progress;
+
+        this.month = settings.DataMonth;
+        this.year = settings.DataYear;
     }
 
     public void CheckInput()
@@ -38,6 +41,19 @@ public class ParaBuilder
         }
 
         progress(1);
+    }
+
+    public void ExtractDownload()
+    {
+        DirectoryInfo ip = new DirectoryInfo(inputPath);
+        
+        foreach (DirectoryInfo dir in ip.GetDirectories())
+        {
+            dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
+            dir.Delete(true);
+        }
+
+        ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"Files.zip"), inputPath);
     }
 
     public void Cleanup(bool fullClean)
@@ -89,55 +105,57 @@ public class ParaBuilder
         progress(1);
     }
 
-    public void FindDate()
-    {
-        using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"ads6", @"readme.txt")))
-        {
-            string line;
-            Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
+    // public void FindDate()
+    // {
+    //     using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"ads6", @"readme.txt")))
+    //     {
+    //         string line;
+    //         Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
 
-            while ((line = sr.ReadLine()) != null)
-            {
-                Match match = regex.Match(line);
+    //         while ((line = sr.ReadLine()) != null)
+    //         {
+    //             Match match = regex.Match(line);
 
-                if (match.Success == true)
-                {
-                    year = match.Groups[3].Value.Substring(8, 2);
-                    month = match.Groups[3].Value.Substring(0, 2);
-                }
-            }
-        }
+    //             if (match.Success == true)
+    //             {
+    //                 year = match.Groups[3].Value.Substring(8, 2);
+    //                 month = match.Groups[3].Value.Substring(0, 2);
+    //             }
+    //         }
+    //     }
 
-        if (month == null || year == null)
-        {
-            throw new Exception("Month/date not found in input files");
-        }
+    //     if (month == null || year == null)
+    //     {
+    //         throw new Exception("Month/date not found in input files");
+    //     }
 
-        progress(1);
-    }
+    //     progress(1);
+    // }
 
     public async Task Extract()
     {
+        string shortYear = year.Substring(2, 2);
+
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("zip", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"ads6", @"ads_zip_09_" + month + year + ".exe"), Path.Combine(workingPath, @"zip"));
+            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"ads6", @"ads_zip_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"zip"));
             File.Create(Path.Combine(workingPath, @"zip", @"live.txt")).Close();
         }));
         tasks.Add("lacs", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"LACSLink", @"ads_lac_09_" + month + year + ".exe"), Path.Combine(workingPath, @"lacs"));
+            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"LACSLink", @"ads_lac_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"lacs"));
             File.Create(Path.Combine(workingPath, @"lacs", @"live.txt")).Close();
         }));
         tasks.Add("suite", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"SuiteLink", @"ads_slk_09_" + month + year + ".exe"), Path.Combine(workingPath, @"suite"));
+            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"SuiteLink", @"ads_slk_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"suite"));
             File.Create(Path.Combine(workingPath, @"suite", @"live.txt")).Close();
         }));
         tasks.Add("dpv", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"DPVfull", @"ads_dpv_09_" + month + year + ".exe"), Path.Combine(workingPath, @"dpv"));
+            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"DPVfull", @"ads_dpv_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"dpv"));
             File.Create(Path.Combine(workingPath, @"dpv", @"live.txt")).Close();
 
             ProcessStartInfo startInfo = new ProcessStartInfo()
@@ -167,7 +185,7 @@ public class ParaBuilder
 
         await Task.WhenAll(tasks.Values);
 
-        progress(17);
+        progress(18);
     }
 
     public async Task Archive()
@@ -205,7 +223,7 @@ public class ParaBuilder
 
     public void CheckBuildComplete()
     {
-        ParaBundle bundle = context.ParaBundles.Where(x => (month == x.DataMonth) && (year == x.DataYear)).FirstOrDefault();
+        ParaBundle bundle = context.ParaBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear)).FirstOrDefault();
         bundle.IsBuildComplete = true;
 
         context.SaveChanges();

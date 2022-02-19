@@ -7,5 +7,7 @@ public class DatabaseContext : DbContext
     public DbSet<UspsBundle> UspsBundles { get; set; }
     public DbSet<ParaBundle> ParaBundles { get; set; }
     public DbSet<RoyalBundle> RoyalBundles { get; set; }
+
+    public DbSet<PafKey> PafKeys { get; set; }
 }
 

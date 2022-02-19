@@ -284,7 +284,7 @@ namespace Crawler.App
             string path = Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle);
             if (!File.Exists(Path.Combine(path, file.FileName + @".CRDOWNLOAD")))
             {
-                // logger.LogInformation("Finished downloading");
+                logger.LogDebug("Finished downloading");
                 file.OnDisk = true;
                 file.DateDownloaded = DateTime.Now;
                 context.UspsFiles.Update(file);
