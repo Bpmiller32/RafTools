@@ -34,13 +34,13 @@
         </header>
         <main>
             <div class="flex justify-center mt-10">
-                <StatusCard/>
+                <StatusCard :builderStatus="builderStatus"/>
             </div>
 
-            <div class="flex flex-wrap justify-center mt-10">
-                <BuildCard class="mx-5 mb-5" :dirType="'SmartMatch'" :progress="9"/>   
-                <BuildCard class="mx-5 mb-5" :dirType="'Parascript'" :progress="100"/>   
-                <BuildCard class="mx-5 mb-5" :dirType="'RoyalMail'" :progress="40"/>       
+            <div v-if="builderStatus.active" class="flex flex-wrap justify-center mt-10">
+                <BuildCard class="mx-5 mb-5" :dirType="'SmartMatch'" :builderStatus="builderStatus"/>   
+                <BuildCard class="mx-5 mb-5" :dirType="'Parascript'" :builderStatus="builderStatus"/>   
+                <BuildCard class="mx-5 mb-5" :dirType="'RoyalMail'" :builderStatus="builderStatus"/>       
             </div>
         </main>
     </div>
@@ -51,6 +51,7 @@ import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { MenuIcon, XIcon } from '@heroicons/vue/outline'
 import BuildCard from './BuildCard.vue'
 import StatusCard from './StatusCard.vue'
+import axios from 'axios'
 
 export default {
     name: "MainPage",
@@ -63,15 +64,43 @@ export default {
         BuildCard,
         StatusCard,
     },
-    data() {
-        return {
-            navigation: [
-                { name: 'Crawler', href: '#', current: false },
-                { name: 'Builder', href: '#', current: true },
-            ]
-        }
-    },
     methods: {
+        GetBuilderStatus() {
+            axios.get(`https://localhost:5001/api/Builder`)
+            .then(response => {
+                if (response.data === null) {
+                    console.log("Connected to server but no data")
+                    return
+                }
+                
+                // Set the service status
+                this.builderStatus.active = true
+
+                // Set the timestamp data
+                const timestamp = new Date()
+                this.builderStatus.timestamp.checkinDate =  timestamp.toLocaleDateString('en-us').toString()
+                this.builderStatus.timestamp.checkinTime =  timestamp.toLocaleTimeString('en-us').toString()
+
+                // Set the builder data
+                this.builderStatus.builders.smartmatch.status = response.data.SmartMatch.Status
+                this.builderStatus.builders.smartmatch.progress = response.data.SmartMatch.Progress
+                this.builderStatus.builders.smartmatch.availableBuilds = response.data.SmartMatch.AvailableBuilds
+                
+                this.builderStatus.builders.parascript.status = response.data.Parascript.Status
+                this.builderStatus.builders.parascript.progress = response.data.Parascript.Progress
+                this.builderStatus.builders.parascript.availableBuilds = response.data.Parascript.AvailableBuilds
+
+                this.builderStatus.builders.royalmail.status = response.data.RoyalMail.Status
+                this.builderStatus.builders.royalmail.progress = response.data.RoyalMail.Progress
+                this.builderStatus.builders.royalmail.availableBuilds = response.data.RoyalMail.AvailableBuilds
+            })
+            .catch(() => {
+                this.builderStatus.active = false
+            })
+        },
+
+
+        // Styling methods, should move these to inline in template later
         LinkStyleDesktop(currentItem) {
             if (currentItem) {
                 return 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-blue-500'
@@ -88,6 +117,44 @@ export default {
                 return 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
             }
         }
+    },
+    data() {
+        return {
+            navigation: [
+                { name: 'Crawler', href: '#', current: false },
+                { name: 'Builder', href: '#', current: true },
+            ],
+
+            builderStatus: {
+                active: false,
+                timestamp: {
+                    checkinTime: "",
+                    checkinDate: "",
+                },
+                builders: {
+                    smartmatch: {
+                        status: 0,
+                        progress: 0,
+                        availableBuilds: [],
+                    },
+                    parascript: {
+                        status: 0,
+                        progress: 0,
+                        availableBuilds: [],
+                    },
+                    royalmail: {
+                        status: 0,
+                        progress: 0,
+                        availableBuilds: [],
+                    },
+                }
+            }
+        }
+    },
+    created() {
+        setInterval(() => 
+            this.GetBuilderStatus(), 3000
+        )
     },
 }
 </script>

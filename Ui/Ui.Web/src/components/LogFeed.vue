@@ -82,6 +82,7 @@ const timeline = [
 ]
 
 export default {
+    name: "LogFeed",
     data() {
         return {
             timeline

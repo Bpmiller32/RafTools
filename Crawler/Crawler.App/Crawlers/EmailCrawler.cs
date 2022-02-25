@@ -14,27 +14,65 @@ using MailKit.Search;
 using System.Collections.Generic;
 using Crawler.Data;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 
 namespace Crawler.App
 {
-    public class EmailCrawler
+    public class EmailCrawler : BackgroundService
     {
         private readonly ILogger logger;
-        private readonly CancellationToken stoppingToken;
-        private readonly Settings settings;
+        private readonly IConfiguration config;
+        private readonly CrawlTask tasks;
         private readonly DatabaseContext context;
+
+        private CancellationToken stoppingToken;
+        private Settings settings = new Settings() { Name = "Email" };
 
         PafKey tempKey = new PafKey();
 
-        public EmailCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
+        public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
             this.logger = logger;
-            this.stoppingToken = stoppingToken;
-            this.settings = settings;
-            this.context = context;
+            this.config = config;
+            this.tasks = tasks;
+            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
-        public void GetKey()
+        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        {
+            stoppingToken = serviceStoppingToken;
+            settings = Settings.Validate(settings, config);
+
+            if (settings.CrawlerEnabled == false)
+            {
+                tasks.Email = CrawlStatus.Disabled;
+                logger.LogInformation("Crawler disabled");
+                return;
+            }
+
+            try
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("Starting Crawler");
+                    tasks.Email = CrawlStatus.Enabled;
+
+                    GetKey();
+                    SaveKey();
+
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+                }
+            }
+            catch (System.Exception e)
+            {
+                tasks.Email = CrawlStatus.Error;
+                logger.LogError(e.Message);
+            }
+        }
+
+        private void GetKey()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -61,7 +99,7 @@ namespace Crawler.App
             }
         }
 
-        public void SaveKey()
+        private void SaveKey()
         {
             if (String.IsNullOrEmpty(tempKey.Value))
             {

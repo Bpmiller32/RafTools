@@ -13,22 +13,60 @@ using Microsoft.Extensions.Logging;
 
 namespace Crawler.App
 {
-    public class RoyalCrawler
+    public class RoyalCrawler : BackgroundService
     {
         private readonly ILogger logger;
-        private readonly CancellationToken stoppingToken;
-        private readonly Settings settings;
+        private readonly IConfiguration config;
+        private readonly CrawlTask tasks;
         private readonly DatabaseContext context;
+
+        private CancellationToken stoppingToken;
+        private Settings settings = new Settings() { Name = "RoyalMail" };
 
         private RoyalFile TempFile = new RoyalFile();
         private string dataYearMonth = "";
 
-        public RoyalCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
+        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
             this.logger = logger;
-            this.stoppingToken = stoppingToken;
-            this.settings = settings;
-            this.context = context;
+            this.config = config;
+            this.tasks = tasks;
+            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        {
+            stoppingToken = serviceStoppingToken;
+            settings = Settings.Validate(settings, config);
+
+            if (settings.CrawlerEnabled == false)
+            {
+                tasks.RoyalMail = CrawlStatus.Disabled;
+                logger.LogInformation("Crawler disabled");
+                return;
+            }
+
+            try
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("Starting Crawler");
+                    tasks.RoyalMail = CrawlStatus.Enabled;
+
+                    PullFile();
+                    CheckFile();
+                    await DownloadFile();
+                    CheckBuildReady();
+
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+                }
+            }
+            catch (System.Exception e)
+            {
+                tasks.RoyalMail = CrawlStatus.Error;
+                logger.LogError(e.Message);
+            }
         }
 
         public void PullFile()

@@ -21,7 +21,7 @@ public class ServerManager : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 11000);
+        TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 10021);
         server.Start();
 
         try
@@ -31,6 +31,8 @@ public class ServerManager : BackgroundService
             {
                 // Blocking, wait for connection, could put in a using but not because server stop will handle it albeit less gracefully, thoughts: creating a TcpClient which you could do whatever with when it isn't == null a 2-way socket is technically established
                 TcpClient connection = await server.AcceptTcpClientAsync();
+                logger.LogInformation("Socket connection established");
+
                 // Connection aquired, can start main loop, no reason to let go of this connection until app ends. Will change if more than one process needs to control Builder
                 NetworkStream stream = connection.GetStream();
 
@@ -85,19 +87,19 @@ public class ServerManager : BackgroundService
         List<List<string>> buildBundle = GetAvailableBuilds();
 
         // Create data message here
-        StatusBundle SmartMatch = new StatusBundle()
+        SocketResponse SmartMatch = new SocketResponse()
         {
             Status = buildManager.SmBuild.Status,
             Progress = buildManager.SmBuild.Progress,
             AvailableBuilds = buildBundle[0]
         };
-        StatusBundle Parascript = new StatusBundle()
+        SocketResponse Parascript = new SocketResponse()
         {
             Status = buildManager.PsBuild.Status,
             Progress = buildManager.PsBuild.Progress,
             AvailableBuilds = buildBundle[1]
         };
-        StatusBundle RoyalMail = new StatusBundle()
+        SocketResponse RoyalMail = new SocketResponse()
         {
             Status = buildManager.RmBuild.Status,
             Progress = buildManager.RmBuild.Progress,
@@ -122,17 +124,47 @@ public class ServerManager : BackgroundService
 
         foreach (UspsBundle bundle in uspsBundles)
         {
-            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            string dataMonth;
+            if (bundle.DataMonth < 10)
+            {
+                dataMonth = "0" + bundle.DataMonth;
+            }
+            else
+            {
+                dataMonth = bundle.DataMonth.ToString();
+            }
+
+            string dataYearMonth = bundle.DataYear.ToString() + dataMonth;
             smBuilds.Add(dataYearMonth);
         }
         foreach (ParaBundle bundle in paraBundles)
         {
-            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            string dataMonth;
+            if (bundle.DataMonth < 10)
+            {
+                dataMonth = "0" + bundle.DataMonth;
+            }
+            else
+            {
+                dataMonth = bundle.DataMonth.ToString();
+            }
+            
+            string dataYearMonth = bundle.DataYear.ToString() + dataMonth;
             psBuilds.Add(dataYearMonth);
         }
         foreach (RoyalBundle bundle in royalBundles)
         {
-            string dataYearMonth = bundle.DataYear.ToString() + bundle.DataMonth.ToString();
+            string dataMonth;
+            if (bundle.DataMonth < 10)
+            {
+                dataMonth = "0" + bundle.DataMonth;
+            }
+            else
+            {
+                dataMonth = bundle.DataMonth.ToString();
+            }
+
+            string dataYearMonth = bundle.DataYear.ToString() + dataMonth;
             rmBuilds.Add(dataYearMonth);
         }
 

@@ -28,5 +28,6 @@ Ui/Ui.Web/dist
 
 Ui/Ui.Core/bin
 Ui/Ui.Core/obj
+Ui/Ui.Core/.vscode
 
 Ui/.vscode

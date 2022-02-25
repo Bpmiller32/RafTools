@@ -1,6 +1,6 @@
 namespace Builder.App.Utils;
 
-public class StatusBundle
+public class SocketResponse
 {
     public BuildStatus Status { get; set; }
     public int Progress { get; set; }

@@ -136,33 +136,6 @@ public class RoyalBuilder
         progress(1);
     }
 
-    // public void FindDate()
-    // {
-    //     using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"PAF COMPRESSED STD", @"README.txt")))
-    //     {
-    //         string line;
-    //         Regex regex = new Regex(@"(Version : )(Y\d\dM\d\d)");
-
-    //         while ((line = sr.ReadLine()) != null)
-    //         {
-    //             Match match = regex.Match(line);
-
-    //             if (match.Success == true)
-    //             {
-    //                 year = match.Groups[2].Value.Substring(1, 2);
-    //                 month = match.Groups[2].Value.Substring(4, 2);
-    //             }
-    //         }
-    //     }
-
-    //     if (month == null || year == null)
-    //     {
-    //         throw new Exception("Month/date not found in input files");
-    //     }
-
-    //     progress(1);
-    // }
-
     public void UpdateSmiFiles()
     {
         Directory.CreateDirectory(Path.Combine(workingPath, @"Smi"));

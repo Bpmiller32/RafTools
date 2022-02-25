@@ -8,28 +8,69 @@ using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System.Linq;
 using System.IO;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Crawler.App
 {
-    public class SmartmatchCrawler
+    public class SmartmatchCrawler : BackgroundService
     {
-        private readonly ILogger logger;
-        private readonly CancellationToken stoppingToken;
-        private readonly Settings settings;
+        private readonly ILogger<SmartmatchCrawler> logger;
+        private readonly IConfiguration config;
+        private readonly CrawlTask tasks;
         private readonly DatabaseContext context;
+
+        private CancellationToken stoppingToken;
+        private Settings settings = new Settings() { Name = "SmartMatch" };
 
         private List<UspsFile> TempFiles = new List<UspsFile>();
         private string dataYearMonth = "";
 
-        public SmartmatchCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
+        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
             this.logger = logger;
-            this.stoppingToken = stoppingToken;
-            this.settings = settings;
-            this.context = context;
+            this.config = config;
+            this.tasks = tasks;
+            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
-        public async Task PullFiles()
+        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        {
+            stoppingToken = serviceStoppingToken;
+            settings = Settings.Validate(settings, config);
+
+            if (settings.CrawlerEnabled == false)
+            {
+                tasks.SmartMatch = CrawlStatus.Disabled;
+                logger.LogInformation("Crawler disabled");
+                return;
+            }
+
+            try
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("Starting Crawler");
+                    tasks.SmartMatch = CrawlStatus.Enabled;
+
+                    await PullFiles();
+                    CheckFiles();
+                    await DownloadFiles();
+                    CheckBuildReady();
+
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+                }
+            }
+            catch (System.Exception e)
+            {
+                tasks.SmartMatch = CrawlStatus.Error;
+                logger.LogError(e.Message);
+            }
+        }
+
+        private async Task PullFiles()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -122,7 +163,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckFiles()
+        private void CheckFiles()
         {
             // Cancellation requested or PullFile failed
             if (stoppingToken.IsCancellationRequested == true)
@@ -178,7 +219,7 @@ namespace Crawler.App
             TempFiles.Clear();
         }
 
-        public async Task DownloadFiles()
+        private async Task DownloadFiles()
         {
             List<UspsFile> offDisk = context.UspsFiles.Where(x => x.OnDisk == false).ToList();
 
@@ -248,7 +289,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckBuildReady()
+        private void CheckBuildReady()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {

@@ -105,33 +105,6 @@ public class ParaBuilder
         progress(1);
     }
 
-    // public void FindDate()
-    // {
-    //     using (StreamReader sr = new StreamReader(Path.Combine(inputPath, @"ads6", @"readme.txt")))
-    //     {
-    //         string line;
-    //         Regex regex = new Regex(@"(Issue Date:)(\s+)(\d\d\/\d\d\/\d\d\d\d)");
-
-    //         while ((line = sr.ReadLine()) != null)
-    //         {
-    //             Match match = regex.Match(line);
-
-    //             if (match.Success == true)
-    //             {
-    //                 year = match.Groups[3].Value.Substring(8, 2);
-    //                 month = match.Groups[3].Value.Substring(0, 2);
-    //             }
-    //         }
-    //     }
-
-    //     if (month == null || year == null)
-    //     {
-    //         throw new Exception("Month/date not found in input files");
-    //     }
-
-    //     progress(1);
-    // }
-
     public async Task Extract()
     {
         string shortYear = year.Substring(2, 2);
@@ -223,6 +196,7 @@ public class ParaBuilder
 
     public void CheckBuildComplete()
     {
+        // Will be null if Crawler never made a record for it, watch out if running standalone
         ParaBundle bundle = context.ParaBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear)).FirstOrDefault();
         bundle.IsBuildComplete = true;
 

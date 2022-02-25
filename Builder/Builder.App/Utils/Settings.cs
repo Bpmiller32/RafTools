@@ -53,6 +53,11 @@ public class Settings
         string dataYearMonth = message.Year + message.Month;
         
         settings.AddressDataPath = Path.Combine(settings.AddressDataPath, dataYearMonth);
+        // SmartMatch specific, look into cycle
+        if (settings.Name == "SmartMatch")
+        {
+            settings.AddressDataPath = Path.Combine(settings.AddressDataPath, @"Cycle-N");
+        }
         // If WorkingPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.WorkingPath))
         {
@@ -154,81 +159,6 @@ public class Settings
         {
             throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
         }
-
-        // string month = settings.DataMonth;
-        // string year = settings.DataYear;
-        // string shortYear = year.Substring(2, 2);
-
-        // string missingFiles = "";
-
-        // // Zip Files
-        // List<string> adsFiles = new List<string>
-        // {
-        //     @"readme.txt",
-        //     @"ads_zip_09_" + month + shortYear + @".exe"
-        // };
-
-        // foreach (string file in adsFiles)
-        // {
-        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"ads6", file)))
-        //     {
-        //         missingFiles += file + ", ";
-        //     }
-        // }
-
-        // // DPV Files
-        // List<string> dpvFiles = new List<string>
-        // {
-        //     @"ads_dpv_09_" + month + shortYear + @".exe"
-        // };
-
-        // foreach (string file in dpvFiles)
-        // {
-        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"DPVfull", file)))
-        //     {
-        //         missingFiles += file + ", ";
-        //     }
-        // }
-        // foreach (string file in dpvFiles)
-        // {
-        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"DPVsplit", file)))
-        //     {
-        //         missingFiles += file + ", ";
-        //     }
-        // }
-
-        // // LACS Files
-        // List<string> lacsFiles = new List<string>
-        // {
-        //     @"ads_lac_09_" + month + shortYear + @".exe"
-        // };
-
-        // foreach (string file in lacsFiles)
-        // {
-        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"LACSLink", file)))
-        //     {
-        //         missingFiles += file + ", ";
-        //     }
-        // }
-
-        // // Suite Files
-        // List<string> suiteFiles = new List<string>
-        // {
-        //     @"ads_slk_09_" + month + shortYear + @".exe"
-        // };
-
-        // foreach (string file in suiteFiles)
-        // {
-        //     if (!File.Exists(Path.Combine(settings.AddressDataPath, @"DPVandLACS", @"SuiteLink", file)))
-        //     {
-        //         missingFiles += file + ", ";
-        //     }
-        // }
-
-        // if (!string.IsNullOrEmpty(missingFiles))
-        // {
-        //     throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
-        // }
     }
 
     public static void CheckMissingRmFiles(Settings settings)

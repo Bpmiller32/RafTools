@@ -2,7 +2,7 @@
 <template>
     <div class="flex-grow max-w-md truncate bg-white rounded-lg shadow divide-y divide-gray-200">
         <div class="flex items-center justify-between p-6">
-            <div>
+            <div class="mr-4">
                 <div class="flex">
                     <p class="text-gray-900 text-sm font-medium">{{ dirType }}</p>
                     <p class="ml-3 px-2 py-0.5 text-green-800 text-xs font-medium bg-green-100 rounded-full">Ready</p>
@@ -32,13 +32,12 @@
 <script>
 import { MailIcon, PhoneIcon } from '@heroicons/vue/solid'
 import SelectMenu from './SelectMenu.vue'
-import axios from 'axios'
 
 export default {
     name: "BuildCard",
     props: {
         dirType: String,
-        progress: Number,
+        "builderStatus": Object,
     },
     components: {
         MailIcon,
@@ -46,21 +45,29 @@ export default {
         SelectMenu,
     },
     methods: {
-        TestSubmit() {
-            axios.get(`http://jsonplaceholder.typicode.com/posts`)
-            .then(response => {
-                // JSON responses are automatically parsed.
-                console.log(response.data)
-            })
-            .catch(e => {
-                this.errors.push(e)
-            })
+        SetProgress() {
+            if (this.dirType !== "SmartMatch") {
+                return
+            }
+
+            this.progress = this.builderStatus.builders.smartmatch.progress
+        }
+    },
+    watch: {
+        "builderStatus": {
+            deep: true,
+            handler() {
+                this.SetProgress()
+            }
         }
     },
     data() {
         return {
+            statusBadge: "Ready",
+            progress: 0,
+
             avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=256&h=256&q=60',
         }
-    }
+    },
 }
 </script>

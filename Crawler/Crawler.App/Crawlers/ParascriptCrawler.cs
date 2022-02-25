@@ -16,25 +16,63 @@ using HtmlAgilityPack;
 
 namespace Crawler.App
 {
-    public class ParascriptCrawler
+    public class ParascriptCrawler : BackgroundService
     {
         private readonly ILogger logger;
-        private readonly CancellationToken stoppingToken;
-        private readonly Settings settings;
+        private readonly IConfiguration config;
+        private readonly CrawlTask tasks;
         private readonly DatabaseContext context;
+
+        private CancellationToken stoppingToken;
+        private Settings settings = new Settings() { Name = "Parascript" };
 
         private List<ParaFile> TempFiles = new List<ParaFile>();
         private string dataYearMonth = "";
 
-        public ParascriptCrawler(ILogger logger, CancellationToken stoppingToken, Settings settings, DatabaseContext context)
+        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
             this.logger = logger;
-            this.stoppingToken = stoppingToken;
-            this.settings = settings;
-            this.context = context;
+            this.config = config;
+            this.tasks = tasks;
+            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         }
 
-        public async Task PullFiles()
+        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        {
+            stoppingToken = serviceStoppingToken;
+            settings = Settings.Validate(settings, config);
+
+            if (settings.CrawlerEnabled == false)
+            {
+                tasks.Parascript = CrawlStatus.Disabled;
+                logger.LogInformation("Crawler disabled");
+                return;
+            }
+
+            try
+            {
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    logger.LogInformation("Starting Crawler");
+                    tasks.Parascript = CrawlStatus.Enabled;
+
+                    await PullFiles();
+                    CheckFiles();
+                    await DownloadFiles();
+                    CheckBuildReady();
+
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+                }
+            }
+            catch (System.Exception e)
+            {
+                tasks.Parascript = CrawlStatus.Error;
+                logger.LogError(e.Message);
+            }
+        }
+
+        private async Task PullFiles()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -99,7 +137,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckFiles()
+        private void CheckFiles()
         {
             // Cancellation requested or PullFile failed
             if (stoppingToken.IsCancellationRequested == true)
@@ -127,14 +165,14 @@ namespace Crawler.App
                     context.ParaFiles.Add(file);
                     logger.LogInformation("Discovered and not on disk: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear);
 
-                    bool bundleExists = context.ParaBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
+                    bool bundleExists = context.ParaBundles.Any(x => (int.Parse(file.DataMonth) == x.DataMonth) && (int.Parse(file.DataYear) == x.DataYear));
 
                     if (!bundleExists)
                     {
                         ParaBundle newBundle = new ParaBundle()
                         {
-                            DataMonth = file.DataMonth,
-                            DataYear = file.DataYear,
+                            DataMonth = int.Parse(file.DataMonth),
+                            DataYear = int.Parse(file.DataYear),
                             IsReadyForBuild = false
                         };
 
@@ -143,7 +181,7 @@ namespace Crawler.App
                     }
                     else
                     {
-                        ParaBundle existingBundle = context.ParaBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear)).FirstOrDefault();
+                        ParaBundle existingBundle = context.ParaBundles.Where(x => (int.Parse(file.DataMonth) == x.DataMonth) && (int.Parse(file.DataYear) == x.DataYear)).FirstOrDefault();
 
                         existingBundle.BuildFiles.Add(file);
                     }
@@ -155,7 +193,7 @@ namespace Crawler.App
             TempFiles.Clear();
         }
 
-        public async Task DownloadFiles()
+        private async Task DownloadFiles()
         {
             List<ParaFile> offDisk = context.ParaFiles.Where(x => x.OnDisk == false).ToList();
 
@@ -215,7 +253,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckBuildReady()
+        private void CheckBuildReady()
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -228,7 +266,7 @@ namespace Crawler.App
             {
                 // idk why but you need to do some linq query to populate bundle.buildfiles? 
                 // Something to do with one -> many relationship between the tables, investigate
-                List<ParaFile> files = context.ParaFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
+                List<ParaFile> files = context.ParaFiles.Where(x => (int.Parse(x.DataMonth) == bundle.DataMonth) && (int.Parse(x.DataYear) == bundle.DataYear)).ToList();
 
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 2)
                 {

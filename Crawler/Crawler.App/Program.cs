@@ -80,11 +80,16 @@ namespace Crawler.App
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<Director>();
+                    services.AddHostedService<SocketServer>();
+                    services.AddSingleton<CrawlTask>();
+                    services.AddHostedService<EmailCrawler>();
+                    services.AddHostedService<SmartmatchCrawler>();
+                    services.AddHostedService<ParascriptCrawler>();
+                    services.AddHostedService<RoyalCrawler>();
                     services.AddDbContext<DatabaseContext>(opt =>
                     {
                         opt.UseSqlite(@"Filename=.\DirectoryCollection.db");
-                    });
+                    }, ServiceLifetime.Transient);
                 });
     }
 }

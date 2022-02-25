@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Crawler.Data
 {
@@ -93,6 +94,26 @@ namespace Crawler.Data
             }
 
             return settings;
+        }
+    
+        public static TimeSpan CalculateWaitTime(ILogger logger, Settings settings)
+        {
+            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
+            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
+            TimeSpan waitTime = execTime - DateTime.Now;
+
+            waitTime = execTime - DateTime.Now;
+            if (waitTime.TotalSeconds <= 0)
+            {
+                waitTime = (endOfMonth - DateTime.Now) + TimeSpan.FromSeconds(5);
+                logger.LogInformation("Pass completed, starting sleep until: " + endOfMonth);
+            }
+            else
+            {
+                logger.LogInformation("Waiting for pass, starting sleep until: " + execTime);
+            }
+
+            return waitTime;
         }
     }
 }
