@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Builder.Data\Builder.Data.csproj" />
+    <ProjectReference Include="..\..\Common\Common.Data\Common.Data.csproj" />
   </ItemGroup>
+
 </Project>

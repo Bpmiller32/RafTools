@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Crawler.Data;
+using Common.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,25 +33,33 @@ namespace Crawler.App
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             context.Database.EnsureCreated();
+            TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 10022);
 
-            try
+            while (!stoppingToken.IsCancellationRequested)
             {
-                TcpListener server = new TcpListener(IPAddress.Parse("127.0.0.1"), 10022);
-                server.Start();
-
-                TcpClient connection = await server.AcceptTcpClientAsync();
-                NetworkStream stream = connection.GetStream();
-
-                // Report status every minute unless error
-                while (!stoppingToken.IsCancellationRequested)
+                try
                 {
-                    GetMessage(stream);
-                    ReportStatus(stream);
+                    server.Start();
+
+                    TcpClient connection = await server.AcceptTcpClientAsync();
+                    logger.LogInformation("Socket connection established");
+                    NetworkStream stream = connection.GetStream();
+
+                    // Report status every minute unless error
+                    while (!stoppingToken.IsCancellationRequested)
+                    {
+                        GetMessage(stream);
+                        ReportStatus(stream);
+                    }
                 }
-            }
-            catch (System.Exception e)
-            {
-                logger.LogError(e.Message);
+                catch (System.Exception e)
+                {
+                    logger.LogError(e.Message);
+                }
+                finally
+                {
+                    server.Stop();
+                }
             }
         }
 
@@ -101,18 +109,7 @@ namespace Crawler.App
 
             foreach (UspsBundle bundle in uspsBundles)
             {
-                string dataMonth;
-                if (bundle.DataMonth < 10)
-                {
-                    dataMonth = "0" + bundle.DataMonth;
-                }
-                else
-                {
-                    dataMonth = bundle.DataMonth.ToString();
-                }
-
-                string dataYearMonth = bundle.DataYear.ToString() + dataMonth;
-                smBuilds.Add(dataYearMonth);
+                smBuilds.Add(bundle.DataYearMonth);
             }
             foreach (ParaBundle bundle in paraBundles)
             {

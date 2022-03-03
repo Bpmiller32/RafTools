@@ -5,6 +5,7 @@ using FlaUI.Core.AutomationElements;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Builder.App.Utils;
+using Common.Data;
 
 public class SmBuilder
 {

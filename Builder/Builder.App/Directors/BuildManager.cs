@@ -1,5 +1,6 @@
 using Builder.App.Builders;
 using Builder.App.Utils;
+using Common.Data;
 using Microsoft.Extensions.Options;
 
 namespace Builder.App;
@@ -25,10 +26,13 @@ public class BuildManager
         this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
         this.smSettings = settings.Get(Settings.SmartMatch);
         this.smSettings.Name = "SmartMatch";
+        this.smSettings.origAddressDataPath = this.smSettings.AddressDataPath;
         this.psSettings = settings.Get(Settings.Parascript);
         this.psSettings.Name = "Parascript";
+        this.psSettings.origAddressDataPath = this.psSettings.AddressDataPath;
         this.rmSettings = settings.Get(Settings.RoyalMail);
         this.rmSettings.Name = "RoyalMail";
+        this.rmSettings.origAddressDataPath = this.rmSettings.AddressDataPath;
 
         // No SyncronizationContext guards because
         // - SyncronizationContext doesn't exist in .net Core
@@ -42,10 +46,10 @@ public class BuildManager
 
     public void RunTask(SocketMessage messsage)
     {
-        if (messsage.BuildSmartMatch && SmBuild.Status == BuildStatus.Ready)
+        if (messsage.BuildSmartMatch && SmBuild.Status == ComponentStatus.Ready)
         {
             logger.LogInformation("Starting builder: SmartMatch");
-            SmBuild.Status = BuildStatus.InProgress;
+            SmBuild.Status = ComponentStatus.InProgress;
             SmBuild.Progress = 0;
 
             SmBuild.Task = Task.Run(async () =>
@@ -53,26 +57,27 @@ public class BuildManager
                 try
                 {
                     Settings.Validate(smSettings, messsage);
+                    SmBuild.CurrentBuild = smSettings.DataYearMonth;
                     SmBuilder sm = new SmBuilder(smSettings, context, smProgress);
 
                     sm.Cleanup();
                     await sm.Build();
                     sm.CheckBuildComplete();
 
-                    SmBuild.Status = BuildStatus.Ready;                    
+                    SmBuild.Status = ComponentStatus.Ready;                    
                 }
                 catch (System.Exception e)
                 {
                     logger.LogError("SmartMatch: " + e.Message);
-                    SmBuild.Status = BuildStatus.Error;          
+                    SmBuild.Status = ComponentStatus.Error;          
                 }
             });
         }
 
-        if (messsage.BuildParascript && PsBuild.Status == BuildStatus.Ready)
+        if (messsage.BuildParascript && PsBuild.Status == ComponentStatus.Ready)
         {
             logger.LogInformation("Starting builder: Parascript");
-            PsBuild.Status = BuildStatus.InProgress;
+            PsBuild.Status = ComponentStatus.InProgress;
             PsBuild.Progress = 0;
 
             PsBuild.Task = Task.Run(async () =>
@@ -80,6 +85,7 @@ public class BuildManager
                 try
                 {                    
                     Settings.Validate(psSettings, messsage);
+                    PsBuild.CurrentBuild = psSettings.DataYearMonth;
                     ParaBuilder ps = new ParaBuilder(psSettings, context, psProgress);
 
                     ps.CheckInput();
@@ -90,20 +96,20 @@ public class BuildManager
                     ps.Cleanup(fullClean: false);
                     ps.CheckBuildComplete();
                 
-                    PsBuild.Status = BuildStatus.Ready;
+                    PsBuild.Status = ComponentStatus.Ready;
                 }
                 catch (System.Exception e)
                 {
                     logger.LogError("Parascript: " + e.Message);
-                    PsBuild.Status = BuildStatus.Error;
+                    PsBuild.Status = ComponentStatus.Error;
                 }
             });
         }
 
-        if (messsage.BuildRoyalMail && RmBuild.Status == BuildStatus.Ready)
+        if (messsage.BuildRoyalMail && RmBuild.Status == ComponentStatus.Ready)
         {
             logger.LogInformation("Starting builder: RoyalMail");
-            RmBuild.Status = BuildStatus.InProgress;
+            RmBuild.Status = ComponentStatus.InProgress;
             RmBuild.Progress = 0;
 
             RmBuild.Task = Task.Run(async () =>
@@ -111,6 +117,7 @@ public class BuildManager
                 try
                 {
                     Settings.Validate(rmSettings, messsage);
+                    RmBuild.CurrentBuild = rmSettings.DataYearMonth;
                     RoyalBuilder rm = new RoyalBuilder(rmSettings, context, rmProgress);
                     
                     await rm.Extract();
@@ -122,12 +129,12 @@ public class BuildManager
                     rm.Cleanup(fullClean: false);         
                     rm.CheckBuildComplete();
 
-                    RmBuild.Status = BuildStatus.Ready;           
+                    RmBuild.Status = ComponentStatus.Ready;           
                 }
                 catch (System.Exception e)
                 {
                     logger.LogError("RoyalMail: " + e.Message);
-                    RmBuild.Status = BuildStatus.Error;      
+                    RmBuild.Status = ComponentStatus.Error;      
                 }
             });
         }

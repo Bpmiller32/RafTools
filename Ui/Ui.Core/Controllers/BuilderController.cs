@@ -22,7 +22,7 @@ public class BuilderController : ControllerBase
     [HttpGet]
     public string Get()
     {
-        logger.LogInformation("Get request recieved");
+        logger.LogInformation("Builder Get request recieved");
         return JsonConvert.SerializeObject(networkStreams.BuilderResponse);
     }
 

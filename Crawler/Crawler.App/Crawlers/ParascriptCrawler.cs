@@ -2,17 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Crawler.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System.Linq;
 using System.IO;
-using System.Text.RegularExpressions;
-using System.IO.Compression;
 using Microsoft.Extensions.Configuration;
 using HtmlAgilityPack;
+using Common.Data;
 
 namespace Crawler.App
 {
@@ -27,7 +25,6 @@ namespace Crawler.App
         private Settings settings = new Settings() { Name = "Parascript" };
 
         private List<ParaFile> TempFiles = new List<ParaFile>();
-        private string dataYearMonth = "";
 
         public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
@@ -54,7 +51,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.Parascript = CrawlStatus.Enabled;
+                    tasks.Parascript = CrawlStatus.Ready;
 
                     await PullFiles();
                     CheckFiles();
@@ -119,16 +116,18 @@ namespace Crawler.App
 
                         ParaFile adsFile = new ParaFile();
                         adsFile.FileName = "ads6";
-                        adsFile.DataMonth = foundDataYearMonth.Substring(0, 2);
-                        adsFile.DataYear = foundDataYearMonth.Substring(2, 2);
+                        adsFile.DataMonth = int.Parse(foundDataYearMonth.Substring(0, 2));
+                        adsFile.DataYear = int.Parse("20" + foundDataYearMonth.Substring(2, 2));
+                        adsFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
                         adsFile.OnDisk = true;
 
                         TempFiles.Add(adsFile);
 
                         ParaFile dpvFile = new ParaFile();
                         dpvFile.FileName = "DPVandLACS";
-                        dpvFile.DataMonth = foundDataYearMonth.Substring(0, 2);
-                        dpvFile.DataYear = foundDataYearMonth.Substring(2, 2);
+                        dpvFile.DataMonth = int.Parse(foundDataYearMonth.Substring(0, 2));
+                        dpvFile.DataYear = int.Parse("20" + foundDataYearMonth.Substring(2, 2));
+                        adsFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
                         dpvFile.OnDisk = true;
 
                         TempFiles.Add(dpvFile);
@@ -146,17 +145,14 @@ namespace Crawler.App
             }
 
             foreach (var file in TempFiles)
-            {
-                // Set dataYearMonth here in case the file is in db but not on disk
-                dataYearMonth = "20" + file.DataYear + file.DataMonth;
-                
+            {                
                 // Check if file is unique against the db
                 bool fileInDb = context.ParaFiles.Any(x => (file.FileName == x.FileName) && (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
 
                 if (!fileInDb)
                 {
                     // Check if the folder exists on the disk
-                    if (!Directory.Exists(Path.Combine(settings.AddressDataPath, dataYearMonth, file.FileName)))
+                    if (!Directory.Exists(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.FileName)))
                     {
                         file.OnDisk = false;
                     }
@@ -165,14 +161,14 @@ namespace Crawler.App
                     context.ParaFiles.Add(file);
                     logger.LogInformation("Discovered and not on disk: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear);
 
-                    bool bundleExists = context.ParaBundles.Any(x => (int.Parse(file.DataMonth) == x.DataMonth) && (int.Parse(file.DataYear) == x.DataYear));
+                    bool bundleExists = context.ParaBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
 
                     if (!bundleExists)
                     {
                         ParaBundle newBundle = new ParaBundle()
                         {
-                            DataMonth = int.Parse(file.DataMonth),
-                            DataYear = int.Parse(file.DataYear),
+                            DataMonth = file.DataMonth,
+                            DataYear = file.DataYear,
                             IsReadyForBuild = false
                         };
 
@@ -181,7 +177,7 @@ namespace Crawler.App
                     }
                     else
                     {
-                        ParaBundle existingBundle = context.ParaBundles.Where(x => (int.Parse(file.DataMonth) == x.DataMonth) && (int.Parse(file.DataYear) == x.DataYear)).FirstOrDefault();
+                        ParaBundle existingBundle = context.ParaBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear)).FirstOrDefault();
 
                         existingBundle.BuildFiles.Add(file);
                     }
@@ -206,8 +202,8 @@ namespace Crawler.App
 
             foreach (ParaFile file in offDisk)
             {
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, dataYearMonth));
-                Cleanup(Path.Combine(settings.AddressDataPath, dataYearMonth));
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, file.DataYearMonth));
+                Cleanup(Path.Combine(settings.AddressDataPath, file.DataYearMonth));
             }
 
             // Download local chromium binary to launch browser
@@ -224,7 +220,7 @@ namespace Crawler.App
                 {
                     using (Page page = await browser.NewPageAsync())
                     {
-                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(settings.AddressDataPath, dataYearMonth) });
+                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(settings.AddressDataPath, offDisk[0].DataYearMonth) });
 
                         // Navigate to download portal page
                         await page.GoToAsync(@"https://parascript.sharefile.com/share/view/s80765117d4441b88");
@@ -266,7 +262,7 @@ namespace Crawler.App
             {
                 // idk why but you need to do some linq query to populate bundle.buildfiles? 
                 // Something to do with one -> many relationship between the tables, investigate
-                List<ParaFile> files = context.ParaFiles.Where(x => (int.Parse(x.DataMonth) == bundle.DataMonth) && (int.Parse(x.DataYear) == bundle.DataYear)).ToList();
+                List<ParaFile> files = context.ParaFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
 
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 2)
                 {
@@ -286,7 +282,7 @@ namespace Crawler.App
                 return;
             }
 
-            string path = Path.Combine(settings.AddressDataPath, dataYearMonth);
+            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth);
             string[] files = Directory.GetFiles(path, @"*.CRDOWNLOAD");
 
             if (files.Length < 1)

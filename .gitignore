@@ -1,4 +1,8 @@
 
+Common/.vscode/
+Common/Common.Data/obj/
+Common/Common.Data/bin/
+
 Crawler/Crawler.Data/obj/
 Crawler/Crawler.Data/bin/
 Crawler/Crawler.App/obj/

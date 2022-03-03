@@ -1,3 +1,5 @@
+using Common.Data;
+
 namespace Builder.App.Utils;
 
 public class Settings
@@ -7,6 +9,7 @@ public class Settings
     public const string RoyalMail = nameof(RoyalMail);
 
     public string Name { get; set; }
+    public string origAddressDataPath { get; set; }
     public string AddressDataPath { get; set; }
     // Can optionally set WorkingPath and OutputPath in appsettings
     public string WorkingPath { get; set; }
@@ -17,6 +20,7 @@ public class Settings
     public string Key { get; set; }
     public string DataMonth { get; set; }
     public string DataYear { get; set; }
+    public string DataYearMonth { get; set; }
 
     public static Settings Validate(Settings settings, SocketMessage message)
     {
@@ -50,9 +54,10 @@ public class Settings
         }
         settings.DataMonth = message.Month;
         settings.DataYear = message.Year;
-        string dataYearMonth = message.Year + message.Month;
+        settings.DataYearMonth = message.Year + message.Month;
         
-        settings.AddressDataPath = Path.Combine(settings.AddressDataPath, dataYearMonth);
+        settings.AddressDataPath = settings.origAddressDataPath;
+        settings.AddressDataPath = Path.Combine(settings.AddressDataPath, settings.DataYearMonth);
         // SmartMatch specific, look into cycle
         if (settings.Name == "SmartMatch")
         {
@@ -70,8 +75,8 @@ public class Settings
         // If OutputPath is empty in appsettings set to default
         if (String.IsNullOrEmpty(settings.OutputPath))
         {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, dataYearMonth));
-            settings.OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, dataYearMonth);
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, settings.DataYearMonth));
+            settings.OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, settings.DataYearMonth);
         }
 
 
@@ -81,14 +86,14 @@ public class Settings
         settings.Pass = message.SmPass;
         settings.Key = message.Key;
 
-        if (settings.Name == "SmartMatch" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
-        {   
-            throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
-        }
-        if (settings.Name == "RoyalMail" && String.IsNullOrEmpty(settings.Key))
-        {
-            throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
-        }
+        // if (settings.Name == "SmartMatch" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
+        // {   
+        //     throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
+        // }
+        // if (settings.Name == "RoyalMail" && String.IsNullOrEmpty(settings.Key))
+        // {
+        //     throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
+        // }
 
 
 

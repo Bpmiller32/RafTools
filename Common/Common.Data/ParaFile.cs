@@ -1,3 +1,7 @@
+using System;
+
+namespace Common.Data;
+
 public class ParaFile
 {
     public int Id { get; set; }
@@ -7,6 +11,7 @@ public class ParaFile
 
     public int DataMonth { get; set; }
     public int DataYear { get; set; }
+    public string DataYearMonth { get; set; }
     public bool OnDisk { get; set; }
     public DateTime DateDownloaded { get; set; }
 }

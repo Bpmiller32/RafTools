@@ -6,8 +6,16 @@
     </select>
 </template>
 
-<script>
-export default {
-    name: "SelectMenu",
-}
+<script setup>
+import { defineProps, isRef, ref, toRef, reactive, watch } from 'vue'
+
+const props = defineProps({ availableBuilds: Array})
+
+console.log(isRef(props.availableBuilds))
+
+watch(props.availableBuilds, () => {
+    console.log(props.availableBuilds)
+})
+
+
 </script>

@@ -4,7 +4,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Crawler.Data
+namespace Crawler.App
 {
     public class Settings
     {

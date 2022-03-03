@@ -18,6 +18,7 @@ namespace Crawler.Data
         // Data relevant to build process
         public int DataMonth { get; set; }
         public int DataYear { get; set; }
+        public string DataYearMonth { get; set; }
         public string Cycle { get; set; }
         public bool OnDisk { get; set; }
         public DateTime DateDownloaded { get; set; }

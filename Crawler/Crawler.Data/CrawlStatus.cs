@@ -4,8 +4,9 @@ namespace Crawler.Data
 {
     public enum CrawlStatus
     {
-        Disabled,
+        Ready,
+        InProgress,
         Error,
-        Enabled
+        Disabled
     }
 }

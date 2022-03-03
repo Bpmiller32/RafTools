@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using Crawler.Data;
+using Common.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,7 +24,6 @@ namespace Crawler.App
         private Settings settings = new Settings() { Name = "RoyalMail" };
 
         private RoyalFile TempFile = new RoyalFile();
-        private string dataYearMonth = "";
 
         public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
@@ -51,7 +50,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.RoyalMail = CrawlStatus.Enabled;
+                    tasks.RoyalMail = CrawlStatus.Ready;
 
                     PullFile();
                     CheckFile();
@@ -91,6 +90,15 @@ namespace Crawler.App
             TempFile.DataMonth = lastModified.Month;
             TempFile.DataDay = lastModified.Day;
             TempFile.DataYear = lastModified.Year;
+
+            if (TempFile.DataMonth < 10)
+            {
+                TempFile.DataYearMonth = TempFile.DataYear.ToString() + "0" + TempFile.DataMonth.ToString();
+            }
+            else
+            {
+                TempFile.DataYearMonth = TempFile.DataYear.ToString() + TempFile.DataMonth.ToString();
+            }
         }
 
         public void CheckFile()
@@ -101,16 +109,13 @@ namespace Crawler.App
                 return;
             }
 
-            // Set dataYearMonth here in case the file is in db but not on disk
-            dataYearMonth = SetDataYearMonth(TempFile);
-
             // Check if file is unique against the db
             bool fileInDb = context.RoyalFiles.Any(x => (TempFile.FileName == x.FileName) && (TempFile.DataMonth == x.DataMonth) && (TempFile.DataYear == x.DataYear));
 
             if (!fileInDb)
             {
                 // Check if the folder exists on the disk
-                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, dataYearMonth, TempFile.FileName)))
+                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth, TempFile.FileName)))
                 {
                     TempFile.OnDisk = false;
                 }
@@ -127,6 +132,7 @@ namespace Crawler.App
                     {
                         DataMonth = TempFile.DataMonth,
                         DataYear = TempFile.DataYear,
+                        DataYearMonth = TempFile.DataYearMonth,
                         IsReadyForBuild = false
                     };
 
@@ -168,13 +174,14 @@ namespace Crawler.App
                     fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
                 }
 
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, dataYearMonth));
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth));
 
-                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, dataYearMonth, @"SetupRM.exe")))
+                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth, @"SetupRM.exe")))
                 {
                     file.Write(fileData, 0, fileData.Length);
                     file.Close();
                     fileData = null;
+                    // TODO: assign TempFile.Size to fileData.Length / ? before assigning to null
 
                     TempFile.OnDisk = true;
                     TempFile.DateDownloaded = DateTime.Now;

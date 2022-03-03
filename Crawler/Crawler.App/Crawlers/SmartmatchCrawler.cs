@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Crawler.Data;
 using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
@@ -11,6 +10,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Common.Data;
 
 namespace Crawler.App
 {
@@ -25,7 +25,6 @@ namespace Crawler.App
         private Settings settings = new Settings() { Name = "SmartMatch" };
 
         private List<UspsFile> TempFiles = new List<UspsFile>();
-        private string dataYearMonth = "";
 
         public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
         {
@@ -52,7 +51,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.SmartMatch = CrawlStatus.Enabled;
+                    tasks.SmartMatch = CrawlStatus.Ready;
 
                     await PullFiles();
                     CheckFiles();
@@ -133,6 +132,15 @@ namespace Crawler.App
                             file.DataMonth = DateTime.Parse(fileRow.ChildNodes[4].InnerText.Trim()).Month;
                             file.DataYear = DateTime.Parse(fileRow.ChildNodes[4].InnerText.Trim()).Year;
 
+                            if (file.DataMonth < 10)
+                            {
+                                file.DataYearMonth = file.DataYear.ToString() + "0" + file.DataMonth.ToString();
+                            }
+                            else
+                            {
+                                file.DataYearMonth = file.DataYear.ToString() + file.DataMonth.ToString();                            
+                            }
+
                             if (fileRow.ChildNodes[1].InnerText.Trim() == "Downloaded")
                             {
                                 file.Downloaded = true;
@@ -173,16 +181,13 @@ namespace Crawler.App
 
             foreach (var file in TempFiles)
             {
-                // Set dataYearMonth here in case the file is in db but not on disk
-                dataYearMonth = SetDataYearMonth(file);
-
                 // Check if file is unique against the db
                 bool fileInDb = context.UspsFiles.Any(x => file.FileId == x.FileId);
 
                 if (!fileInDb)
                 {
                     // Check if file exists on the disk 
-                    if (!File.Exists(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle, file.FileName)))
+                    if (!File.Exists(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle, file.FileName)))
                     {
                         file.OnDisk = false;
                     }
@@ -198,6 +203,7 @@ namespace Crawler.App
                         {
                             DataMonth = file.DataMonth,
                             DataYear = file.DataYear,
+                            DataYearMonth = file.DataYearMonth,
                             Cycle = file.Cycle,
                             IsReadyForBuild = false
                         };
@@ -234,8 +240,8 @@ namespace Crawler.App
             foreach (UspsFile file in offDisk)
             {
                 // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle));
-                Cleanup(Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle));
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle));
+                Cleanup(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle));
             }
 
             // Download local chromium binary to launch browser
@@ -275,7 +281,7 @@ namespace Crawler.App
                         // Changed behavior, start download and wait for indivdual file to download. USPS website corrupts downloads if you do them all at once sometimes
                         foreach (var file in offDisk)
                         {
-                            string path = Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle);
+                            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle);
                             await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = path });
 
                             await page.EvaluateExpressionAsync(@"getFileForDownload(" + file.ProductKey + "," + file.FileId + ",rw_" + file.FileId + ");");
@@ -322,7 +328,7 @@ namespace Crawler.App
                 return;
             }
 
-            string path = Path.Combine(settings.AddressDataPath, dataYearMonth, file.Cycle);
+            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle);
             if (!File.Exists(Path.Combine(path, file.FileName + @".CRDOWNLOAD")))
             {
                 logger.LogDebug("Finished downloading");

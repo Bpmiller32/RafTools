@@ -37,124 +37,103 @@
                 <StatusCard :builderStatus="builderStatus"/>
             </div>
 
-            <div v-if="builderStatus.active" class="flex flex-wrap justify-center mt-10">
-                <BuildCard class="mx-5 mb-5" :dirType="'SmartMatch'" :builderStatus="builderStatus"/>   
-                <BuildCard class="mx-5 mb-5" :dirType="'Parascript'" :builderStatus="builderStatus"/>   
-                <BuildCard class="mx-5 mb-5" :dirType="'RoyalMail'" :builderStatus="builderStatus"/>       
+            <div class="flex flex-wrap justify-center mt-10">
+                <BuildCard class="mx-5 mb-5" :dirType="'SmartMatch'" :crawler="crawlerStatus.subdirs.smartmatch" :builder="builderStatus.subdirs.smartmatch"/>   
+                <BuildCard class="mx-5 mb-5" :dirType="'Parascript'" :crawler="crawlerStatus.subdirs.parascript" :builder="builderStatus.subdirs.parascript"/>   
+                <BuildCard class="mx-5 mb-5" :dirType="'RoyalMail'" :crawler="crawlerStatus.subdirs.royalmail" :builder="builderStatus.subdirs.royalmail"/>       
             </div>
         </main>
     </div>
 </template>
 
-<script>
+<script setup>
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import { MenuIcon, XIcon } from '@heroicons/vue/outline'
 import BuildCard from './BuildCard.vue'
 import StatusCard from './StatusCard.vue'
 import axios from 'axios'
+import { onMounted, ref } from 'vue'
+import classes from './Classes'
 
-export default {
-    name: "MainPage",
-    components: {
-        Disclosure,
-        DisclosureButton,
-        DisclosurePanel,
-        MenuIcon,
-        XIcon,
-        BuildCard,
-        StatusCard,
-    },
-    methods: {
-        GetBuilderStatus() {
-            axios.get(`https://localhost:5001/api/Builder`)
-            .then(response => {
-                if (response.data === null) {
-                    console.log("Connected to server but no data")
-                    return
-                }
-                
-                // Set the service status
-                this.builderStatus.active = true
+const navigation = [
+    { name: 'Crawler', href: '#', current: false },
+    { name: 'Builder', href: '#', current: true },
+]
 
-                // Set the timestamp data
-                const timestamp = new Date()
-                this.builderStatus.timestamp.checkinDate =  timestamp.toLocaleDateString('en-us').toString()
-                this.builderStatus.timestamp.checkinTime =  timestamp.toLocaleTimeString('en-us').toString()
+const crawlerStatus = ref(new classes.StatusResponse())
+const builderStatus = ref(new classes.StatusResponse())
 
-                // Set the builder data
-                this.builderStatus.builders.smartmatch.status = response.data.SmartMatch.Status
-                this.builderStatus.builders.smartmatch.progress = response.data.SmartMatch.Progress
-                this.builderStatus.builders.smartmatch.availableBuilds = response.data.SmartMatch.AvailableBuilds
-                
-                this.builderStatus.builders.parascript.status = response.data.Parascript.Status
-                this.builderStatus.builders.parascript.progress = response.data.Parascript.Progress
-                this.builderStatus.builders.parascript.availableBuilds = response.data.Parascript.AvailableBuilds
+function GetStatus(module, moduleName) {
+    axios.get("https://localhost:5001/api/" + moduleName)
+    .then(response => {
+        // Set the timestamp data
+        const timestamp = new Date()
+        module.timestamp.checkinDate =  timestamp.toLocaleDateString('en-us').toString()
+        module.timestamp.checkinTime =  timestamp.toLocaleTimeString('en-us').toString()
 
-                this.builderStatus.builders.royalmail.status = response.data.RoyalMail.Status
-                this.builderStatus.builders.royalmail.progress = response.data.RoyalMail.Progress
-                this.builderStatus.builders.royalmail.availableBuilds = response.data.RoyalMail.AvailableBuilds
-            })
-            .catch(() => {
-                this.builderStatus.active = false
-            })
-        },
-
-
-        // Styling methods, should move these to inline in template later
-        LinkStyleDesktop(currentItem) {
-            if (currentItem) {
-                return 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-blue-500'
-            }
-            else {
-                return 'flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300'
-            }
-        },
-        LinkStyleMobile(currentItem) {
-            if (currentItem) {
-                return 'bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
-            }
-            else {
-                return 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
-            }
+        if (response.data === null) {
+            console.log("Connected to server but no data")
+            return
         }
-    },
-    data() {
-        return {
-            navigation: [
-                { name: 'Crawler', href: '#', current: false },
-                { name: 'Builder', href: '#', current: true },
-            ],
 
-            builderStatus: {
-                active: false,
-                timestamp: {
-                    checkinTime: "",
-                    checkinDate: "",
-                },
-                builders: {
-                    smartmatch: {
-                        status: 0,
-                        progress: 0,
-                        availableBuilds: [],
-                    },
-                    parascript: {
-                        status: 0,
-                        progress: 0,
-                        availableBuilds: [],
-                    },
-                    royalmail: {
-                        status: 0,
-                        progress: 0,
-                        availableBuilds: [],
-                    },
-                }
-            }
-        }
-    },
-    created() {
-        setInterval(() => 
-            this.GetBuilderStatus(), 3000
-        )
-    },
+        // Set the service status
+        module.active = true
+
+        // Set the builder data
+        module.subdirs.smartmatch.status = response.data.SmartMatch.Status
+        module.subdirs.smartmatch.progress = response.data.SmartMatch.Progress
+        module.subdirs.smartmatch.availableBuilds = response.data.SmartMatch.AvailableBuilds
+        module.subdirs.smartmatch.currentBuild = response.data.SmartMatch.CurrentBuild
+        
+        module.subdirs.parascript.status = response.data.Parascript.Status
+        module.subdirs.parascript.progress = response.data.Parascript.Progress
+        module.subdirs.parascript.availableBuilds = response.data.Parascript.AvailableBuilds
+        module.subdirs.parascript.currentBuild = response.data.Parascript.CurrentBuild
+
+        module.subdirs.royalmail.status = response.data.RoyalMail.Status
+        module.subdirs.royalmail.progress = response.data.RoyalMail.Progress
+        module.subdirs.royalmail.availableBuilds = response.data.RoyalMail.AvailableBuilds
+        module.subdirs.royalmail.currentBuild = response.data.RoyalMail.CurrentBuild
+    
+    })
+    .catch(() => {
+        // Set the service status
+        module.active = false
+
+        // Set the timestamp data
+        const timestamp = new Date()
+        module.timestamp.checkinDate =  timestamp.toLocaleDateString('en-us').toString()
+        module.timestamp.checkinTime =  timestamp.toLocaleTimeString('en-us').toString()
+    })
 }
+
+// Styling methods, should move these to inline in template later
+function LinkStyleDesktop(currentItem) {
+    if (currentItem) {
+        return 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-blue-500'
+    }
+    else {
+        return 'flex items-center text-gray-500 hover:text-gray-700 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300'
+    }
+}
+function LinkStyleMobile(currentItem) {
+    if (currentItem) {
+        return 'bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
+    }
+    else {
+        return 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
+    }
+}
+
+onMounted(() => {
+    // Run once when first mounted
+    GetStatus(crawlerStatus.value, "Crawler")
+    GetStatus(builderStatus.value, "Builder")
+
+    // Continuously run every 3 seconds
+    setInterval(() => {
+        GetStatus(crawlerStatus.value, "Crawler")
+        GetStatus(builderStatus.value, "Builder")
+    }, 3000)
+})
 </script>

@@ -83,7 +83,6 @@ public class SocketServer : BackgroundService
 
         networkStream.BuilderStream.Write(messageBytes);
 
-
         // Recieve response
         byte[] buffer = new byte[256];
 
@@ -95,13 +94,18 @@ public class SocketServer : BackgroundService
         return bundle;
     }
 
-    private SocketResponse GetCrawlerStatus()
+    private SocketResponseBundle GetCrawlerStatus()
     {
         // Send message
-        byte[] messageBytes = Encoding.UTF8.GetBytes("Status");
+        SocketMessage message = new SocketMessage()
+        {
+            CheckStatus = true
+        };
+
+        string messageSerialized = JsonConvert.SerializeObject(message);
+        byte[] messageBytes = Encoding.UTF8.GetBytes(messageSerialized);
 
         networkStream.CrawlerStream.Write(messageBytes);
-
 
         // Recieve response
         byte[] buffer = new byte[256];
@@ -109,8 +113,8 @@ public class SocketServer : BackgroundService
         int responseBytes = networkStream.CrawlerStream.Read(buffer, 0, buffer.Length);
         string responseSerialized = Encoding.UTF8.GetString(buffer, 0, responseBytes);
 
-        SocketResponse response = JsonConvert.DeserializeObject<SocketResponse>(responseSerialized);
+        SocketResponseBundle bundle = JsonConvert.DeserializeObject<SocketResponseBundle>(responseSerialized);
 
-        return response;
+        return bundle;
     }
 }

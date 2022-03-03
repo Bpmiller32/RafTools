@@ -1,4 +1,8 @@
-public class ParaFile
+using System;
+
+namespace Common.Data;
+
+public class RoyalFile
 {
     public int Id { get; set; }
 
@@ -6,7 +10,9 @@ public class ParaFile
     public string Size { get; set; }
 
     public int DataMonth { get; set; }
+    public int DataDay { get; set; }
     public int DataYear { get; set; }
+    public string DataYearMonth { get; set; }
     public bool OnDisk { get; set; }
     public DateTime DateDownloaded { get; set; }
 }

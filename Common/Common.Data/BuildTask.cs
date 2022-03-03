@@ -1,10 +1,10 @@
-namespace Builder.App.Utils;
+namespace Common.Data;
 
 public class BuildTask
 {
     public string Name { get; set; }
     public Task Task { get; set; }
-    public BuildStatus Status { get; set; }
+    public ComponentStatus Status { get; set; }
     public int Progress { get; set; }
     public string CurrentBuild { get; set; }
     

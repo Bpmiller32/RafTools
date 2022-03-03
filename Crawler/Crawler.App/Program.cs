@@ -1,15 +1,13 @@
 using System;
-using System.IO;
 using System.Security.Principal;
 using System.Threading;
-using Crawler.Data;
+using Common.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
-using Microsoft.Extensions.Configuration;
 
 #pragma warning disable CA1416 // ignore that calls to manipulate services and check for admin are Windows only 
 

@@ -2,20 +2,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MailKit.Net.Pop3;
 using MailKit.Net.Imap;
-using HtmlAgilityPack;
 using MailKit;
 using MimeKit;
 using System;
 using System.Text.RegularExpressions;
-using System.Text;
 using MailKit.Search;
 using System.Collections.Generic;
-using Crawler.Data;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Common.Data;
 
 namespace Crawler.App
 {
@@ -46,7 +43,7 @@ namespace Crawler.App
 
             if (settings.CrawlerEnabled == false)
             {
-                tasks.Email = CrawlStatus.Disabled;
+                tasks.Email = ComponentStatus.Disabled;
                 logger.LogInformation("Crawler disabled");
                 return;
             }
@@ -56,7 +53,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.Email = CrawlStatus.Enabled;
+                    tasks.Email = CrawlStatus.Ready;
 
                     GetKey();
                     SaveKey();
@@ -112,6 +109,7 @@ namespace Crawler.App
             {
                 logger.LogInformation("Unique PafKey added: " + tempKey.DataMonth + "/" + tempKey.DataYear);
                 context.PafKeys.Add(tempKey);
+                context.SaveChanges();
             }
         }
 

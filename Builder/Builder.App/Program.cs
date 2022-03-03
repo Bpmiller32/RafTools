@@ -3,6 +3,7 @@ using System.Security.Principal;
 using Builder.App;
 using Builder.App.Builders;
 using Builder.App.Utils;
+using Common.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
@@ -58,7 +59,7 @@ try
                 
                 services.AddDbContext<DatabaseContext>(opt => 
                 {
-                    opt.UseSqlite(@"FileName=.\DirectoryCollection.db");
+                    opt.UseSqlite(@"FileName=C:\Users\billy\Desktop\Github\RafTools\Crawler\Crawler.App\bin\Debug\net6.0\DirectoryCollection.db");
                 });
                 
                 services.AddHostedService<ServerManager>();
