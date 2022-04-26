@@ -3,6 +3,10 @@ Common/.vscode/
 Common/Common.Data/obj/
 Common/Common.Data/bin/
 
+EmailReader/EmailReader.App/obj/
+EmailReader/EmailReader.App/bin/
+EmailReader/.vscode/
+
 Crawler/Crawler.Data/obj/
 Crawler/Crawler.Data/bin/
 Crawler/Crawler.App/obj/
