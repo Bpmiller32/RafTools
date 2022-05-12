@@ -1,239 +1,300 @@
 <script setup>
-import { ref, watch, watchEffect, watchPostEffect } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import AnimationHandler from "./AnimationHandler.vue";
-import CrawlerList from "./CrawlerList.vue";
 import anime from "animejs/lib/anime.es.js";
 import {
   StatusOnlineIcon,
   ArrowCircleDownIcon,
   ExclamationCircleIcon,
   XCircleIcon,
-  MenuIcon,
+  ChevronDoubleRightIcon,
   RefreshIcon,
 } from "@heroicons/vue/outline";
-import animations from "../animations.js";
-import SpinnerIcon from "./SpinnerIcon.vue";
+import { useStore } from "../store";
 
-// Socket message variables and handlers
-const crawlerStatus = ref("Ready");
-const autoCrawlerEnabled = ref(false);
-const autoCrawlerTriggerDate = ref("01/01/2022");
-watch(crawlerStatus, () => {
-  console.log("crawler status triggered, send ws message");
-});
-watch(autoCrawlerEnabled, () => {
-  console.log("crawler enabled triggered, send ws message");
-});
-watch(autoCrawlerTriggerDate, () => {
-  console.log("crawler date triggered, send ws message");
-});
-// ** Update to use websocket values after testing
+const props = defineProps(["dirType"]);
+const store = useStore();
+
+// Store refs
+// const autoCrawlStatus = ref(store.crawlers[props.dirType].autoCrawlStatus);
+// const autoCrawlEnabled = ref(store.crawlers[props.dirType].autoCrawlEnabled);
+// const autoCrawlDate = ref(store.crawlers[props.dirType].autoCrawlDate);
+const autoCrawlStatus = ref(null);
+const autoCrawlEnabled = ref(null);
+const autoCrawlDate = ref(null);
 
 // Template refs
-const refForceButtonText = ref();
-const refForceButtonIcon = ref();
-watch(
-  () => refForceButtonText.value?.className,
-  (newVal, oldVal) => {
-    console.log(refForceButtonText.value?.className);
-    if (typeof oldVal === "undefined") {
-      return;
-    }
-
-    animations[crawlButtonState.value.animation + "Enter"](
-      refForceButtonText.value
-    );
-  }
-);
-let ani;
-watch(
-  () => refForceButtonIcon.value,
-  (newVal, oldVal) => {
-    if (typeof oldVal === "undefined") {
-      return;
-    }
-    ani = animations.Spin(refForceButtonIcon.value);
-
-    if (crawlButtonState.value.animation == "ButtonDrain") {
-      ani.play();
-    } else {
-      ani.pause();
-    }
-  }
-);
-// watchEffect(() => {
-//   console.log(refForceButtonText.value);
-//   console.log(refForceButtonIcon.value);
-// });
+const refCrawlButtonIcon = ref(null);
+const refEditPanelIcon = ref(null);
 
 // States
-const crawlButtonState = ref({ isActive: true, animation: null });
-const panelState = ref({
+const firstAnimationSupressed = ref(false);
+const crawlButtonState = ref({
+  isActive: null,
+  label: null,
+  animation: null,
+  SetState: () => {
+    const el = refCrawlButtonIcon.value;
+    const animation = anime({
+      targets: el,
+      rotate: "-=2turn",
+      easing: "easeInOutSine",
+      loop: true,
+      autoplay: false,
+    });
+
+    if (autoCrawlStatus.value == "Ready") {
+      crawlButtonState.value.label = "Force Crawl";
+      crawlButtonState.value.isActive = true;
+      anime.remove(el);
+      if (firstAnimationSupressed.value == false) {
+        return;
+      }
+      crawlButtonState.value.animation = "ButtonFill";
+    } else if (autoCrawlStatus.value == "In Progress") {
+      crawlButtonState.value.label = "Crawling ....";
+      crawlButtonState.value.isActive = false;
+      animation.play();
+      if (firstAnimationSupressed.value == false) {
+        return;
+      }
+      crawlButtonState.value.animation = "ButtonDrain";
+    } else if (autoCrawlStatus.value == "Error") {
+      crawlButtonState.value.label = "Force Crawl";
+      crawlButtonState.value.isActive = false;
+      anime.remove(el);
+      if (firstAnimationSupressed.value == false) {
+        return;
+      }
+      crawlButtonState.value.animation = "ButtonDrain";
+    } else if (autoCrawlStatus.value == "Disabled") {
+      crawlButtonState.value.label = "Force Crawl";
+      crawlButtonState.value.isActive = false;
+      anime.remove(el);
+      if (firstAnimationSupressed.value == false) {
+        return;
+      }
+      crawlButtonState.value.animation = "ButtonDrain";
+    }
+  },
+});
+const editPanelState = ref({
   label: "Enter date",
   animation: null,
   editDate: null,
+  RotateMenu: (isPanelOpen) => {
+    const el = refEditPanelIcon.value;
+    let rotationDirection = [];
+
+    if (isPanelOpen == false) {
+      rotationDirection = [0, 90];
+    } else {
+      rotationDirection = [90, 0];
+    }
+    anime({
+      targets: el,
+      rotate: rotationDirection,
+      duration: 500,
+      easing: "easeInOutSine",
+    });
+  },
+  SetDate: () => {
+    const dateString = editPanelState.value.editDate.split("-");
+    const newDate = new Date(dateString[0], dateString[1] - 1, dateString[2]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (newDate >= today) {
+      store.SendMessageCrawler(
+        props.dirType,
+        "autoCrawlDate",
+        dateString[1] + "/" + dateString[2] + "/" + dateString[0]
+      );
+      editPanelState.value.animation = "Flash";
+      editPanelState.value.label = "Date updated";
+    } else {
+      editPanelState.value.animation = "HeadShake";
+      editPanelState.value.label = "Invalid date";
+    }
+  },
 });
 const statusState = ref({
-  currentStatus: null,
+  currentIcon: null,
   icons: [
     StatusOnlineIcon,
     ArrowCircleDownIcon,
     ExclamationCircleIcon,
     XCircleIcon,
   ],
-  setStatus: () => {
-    if (crawlerStatus.value == "Ready") {
-      statusState.value.currentStatus = statusState.value.icons[0];
-    } else if (crawlerStatus.value == "In Progress") {
-      statusState.value.currentStatus = statusState.value.icons[1];
-    } else if (crawlerStatus.value == "Error") {
-      statusState.value.currentStatus = statusState.value.icons[2];
-    } else if (crawlerStatus.value == "Disabled") {
-      statusState.value.currentStatus = statusState.value.icons[3];
+  animation: null,
+  SetState: () => {
+    if (autoCrawlStatus.value == "Ready") {
+      statusState.value.currentIcon = statusState.value.icons[0];
+    } else if (autoCrawlStatus.value == "In Progress") {
+      statusState.value.currentIcon = statusState.value.icons[1];
+    } else if (autoCrawlStatus.value == "Error") {
+      statusState.value.currentIcon = statusState.value.icons[2];
+    } else if (autoCrawlStatus.value == "Disabled") {
+      statusState.value.currentIcon = statusState.value.icons[3];
+    }
+
+    if (firstAnimationSupressed.value == false) {
+      return;
+    }
+    statusState.value.animation = "FadeIn";
+  },
+});
+const logoState = ref({
+  currentIcon: null,
+  icons: [
+    new URL("../assets/SmartMatchLogo.png", import.meta.url).href,
+    new URL("../assets/ParascriptLogo.png", import.meta.url).href,
+    new URL("../assets/RoyalMailLogo.png", import.meta.url).href,
+  ],
+  SetIcon: () => {
+    if (props.dirType == "SmartMatch") {
+      logoState.value.currentIcon = logoState.value.icons[0];
+    } else if (props.dirType == "Parascript") {
+      logoState.value.currentIcon = logoState.value.icons[1];
+    } else if (props.dirType == "RoyalMail") {
+      logoState.value.currentIcon = logoState.value.icons[2];
+    } else {
+      logoState.value.currentIcon = "Error";
     }
   },
 });
-statusState.value.setStatus();
+
+// OnMounted functions
+onMounted(() => {
+  logoState.value.SetIcon();
+  // statusState.value.SetState();
+  // crawlButtonState.value.SetState();
+  // await new Promise((resolve) => {
+  //   setTimeout(console.log("timeout"), 5000);
+  //   resolve();
+  // });
+  // editPanelState.value.MenuRotate;
+});
 
 // Watchers
+// Deep watch to check store updates
+watch(
+  () => store.crawlers[props.dirType],
+  () => {
+    autoCrawlStatus.value = store.crawlers[props.dirType].autoCrawlStatus;
+    autoCrawlEnabled.value = store.crawlers[props.dirType].autoCrawlEnabled;
+    autoCrawlDate.value = store.crawlers[props.dirType].autoCrawlDate;
+
+    // logoState.value.SetIcon();
+    statusState.value.SetState();
+    crawlButtonState.value.SetState();
+    firstAnimationSupressed.value = true;
+  },
+  { deep: true }
+);
 // To validate date
 watch(
-  () => panelState.value.editDate,
-  () => {
-    const dateString = panelState.value.editDate.split("-");
-    const newDate = new Date(dateString[0], dateString[1] - 1, dateString[2]);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (newDate >= today) {
-      autoCrawlerTriggerDate.value =
-        dateString[1] + "/" + dateString[2] + "/" + dateString[0];
-
-      panelState.value.animation = "Flash";
-      panelState.value.label = "Date updated";
-    } else {
-      panelState.value.animation = "HeadShake";
-      panelState.value.label = "Invalid date";
-    }
-  }
-);
-// To switch out Status icon
-watch(
-  () => crawlerStatus.value,
-  () => statusState.value.setStatus()
+  () => editPanelState.value.editDate,
+  () => editPanelState.value.SetDate()
 );
 
 // Events
-function PanelButtonClicked(isPanelOpen, ClosePanel, event) {
+function PanelButtonClicked(isPanelOpen, ClosePanel) {
   if (crawlButtonState.value.isActive == false) {
     ClosePanel();
+    return;
   }
-  panelState.value.label = "Enter date";
-
-  const el = event.target.childNodes[0];
-
-  if (isPanelOpen == false) {
-    anime({
-      targets: el,
-      rotate: {
-        value: "+=0.25turn",
-        duration: 500,
-        easing: "easeInOutSine",
-      },
-    });
-  } else {
-    anime({
-      targets: el,
-      rotate: {
-        value: "-=0.25turn",
-        duration: 500,
-        easing: "easeInOutSine",
-      },
-    });
-  }
+  editPanelState.value.label = "Enter date";
+  editPanelState.value.RotateMenu(isPanelOpen);
 }
-function CrawlButtonClicked(ClosePanel, event) {
+function CrawlButtonClicked(ClosePanel) {
   if (crawlButtonState.value.isActive) {
     crawlButtonState.value.isActive = false;
+    crawlButtonState.value.label = "Crawling ....";
     crawlButtonState.value.animation = "ButtonDrain";
     ClosePanel();
 
-    // TODO: remove
-    crawlerStatus.value = "In Progress";
+    // TODO: remove 2nd arg, move out of if statement
+    store.SendMessageForceCrawl(props.dirType, "In Progress");
   } else {
     crawlButtonState.value.isActive = true;
+    crawlButtonState.value.label = "Force Crawl";
     crawlButtonState.value.animation = "ButtonFill";
 
-    // TODO: remove
-    crawlerStatus.value = "Ready";
+    // TODO: remove 2nd arg
+    store.SendMessageForceCrawl(props.dirType, "Ready");
+  }
+  crawlButtonState.value.SetState();
+}
+function CheckboxClicked() {
+  if (store.crawlers[props.dirType].autoCrawlEnabled == true) {
+    store.SendMessageCrawler(props.dirType, "autoCrawlEnabled", false);
+  } else {
+    store.SendMessageCrawler(props.dirType, "autoCrawlEnabled", true);
   }
 }
 </script>
 
 <template>
-  <!-- TODO: remove -->
-  <div class="my-10"></div>
-
   <div
-    class="mx-4 select-none max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
+    class="overflow-hidden select-none min-w-[22rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
   >
     <div class="flex items-center justify-between p-6">
-      <div>
+      <div class="shrink-0">
         <div class="flex items-center">
-          <p class="text-gray-900 text-sm font-medium">SmartMatch</p>
-          <!-- <AnimationHandler animation="FadeIn"> -->
-          <div
-            :key="crawlerStatus"
-            :class="{
-              'text-green-800 bg-green-100': crawlerStatus == 'Ready',
-              'text-yellow-800 bg-yellow-100': crawlerStatus == 'In Progress',
-              'text-red-800 bg-red-100': crawlerStatus == 'Error',
-              'text-gray-800 bg-gray-100': crawlerStatus == 'Disabled',
-              'ml-3 px-2 py-0.5 text-xs font-medium rounded-full': true,
-            }"
-          >
-            {{ crawlerStatus }}
-          </div>
-          <!-- </AnimationHandler> -->
-          <!-- <AnimationHandler animation="FadeIn"> -->
-          <component
-            :is="statusState.currentStatus"
-            :class="{
-              'text-green-500':
-                statusState.currentStatus == statusState.icons[0],
-              'text-yellow-500':
-                statusState.currentStatus == statusState.icons[1],
-              'text-red-500': statusState.currentStatus == statusState.icons[2],
-              'text-gray-500':
-                statusState.currentStatus == statusState.icons[3],
-              'h-5 w-5 ml-1': true,
-            }"
-          ></component>
-          <!-- </AnimationHandler> -->
+          <p class="text-gray-900 text-sm font-medium">
+            {{ props.dirType }}
+          </p>
+          <AnimationHandler :animation="statusState.animation">
+            <div
+              :key="autoCrawlStatus"
+              :class="{
+                'text-green-800 bg-green-100': autoCrawlStatus == 'Ready',
+                'text-yellow-800 bg-yellow-100':
+                  autoCrawlStatus == 'In Progress',
+                'text-red-800 bg-red-100': autoCrawlStatus == 'Error',
+                'text-gray-800 bg-gray-100': autoCrawlStatus == 'Disabled',
+                'ml-3 px-2 py-0.5 text-xs font-medium rounded-full': true,
+              }"
+            >
+              {{ autoCrawlStatus }}
+            </div>
+          </AnimationHandler>
+          <AnimationHandler :animation="statusState.animation">
+            <component
+              :is="statusState.currentIcon"
+              :class="{
+                'text-green-500':
+                  statusState.currentIcon == statusState.icons[0],
+                'text-yellow-500':
+                  statusState.currentIcon == statusState.icons[1],
+                'text-red-500': statusState.currentIcon == statusState.icons[2],
+                'text-gray-500':
+                  statusState.currentIcon == statusState.icons[3],
+                'h-5 w-5 ml-1': true,
+              }"
+            ></component>
+          </AnimationHandler>
         </div>
         <div class="flex items-center mt-2 text-gray-500 text-sm">
           <p>AutoCrawl:</p>
           <input
-            :key="crawlButtonState.isActive"
             type="checkbox"
-            v-model="autoCrawlerEnabled"
+            v-model="autoCrawlEnabled"
+            @click="CheckboxClicked()"
             class="flex items-center ml-2 cursor-pointer focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
           />
         </div>
         <div class="text-gray-500 text-sm">
           <span>Next AutoCrawl: </span>
-          <AnimationHandler animation="FadeIn">
-            <span :key="autoCrawlerTriggerDate">{{
-              autoCrawlerTriggerDate
-            }}</span>
+          <AnimationHandler :animation="statusState.animation">
+            <span :key="autoCrawlDate" class="mr-16">{{ autoCrawlDate }}</span>
           </AnimationHandler>
         </div>
+        <!-- <div class="bg-red-200 min-w-full pr-16">&nbsp;</div> -->
       </div>
-      <img
-        class="w-20 h-20 border rounded-full"
-        src="../assets/SmartMatchLogo.png"
-      />
+      <img class="w-20 h-20 border rounded-full" :src="logoState.currentIcon" />
     </div>
     <Disclosure
       as="div"
@@ -241,14 +302,14 @@ function CrawlButtonClicked(ClosePanel, event) {
       class="flex justify-between divide-x divide-gray-200"
     >
       <div class="flex flex-1 justify-center">
-        <div>
+        <div class="shrink-0">
           <AnimationHandler
             :animation="crawlButtonState.animation"
             args="panelbutton"
           >
             <DisclosureButton
               :key="crawlButtonState.isActive"
-              @click="PanelButtonClicked(open, close, $event)"
+              @click="PanelButtonClicked(open, close)"
               :class="{
                 'bg-indigo-100 text-indigo-700':
                   crawlButtonState.isActive == true,
@@ -258,9 +319,12 @@ function CrawlButtonClicked(ClosePanel, event) {
                   crawlButtonState.isActive == true && open == true,
                 'bg-[length:0%,0%] bg-indigo-100 hover:bg-indigo-200':
                   crawlButtonState.isActive == true && open == false,
-                'flex items-center mx-6 my-4 px-2 py-2 max-h-8 bg-gradient-to-r from-indigo-100 to-indigo-100 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
+                'flex items-center mx-5 my-4 px-2 py-2 max-h-8 bg-gradient-to-r from-indigo-100 to-indigo-100 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
               }"
-              ><MenuIcon class="h-5 w-5 mr-1" />Edit AutoCrawl
+              ><ChevronDoubleRightIcon
+                ref="refEditPanelIcon"
+                class="h-5 w-5 mr-1"
+              />Edit AutoCrawl
             </DisclosureButton>
           </AnimationHandler>
           <AnimationHandler animation="SlideDown">
@@ -271,50 +335,45 @@ function CrawlButtonClicked(ClosePanel, event) {
               <div class="mt-1">
                 <input
                   type="date"
-                  v-model="panelState.editDate"
-                  class="mx-1 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                  v-model="editPanelState.editDate"
+                  class="mx-1 px-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
                   placeholder="MM/DD/YYYY"
                 />
               </div>
-              <AnimationHandler :animation="panelState.animation">
+              <AnimationHandler :animation="editPanelState.animation">
                 <p
-                  :key="panelState.editDate"
+                  :key="editPanelState.editDate"
                   class="mx-1 text-gray-500 mt-2 mb-4 t)ext-sm"
                 >
-                  {{ panelState.label }}
+                  {{ editPanelState.label }}
                 </p>
               </AnimationHandler>
             </DisclosurePanel>
           </AnimationHandler>
         </div>
       </div>
-      <div class="flex flex-1 justify-center items-center">
-        <div>test</div>
-        <!-- <AnimationHandler :animation="crawlButtonState.animation"> -->
-        <button
-          ref="refForceButtonText"
-          id="ForceButton"
-          :key="crawlButtonState.isActive"
-          type="button"
-          @click="CrawlButtonClicked(close, $event)"
-          :class="{
-            'bg-indigo-600 bg-[length:150%,150%] hover:bg-[length:0%,0%] hover:bg-indigo-700':
-              crawlButtonState.isActive == true,
-            'bg-gray-500 bg-[length:0%,0%] cursor-not-allowed':
-              crawlButtonState.isActive == false,
-            'flex items-center my-4 px-2 py-2 max-h-8 bg-gradient-to-r from-indigo-600 to-indigo-600 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
-          }"
-        >
-          <!-- :key="crawlButtonState.isActive" -->
-          Force Crawl
-        </button>
-        <!-- </AnimationHandler> -->
+      <div class="flex flex-1 justify-center items-center -space-x-7">
+        <RefreshIcon
+          ref="refCrawlButtonIcon"
+          class="shrink-0 h-5 w-5 text-white z-10"
+        />
+        <AnimationHandler :animation="crawlButtonState.animation">
+          <button
+            type="button"
+            :key="crawlButtonState.isActive"
+            @click="CrawlButtonClicked(close, $event)"
+            :class="{
+              'bg-indigo-600 bg-[length:150%,150%] hover:bg-[length:0%,0%] hover:bg-indigo-700':
+                crawlButtonState.isActive == true,
+              'bg-gray-500 bg-[length:0%,0%] cursor-not-allowed':
+                crawlButtonState.isActive == false,
+              'flex shrink-0 items-center my-4 pl-8 pr-2 py-2 max-h-8 bg-gradient-to-r from-indigo-600 to-indigo-600 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
+            }"
+          >
+            {{ crawlButtonState.label }}
+          </button>
+        </AnimationHandler>
       </div>
     </Disclosure>
   </div>
-  <!-- <CrawlerList></CrawlerList>
-  <MenuIcon class="h-6 w-6"></MenuIcon> -->
-  <Teleport to="#ForceButton">
-    <RefreshIcon ref="refForceButtonIcon" class="h-5 w-5 mr-1" />
-  </Teleport>
 </template>

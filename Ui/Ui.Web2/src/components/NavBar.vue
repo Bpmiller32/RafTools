@@ -1,7 +1,18 @@
 <script setup>
 import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
 import { MenuIcon, XIcon } from "@heroicons/vue/outline";
+import { watch } from "vue";
+import { useRoute } from "vue-router";
 import AnimationHandler from "./AnimationHandler.vue";
+
+const route = useRoute();
+
+watch(
+  () => route.name,
+  () => {
+    console.log("route changed: ", route.name);
+  }
+);
 </script>
 
 <template>
@@ -9,33 +20,68 @@ import AnimationHandler from "./AnimationHandler.vue";
     <div class="flex justify-between h-16 px-4">
       <div class="flex sm:space-x-8">
         <div class="flex items-center">
-          <img
-            class="block lg:hidden h-8"
-            src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg"
-          />
-          <img
-            class="hidden lg:block h-8"
-            src="https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg"
-          />
+          <img class="block lg:hidden h-8" src="../assets/MatwLogoSmall.png" />
+          <img class="hidden lg:block h-8" src="../assets/MatwLogoLarge.png" />
         </div>
         <div class="hidden sm:flex sm:space-x-8">
-          <router-link custom to="/Crawler" v-slot="{ href, isActive }">
+          <!-- <router-link custom to="/Crawler" v-slot="{ href, isActive }">
+            <AnimationHandler v-if="isActive" animation="NavFadeIn" appear>
+              <a
+                :href="href"
+                :class="{
+                  'border-indigo-600': isActive == true,
+                  'border-transparent hover:border-gray-300': isActive == false,
+                  'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
+                }"
+              >
+                Crawler
+              </a>
+            </AnimationHandler>
             <a
+              v-else
               :href="href"
               :class="{
-                'border-blue-500': isActive == true,
+                'border-indigo-600': isActive == true,
                 'border-transparent hover:border-gray-300': isActive == false,
                 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
               }"
             >
               Crawler
             </a>
-          </router-link>
+          </router-link> -->
+
+          <!-- v-if="route.name == 'Home'" -->
+          <AnimationHandler animation="NavFadeIn" appear>
+            <router-link
+              to="/Crawler"
+              :class="{
+                'border-indigo-600': route.name == 'Home',
+                'border-transparent hover:border-gray-300':
+                  route.name != 'Home',
+                'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
+              }"
+              >Crawler</router-link
+            >
+          </AnimationHandler>
+
           <router-link custom to="/Builder" v-slot="{ href, isActive }">
+            <AnimationHandler v-if="isActive" animation="NavFadeIn" appear>
+              <a
+                :href="href"
+                :class="{
+                  'border-indigo-600': isActive == true,
+                  'border-transparent hover:border-gray-300': isActive == false,
+                  'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
+                }"
+              >
+                Builder
+              </a>
+            </AnimationHandler>
             <a
+              v-else
               :href="href"
               :class="{
-                'border-blue-500': isActive == true,
+                'border-indigo-600': isActive == true,
                 'border-transparent hover:border-gray-300': isActive == false,
                 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
               }"
@@ -44,10 +90,23 @@ import AnimationHandler from "./AnimationHandler.vue";
             </a>
           </router-link>
           <router-link custom to="/Tester" v-slot="{ href, isActive }">
+            <AnimationHandler v-if="isActive" animation="NavFadeIn" appear>
+              <a
+                :href="href"
+                :class="{
+                  'border-indigo-600': isActive == true,
+                  'border-transparent hover:border-gray-300': isActive == false,
+                  'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
+                }"
+              >
+                Tester
+              </a>
+            </AnimationHandler>
             <a
+              v-else
               :href="href"
               :class="{
-                'border-blue-500': isActive == true,
+                'border-indigo-600': isActive == true,
                 'border-transparent hover:border-gray-300': isActive == false,
                 'flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2': true,
               }"

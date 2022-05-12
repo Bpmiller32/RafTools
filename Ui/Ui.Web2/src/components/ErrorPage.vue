@@ -1,10 +1,7 @@
 <template>
   <main class="py-16">
     <div class="flex justify-center">
-      <img
-        class="h-12"
-        src="https://tailwindui.com/img/logos/workflow-mark.svg?color=indigo&shade=600"
-      />
+      <img class="h-12" src="../assets/MatwLogoSmall.png" />
     </div>
     <div class="py-16">
       <div class="text-center">
