@@ -2,7 +2,7 @@ using System;
 
 namespace Common.Data;
 
-public class CrawlTask
+public class ComponentTask
 {
     public ComponentStatus Email { get; set; }
     public ComponentStatus SmartMatch { get; set; }

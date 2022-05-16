@@ -18,15 +18,15 @@ namespace Crawler.App
     {
         private readonly ILogger<SmartmatchCrawler> logger;
         private readonly IConfiguration config;
-        private readonly CrawlTask tasks;
+        private readonly ComponentTask tasks;
         private readonly DatabaseContext context;
 
         private CancellationToken stoppingToken;
         private Settings settings = new Settings() { Name = "SmartMatch" };
 
-        private List<UspsFile> TempFiles = new List<UspsFile>();
+        private List<UspsFile> tempFiles = new List<UspsFile>();
 
-        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
+        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, IServiceScopeFactory factory, ComponentTask tasks)
         {
             this.logger = logger;
             this.config = config;
@@ -41,7 +41,7 @@ namespace Crawler.App
 
             if (settings.CrawlerEnabled == false)
             {
-                tasks.SmartMatch = CrawlStatus.Disabled;
+                tasks.SmartMatch = ComponentStatus.Disabled;
                 logger.LogInformation("Crawler disabled");
                 return;
             }
@@ -51,7 +51,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.SmartMatch = CrawlStatus.Ready;
+                    tasks.SmartMatch = ComponentStatus.Ready;
 
                     await PullFiles();
                     CheckFiles();
@@ -64,7 +64,7 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
-                tasks.SmartMatch = CrawlStatus.Error;
+                tasks.SmartMatch = ComponentStatus.Error;
                 logger.LogError(e.Message);
             }
         }
@@ -138,7 +138,7 @@ namespace Crawler.App
                             }
                             else
                             {
-                                file.DataYearMonth = file.DataYear.ToString() + file.DataMonth.ToString();                            
+                                file.DataYearMonth = file.DataYear.ToString() + file.DataMonth.ToString();
                             }
 
                             if (fileRow.ChildNodes[1].InnerText.Trim() == "Downloaded")
@@ -162,7 +162,7 @@ namespace Crawler.App
                                 continue;
                             }
 
-                            TempFiles.Add(file);
+                            tempFiles.Add(file);
                         }
 
                         // Exit page, browser
@@ -179,7 +179,7 @@ namespace Crawler.App
                 return;
             }
 
-            foreach (var file in TempFiles)
+            foreach (var file in tempFiles)
             {
                 // Check if file is unique against the db
                 bool fileInDb = context.UspsFiles.Any(x => file.FileId == x.FileId);
@@ -222,7 +222,7 @@ namespace Crawler.App
                 }
             }
 
-            TempFiles.Clear();
+            tempFiles.Clear();
         }
 
         private async Task DownloadFiles()

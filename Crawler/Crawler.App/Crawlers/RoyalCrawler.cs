@@ -6,10 +6,13 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
+using Crawler.App.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+
+#pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 
 namespace Crawler.App
 {
@@ -17,20 +20,22 @@ namespace Crawler.App
     {
         private readonly ILogger logger;
         private readonly IConfiguration config;
-        private readonly CrawlTask tasks;
+        private readonly ComponentTask tasks;
         private readonly DatabaseContext context;
 
         private CancellationToken stoppingToken;
         private Settings settings = new Settings() { Name = "RoyalMail" };
+        private SocketConnection connection;
 
-        private RoyalFile TempFile = new RoyalFile();
+        private RoyalFile tempFile = new RoyalFile();
 
-        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
+        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, IServiceScopeFactory factory, ComponentTask tasks)
         {
             this.logger = logger;
             this.config = config;
             this.tasks = tasks;
             this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.connection = new SocketConnection(logger, tasks, context);
         }
 
         protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
@@ -40,7 +45,8 @@ namespace Crawler.App
 
             if (settings.CrawlerEnabled == false)
             {
-                tasks.RoyalMail = CrawlStatus.Disabled;
+                tasks.RoyalMail = ComponentStatus.Disabled;
+                connection.SendMessage();
                 logger.LogInformation("Crawler disabled");
                 return;
             }
@@ -50,12 +56,16 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.RoyalMail = CrawlStatus.Ready;
+                    tasks.RoyalMail = ComponentStatus.InProgress;
+                    connection.SendMessage();
 
                     PullFile();
                     CheckFile();
                     await DownloadFile();
                     CheckBuildReady();
+
+                    tasks.RoyalMail = ComponentStatus.Ready;
+                    connection.SendMessage();
 
                     TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
@@ -63,7 +73,8 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
-                tasks.RoyalMail = CrawlStatus.Error;
+                tasks.RoyalMail = ComponentStatus.Error;
+                connection.SendMessage();
                 logger.LogError(e.Message);
             }
         }
@@ -86,18 +97,18 @@ namespace Crawler.App
                 lastModified = response.LastModified;
             }
 
-            TempFile.FileName = "SetupRM.exe";
-            TempFile.DataMonth = lastModified.Month;
-            TempFile.DataDay = lastModified.Day;
-            TempFile.DataYear = lastModified.Year;
+            tempFile.FileName = "SetupRM.exe";
+            tempFile.DataMonth = lastModified.Month;
+            tempFile.DataDay = lastModified.Day;
+            tempFile.DataYear = lastModified.Year;
 
-            if (TempFile.DataMonth < 10)
+            if (tempFile.DataMonth < 10)
             {
-                TempFile.DataYearMonth = TempFile.DataYear.ToString() + "0" + TempFile.DataMonth.ToString();
+                tempFile.DataYearMonth = tempFile.DataYear.ToString() + "0" + tempFile.DataMonth.ToString();
             }
             else
             {
-                TempFile.DataYearMonth = TempFile.DataYear.ToString() + TempFile.DataMonth.ToString();
+                tempFile.DataYearMonth = tempFile.DataYear.ToString() + tempFile.DataMonth.ToString();
             }
         }
 
@@ -110,40 +121,40 @@ namespace Crawler.App
             }
 
             // Check if file is unique against the db
-            bool fileInDb = context.RoyalFiles.Any(x => (TempFile.FileName == x.FileName) && (TempFile.DataMonth == x.DataMonth) && (TempFile.DataYear == x.DataYear));
+            bool fileInDb = context.RoyalFiles.Any(x => (tempFile.FileName == x.FileName) && (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
 
             if (!fileInDb)
             {
                 // Check if the folder exists on the disk
-                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth, TempFile.FileName)))
+                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
                 {
-                    TempFile.OnDisk = false;
+                    tempFile.OnDisk = false;
                 }
 
                 // regardless of check file is unique, add to db
-                context.RoyalFiles.Add(TempFile);
-                logger.LogInformation("Discovered and not on disk: " + TempFile.FileName + " " + TempFile.DataMonth + "/" + TempFile.DataYear);
+                context.RoyalFiles.Add(tempFile);
+                logger.LogInformation("Discovered and not on disk: " + tempFile.FileName + " " + tempFile.DataMonth + "/" + tempFile.DataYear);
 
-                bool bundleExists = context.RoyalBundles.Any(x => (TempFile.DataMonth == x.DataMonth) && (TempFile.DataYear == x.DataYear));
+                bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
 
                 if (!bundleExists)
                 {
                     RoyalBundle newBundle = new RoyalBundle()
                     {
-                        DataMonth = TempFile.DataMonth,
-                        DataYear = TempFile.DataYear,
-                        DataYearMonth = TempFile.DataYearMonth,
+                        DataMonth = tempFile.DataMonth,
+                        DataYear = tempFile.DataYear,
+                        DataYearMonth = tempFile.DataYearMonth,
                         IsReadyForBuild = false
                     };
 
-                    newBundle.BuildFiles.Add(TempFile);
+                    newBundle.BuildFiles.Add(tempFile);
                     context.RoyalBundles.Add(newBundle);
                 }
                 else
                 {
-                    RoyalBundle existingBundle = context.RoyalBundles.Where(x => (TempFile.DataMonth == x.DataMonth) && (TempFile.DataYear == x.DataYear)).FirstOrDefault();
+                    RoyalBundle existingBundle = context.RoyalBundles.Where(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear)).FirstOrDefault();
 
-                    existingBundle.BuildFiles.Add(TempFile);
+                    existingBundle.BuildFiles.Add(tempFile);
                 }
 
                 context.SaveChanges();
@@ -169,23 +180,23 @@ namespace Crawler.App
 
                 using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
                 {
-                    logger.LogInformation("Currently downloading: " + TempFile.FileName + " " + TempFile.DataMonth + "/" + TempFile.DataYear);
+                    logger.LogInformation("Currently downloading: " + tempFile.FileName + " " + tempFile.DataMonth + "/" + tempFile.DataYear);
                     // Throws error is request is canceled, caught in catch
                     fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
                 }
 
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth));
+                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth));
 
-                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, TempFile.DataYearMonth, @"SetupRM.exe")))
+                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth, @"SetupRM.exe")))
                 {
                     file.Write(fileData, 0, fileData.Length);
                     file.Close();
                     fileData = null;
                     // TODO: assign TempFile.Size to fileData.Length / ? before assigning to null
 
-                    TempFile.OnDisk = true;
-                    TempFile.DateDownloaded = DateTime.Now;
-                    context.RoyalFiles.Update(TempFile);
+                    tempFile.OnDisk = true;
+                    tempFile.DateDownloaded = DateTime.Now;
+                    context.RoyalFiles.Update(tempFile);
                     context.SaveChanges();
                 }
             }

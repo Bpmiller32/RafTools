@@ -2,6 +2,7 @@ using System;
 using System.Security.Principal;
 using System.Threading;
 using Common.Data;
+using Crawler.App.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,7 +27,7 @@ namespace Crawler.App
                         .MinimumLevel.Override("System", LogEventLevel.Warning)
                         .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"))
                         .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), @".\Log\CrawlerLog.txt")
-                        .WriteTo.DiscordSink()
+                        // .WriteTo.DiscordSink()
                         .CreateLogger();
 
                     // Crucially important for Windows Service, otherwise working directory runs out of Windows\System32
@@ -78,8 +79,8 @@ namespace Crawler.App
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.AddSingleton<ComponentTask>();
                     services.AddHostedService<SocketServer>();
-                    services.AddSingleton<CrawlTask>();
                     services.AddHostedService<EmailCrawler>();
                     services.AddHostedService<SmartmatchCrawler>();
                     services.AddHostedService<ParascriptCrawler>();

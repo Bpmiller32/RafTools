@@ -11,6 +11,8 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using HtmlAgilityPack;
 using Common.Data;
+using Crawler.App.Utils;
+using WebSocketSharp.Server;
 
 namespace Crawler.App
 {
@@ -18,20 +20,22 @@ namespace Crawler.App
     {
         private readonly ILogger logger;
         private readonly IConfiguration config;
-        private readonly CrawlTask tasks;
+        private readonly ComponentTask tasks;
         private readonly DatabaseContext context;
 
         private CancellationToken stoppingToken;
         private Settings settings = new Settings() { Name = "Parascript" };
+        private SocketConnection connection;
 
-        private List<ParaFile> TempFiles = new List<ParaFile>();
+        private List<ParaFile> tempFiles = new List<ParaFile>();
 
-        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
+        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, ComponentTask tasks, IServiceScopeFactory factory)
         {
             this.logger = logger;
             this.config = config;
             this.tasks = tasks;
             this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.connection = new SocketConnection(logger, tasks, context);
         }
 
         protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
@@ -41,7 +45,7 @@ namespace Crawler.App
 
             if (settings.CrawlerEnabled == false)
             {
-                tasks.Parascript = CrawlStatus.Disabled;
+                tasks.Parascript = ComponentStatus.Disabled;
                 logger.LogInformation("Crawler disabled");
                 return;
             }
@@ -50,13 +54,19 @@ namespace Crawler.App
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
+                    await Task.Delay(15000);
                     logger.LogInformation("Starting Crawler");
-                    tasks.Parascript = CrawlStatus.Ready;
+                    tasks.Parascript = ComponentStatus.InProgress;
+                    connection.SendMessage();
+                    // SocketConnection.SocketServer["/"].Sessions.Broadcast("test");
 
                     await PullFiles();
                     CheckFiles();
                     await DownloadFiles();
                     CheckBuildReady();
+
+                    tasks.RoyalMail = ComponentStatus.Ready;
+                    // connection.SendMessage();
 
                     TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
@@ -64,7 +74,7 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
-                tasks.Parascript = CrawlStatus.Error;
+                tasks.Parascript = ComponentStatus.Error;
                 logger.LogError(e.Message);
             }
         }
@@ -121,7 +131,7 @@ namespace Crawler.App
                         adsFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
                         adsFile.OnDisk = true;
 
-                        TempFiles.Add(adsFile);
+                        tempFiles.Add(adsFile);
 
                         ParaFile dpvFile = new ParaFile();
                         dpvFile.FileName = "DPVandLACS";
@@ -130,7 +140,7 @@ namespace Crawler.App
                         adsFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
                         dpvFile.OnDisk = true;
 
-                        TempFiles.Add(dpvFile);
+                        tempFiles.Add(dpvFile);
                     }
                 }
             }
@@ -144,8 +154,8 @@ namespace Crawler.App
                 return;
             }
 
-            foreach (var file in TempFiles)
-            {                
+            foreach (var file in tempFiles)
+            {
                 // Check if file is unique against the db
                 bool fileInDb = context.ParaFiles.Any(x => (file.FileName == x.FileName) && (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
 
@@ -186,7 +196,7 @@ namespace Crawler.App
                 }
             }
 
-            TempFiles.Clear();
+            tempFiles.Clear();
         }
 
         private async Task DownloadFiles()
@@ -239,10 +249,10 @@ namespace Crawler.App
 
                         logger.LogInformation("Currently downloading: Parascript files");
                         // Cancellation closes page and browser using statement, clears crdownload so no cleanup there
-                        
+
                         foreach (var file in offDisk)
                         {
-                            await WaitForDownload(file);                        
+                            await WaitForDownload(file);
                         }
                     }
                 }

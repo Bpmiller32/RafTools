@@ -13,6 +13,7 @@ using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Common.Data;
+using Crawler.App.Utils;
 
 namespace Crawler.App
 {
@@ -20,7 +21,7 @@ namespace Crawler.App
     {
         private readonly ILogger logger;
         private readonly IConfiguration config;
-        private readonly CrawlTask tasks;
+        private readonly ComponentTask tasks;
         private readonly DatabaseContext context;
 
         private CancellationToken stoppingToken;
@@ -28,7 +29,7 @@ namespace Crawler.App
 
         PafKey tempKey = new PafKey();
 
-        public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, IServiceScopeFactory factory, CrawlTask tasks)
+        public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, IServiceScopeFactory factory, ComponentTask tasks)
         {
             this.logger = logger;
             this.config = config;
@@ -53,7 +54,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.Email = CrawlStatus.Ready;
+                    tasks.Email = ComponentStatus.InProgress;
 
                     GetKey();
                     SaveKey();
@@ -64,7 +65,7 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
-                tasks.Email = CrawlStatus.Error;
+                tasks.Email = ComponentStatus.Error;
                 logger.LogError(e.Message);
             }
         }
