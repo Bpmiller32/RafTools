@@ -4,6 +4,7 @@ using System.Threading;
 using Common.Data;
 using Crawler.App.Utils;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -75,16 +76,19 @@ namespace Crawler.App
                 .ConfigureAppConfiguration((hostContext, config) =>
                 {
                     // config.Sources.Clear();
-                    // config.AddJsonFile("CrawlerConfig.json", false, true);
+                    // config.AddJsonFile("appsettings.json", false, true);
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddSingleton<ComponentTask>();
                     services.AddHostedService<SocketServer>();
-                    services.AddHostedService<EmailCrawler>();
-                    services.AddHostedService<SmartmatchCrawler>();
-                    services.AddHostedService<ParascriptCrawler>();
-                    services.AddHostedService<RoyalCrawler>();
+                    services.AddTransient<SocketConnection>();
+
+                    services.AddSingleton<ComponentTask>();
+                    services.AddSingleton<EmailCrawler>();
+                    services.AddSingleton<SmartmatchCrawler>();
+                    services.AddSingleton<ParascriptCrawler>();
+                    services.AddSingleton<RoyalCrawler>();
+
                     services.AddDbContext<DatabaseContext>(opt =>
                     {
                         opt.UseSqlite(@"Filename=.\DirectoryCollection.db");

@@ -11,10 +11,13 @@ namespace Crawler.App
         public string Name { get; set; }
         public string AddressDataPath { get; set; }
         public bool CrawlerEnabled { get; set; }
+        public bool AutoCrawlEnabled { get; set; }
 
         public string UserName { get; set; }
         public string Password { get; set; }
 
+        public int ExecYear { get; set; }
+        public int ExecMonth { get; set; }
         public int ExecDay { get; set; }
         public int ExecHour { get; set; }
         public int ExecMinute { get; set; }
@@ -42,8 +45,27 @@ namespace Crawler.App
                     {
                         settings.CrawlerEnabled = true;
                     }
+                    if (config.GetValue<bool>("settings:" + dir + ":AutoCrawlEnabled"))
+                    {
+                        settings.AutoCrawlEnabled = true;
+                    }
 
-
+                    if (config.GetValue<int>("settings:" + dir + ":ExecTime:Year") != 0)
+                    {
+                        settings.ExecYear = config.GetValue<int>("settings:" + dir + ":ExecTime:Year");
+                    }
+                    else
+                    {
+                        settings.ExecYear = DateTime.Now.Year;
+                    }
+                    if (config.GetValue<int>("settings:" + dir + ":ExecTime:Month") != 0)
+                    {
+                        settings.ExecMonth = config.GetValue<int>("settings:" + dir + ":ExecTime:Month");
+                    }
+                    else
+                    {
+                        settings.ExecMonth = DateTime.Now.Month;
+                    }
                     if (config.GetValue<int>("settings:" + dir + ":ExecTime:Day") != 0)
                     {
                         settings.ExecDay = config.GetValue<int>("settings:" + dir + ":ExecTime:Day");
@@ -87,7 +109,7 @@ namespace Crawler.App
                         else
                         {
                             settings.UserName = config.GetValue<string>("settings:" + dir + ":Login:User");
-                            settings.Password = config.GetValue<string>("settings:" + dir + ":Login:Pass");                            
+                            settings.Password = config.GetValue<string>("settings:" + dir + ":Login:Pass");
                         }
                     }
                 }
@@ -95,11 +117,11 @@ namespace Crawler.App
 
             return settings;
         }
-    
+
         public static TimeSpan CalculateWaitTime(ILogger logger, Settings settings)
         {
             DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
-            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 23, 59);
+            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 59, 59);
             TimeSpan waitTime = execTime - DateTime.Now;
 
             waitTime = execTime - DateTime.Now;

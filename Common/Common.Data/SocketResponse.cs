@@ -15,6 +15,6 @@ public class SocketResponse
 {
     public string AutoCrawlStatus { get; set; }
     public bool AutoCrawlEnabled { get; set; }
-    public List<string> AvailableBuilds { get; set; }
+    public List<BuildInfo> AvailableBuilds { get; set; }
     public string AutoCrawlDate { get; set; }
 }

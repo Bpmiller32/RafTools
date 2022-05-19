@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PuppeteerSharp;
 using System.Linq;
@@ -12,41 +10,46 @@ using Microsoft.Extensions.Configuration;
 using HtmlAgilityPack;
 using Common.Data;
 using Crawler.App.Utils;
-using WebSocketSharp.Server;
 
 namespace Crawler.App
 {
-    public class ParascriptCrawler : BackgroundService
+    public class ParascriptCrawler
     {
-        private readonly ILogger logger;
+        public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
+
+        private readonly ILogger<ParascriptCrawler> logger;
         private readonly IConfiguration config;
         private readonly ComponentTask tasks;
+        private readonly SocketConnection connection;
         private readonly DatabaseContext context;
-
-        private CancellationToken stoppingToken;
-        private Settings settings = new Settings() { Name = "Parascript" };
-        private SocketConnection connection;
 
         private List<ParaFile> tempFiles = new List<ParaFile>();
 
-        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, ComponentTask tasks, IServiceScopeFactory factory)
+        public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
         {
             this.logger = logger;
             this.config = config;
             this.tasks = tasks;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
-            this.connection = new SocketConnection(logger, tasks, context);
+            this.connection = connection;
+            this.context = context;
+
+            Settings = Settings.Validate(Settings, config);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            stoppingToken = serviceStoppingToken;
-            settings = Settings.Validate(settings, config);
+            connection.SendMessage();
 
-            if (settings.CrawlerEnabled == false)
+            if (Settings.CrawlerEnabled == false)
             {
-                tasks.Parascript = ComponentStatus.Disabled;
                 logger.LogInformation("Crawler disabled");
+                tasks.Parascript = ComponentStatus.Disabled;
+                connection.SendMessage();
+                return;
+            }
+            if (Settings.AutoCrawlEnabled == false)
+            {
+                logger.LogDebug("AutoCrawl disabled");
                 return;
             }
 
@@ -54,32 +57,54 @@ namespace Crawler.App
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    await Task.Delay(15000);
-                    logger.LogInformation("Starting Crawler");
-                    tasks.Parascript = ComponentStatus.InProgress;
-                    connection.SendMessage();
-                    // SocketConnection.SocketServer["/"].Sessions.Broadcast("test");
-
-                    await PullFiles();
-                    CheckFiles();
-                    await DownloadFiles();
-                    CheckBuildReady();
-
-                    tasks.RoyalMail = ComponentStatus.Ready;
-                    // connection.SendMessage();
-
-                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    logger.LogInformation("Starting Crawler - Auto mode");
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                    await this.ExecuteAsync(stoppingToken);
                 }
+            }
+            catch (TaskCanceledException e)
+            {
+                logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
-                tasks.Parascript = ComponentStatus.Error;
                 logger.LogError(e.Message);
             }
         }
 
-        private async Task PullFiles()
+        public async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                logger.LogInformation("Starting Crawler");
+                tasks.Parascript = ComponentStatus.InProgress;
+                connection.SendMessage();
+
+                await PullFiles(stoppingToken);
+                CheckFiles(stoppingToken);
+                await DownloadFiles(stoppingToken);
+                CheckBuildReady(stoppingToken);
+
+                tasks.Parascript = ComponentStatus.Ready;
+                connection.SendMessage();
+            }
+            catch (TaskCanceledException e)
+            {
+                tasks.Parascript = ComponentStatus.Ready;
+                connection.SendMessage();
+                logger.LogDebug(e.Message);
+            }
+            catch (System.Exception e)
+            {
+                tasks.Parascript = ComponentStatus.Error;
+                connection.SendMessage();
+                logger.LogError(e.Message);
+            }
+        }
+
+        private async Task PullFiles(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -100,7 +125,7 @@ namespace Crawler.App
                 {
                     using (Page page = await browser.NewPageAsync())
                     {
-                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(settings.AddressDataPath, "Temp") });
+                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(Settings.AddressDataPath, "Temp") });
 
                         // Navigate to download portal page
                         await page.GoToAsync(@"https://parascript.sharefile.com/share/view/s80765117d4441b88");
@@ -137,7 +162,7 @@ namespace Crawler.App
                         dpvFile.FileName = "DPVandLACS";
                         dpvFile.DataMonth = int.Parse(foundDataYearMonth.Substring(0, 2));
                         dpvFile.DataYear = int.Parse("20" + foundDataYearMonth.Substring(2, 2));
-                        adsFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
+                        dpvFile.DataYearMonth = "20" + foundDataYearMonth.Substring(2, 2) + foundDataYearMonth.Substring(0, 2);
                         dpvFile.OnDisk = true;
 
                         tempFiles.Add(dpvFile);
@@ -146,7 +171,7 @@ namespace Crawler.App
             }
         }
 
-        private void CheckFiles()
+        private void CheckFiles(CancellationToken stoppingToken)
         {
             // Cancellation requested or PullFile failed
             if (stoppingToken.IsCancellationRequested == true)
@@ -162,7 +187,7 @@ namespace Crawler.App
                 if (!fileInDb)
                 {
                     // Check if the folder exists on the disk
-                    if (!Directory.Exists(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.FileName)))
+                    if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.FileName)))
                     {
                         file.OnDisk = false;
                     }
@@ -179,6 +204,7 @@ namespace Crawler.App
                         {
                             DataMonth = file.DataMonth,
                             DataYear = file.DataYear,
+                            DataYearMonth = file.DataYearMonth,
                             IsReadyForBuild = false
                         };
 
@@ -199,7 +225,7 @@ namespace Crawler.App
             tempFiles.Clear();
         }
 
-        private async Task DownloadFiles()
+        private async Task DownloadFiles(CancellationToken stoppingToken)
         {
             List<ParaFile> offDisk = context.ParaFiles.Where(x => x.OnDisk == false).ToList();
 
@@ -212,8 +238,8 @@ namespace Crawler.App
 
             foreach (ParaFile file in offDisk)
             {
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, file.DataYearMonth));
-                Cleanup(Path.Combine(settings.AddressDataPath, file.DataYearMonth));
+                Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth));
+                Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth), stoppingToken);
             }
 
             // Download local chromium binary to launch browser
@@ -230,7 +256,7 @@ namespace Crawler.App
                 {
                     using (Page page = await browser.NewPageAsync())
                     {
-                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(settings.AddressDataPath, offDisk[0].DataYearMonth) });
+                        await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = Path.Combine(Settings.AddressDataPath, offDisk[0].DataYearMonth) });
 
                         // Navigate to download portal page
                         await page.GoToAsync(@"https://parascript.sharefile.com/share/view/s80765117d4441b88");
@@ -252,14 +278,14 @@ namespace Crawler.App
 
                         foreach (var file in offDisk)
                         {
-                            await WaitForDownload(file);
+                            await WaitForDownload(file, stoppingToken);
                         }
                     }
                 }
             }
         }
 
-        private void CheckBuildReady()
+        private void CheckBuildReady(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -277,6 +303,33 @@ namespace Crawler.App
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 2)
                 {
                     bundle.IsReadyForBuild = true;
+
+                    DateTime timestamp = DateTime.Now;
+                    string hour;
+                    string minute;
+                    string ampm;
+                    if (timestamp.Minute < 10)
+                    {
+                        minute = timestamp.Minute.ToString().PadLeft(2, '0');
+                    }
+                    else
+                    {
+                        minute = timestamp.Minute.ToString();
+                    }
+                    if (timestamp.Hour > 12)
+                    {
+                        hour = (timestamp.Hour - 12).ToString();
+                        ampm = "pm";
+                    }
+                    else
+                    {
+                        hour = timestamp.Hour.ToString();
+                        ampm = "am";
+                    }
+                    bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+                    bundle.DownloadTime = hour + ":" + minute + ampm;
+                    bundle.FileCount = bundle.BuildFiles.Count;
+
                     logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear);
                 }
 
@@ -284,7 +337,7 @@ namespace Crawler.App
             }
         }
 
-        private async Task WaitForDownload(ParaFile file)
+        private async Task WaitForDownload(ParaFile file, CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -292,7 +345,7 @@ namespace Crawler.App
                 return;
             }
 
-            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth);
+            string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth);
             string[] files = Directory.GetFiles(path, @"*.CRDOWNLOAD");
 
             if (files.Length < 1)
@@ -306,10 +359,10 @@ namespace Crawler.App
             }
 
             await Task.Delay(TimeSpan.FromSeconds(10));
-            await WaitForDownload(file);
+            await WaitForDownload(file, stoppingToken);
         }
 
-        private void Cleanup(string path)
+        private void Cleanup(string path, CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {

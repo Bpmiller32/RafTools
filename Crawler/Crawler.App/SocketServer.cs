@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
@@ -12,32 +13,46 @@ namespace Crawler.App
     public class SocketServer : BackgroundService
     {
         private readonly ILogger<SocketServer> logger;
-        private readonly ComponentTask tasks;
         private readonly DatabaseContext context;
+        private readonly IServiceScopeFactory factory;
+        private readonly EmailCrawler emailCrawler;
+        private readonly SmartmatchCrawler smartmatchCrawler;
+        private readonly ParascriptCrawler parascriptCrawler;
+        private readonly RoyalCrawler royalCrawler;
 
-        public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory, ComponentTask tasks)
+        public SocketServer(ILogger<SocketServer> logger, DatabaseContext context, IServiceScopeFactory factory, EmailCrawler emailCrawler, SmartmatchCrawler smartmatchCrawler, ParascriptCrawler parascriptCrawler, RoyalCrawler royalCrawler)
         {
             this.logger = logger;
-            this.tasks = tasks;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.context = context;
+            this.factory = factory;
+
+            this.emailCrawler = emailCrawler;
+            this.smartmatchCrawler = smartmatchCrawler;
+            this.parascriptCrawler = parascriptCrawler;
+            this.royalCrawler = royalCrawler;
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             context.Database.EnsureCreated();
 
-            // WebSocketServer server = new WebSocketServer(IPAddress.Parse("127.0.0.1"), 10022);
             WebSocketServer server = new WebSocketServer(10022);
             server.Log.Output = (logdata, str) => { logger.LogError(logdata.Message); };
 
-            // server.AddWebSocketService<WsEcho>("/Echo", () => new WsEcho());
-            server.AddWebSocketService<SocketConnection>("/", () => new SocketConnection(logger, tasks, context));
             SocketConnection.SocketServer = server.WebSocketServices;
+            SocketConnection.EmailCrawler = emailCrawler;
+            SocketConnection.ParascriptCrawler = parascriptCrawler;
+
+            server.AddWebSocketService<SocketConnection>("/", () =>
+            {
+                SocketConnection connection = factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>();
+                return connection;
+            });
 
             try
             {
                 server.Start();
-                logger.LogInformation("Listening for client connection");
+                logger.LogInformation("Listening for client connections");
             }
             catch (System.Exception e)
             {

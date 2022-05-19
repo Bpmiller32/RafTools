@@ -35,7 +35,6 @@ namespace Crawler.App
             this.config = config;
             this.tasks = tasks;
             this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
-            this.connection = new SocketConnection(logger, tasks, context);
         }
 
         protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
