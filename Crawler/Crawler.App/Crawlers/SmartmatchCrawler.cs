@@ -8,41 +8,48 @@ using PuppeteerSharp;
 using System.Linq;
 using System.IO;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Common.Data;
+using Crawler.App.Utils;
 
 namespace Crawler.App
 {
-    public class SmartmatchCrawler : BackgroundService
+    public class SmartmatchCrawler
     {
+        public Settings Settings { get; set; } = new Settings { Name = "SmartMatch" };
+
         private readonly ILogger<SmartmatchCrawler> logger;
         private readonly IConfiguration config;
         private readonly ComponentTask tasks;
+        private readonly SocketConnection connection;
         private readonly DatabaseContext context;
-
-        private CancellationToken stoppingToken;
-        private Settings settings = new Settings() { Name = "SmartMatch" };
 
         private List<UspsFile> tempFiles = new List<UspsFile>();
 
-        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, IServiceScopeFactory factory, ComponentTask tasks)
+        public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
         {
             this.logger = logger;
             this.config = config;
             this.tasks = tasks;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.connection = connection;
+            this.context = context;
+
+            Settings = Settings.Validate(Settings, config);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            stoppingToken = serviceStoppingToken;
-            settings = Settings.Validate(settings, config);
+            connection.SendMessage();
 
-            if (settings.CrawlerEnabled == false)
+            if (Settings.CrawlerEnabled == false)
             {
-                tasks.SmartMatch = ComponentStatus.Disabled;
                 logger.LogInformation("Crawler disabled");
+                tasks.SmartMatch = ComponentStatus.Disabled;
+                connection.SendMessage();
+                return;
+            }
+            if (Settings.AutoCrawlEnabled == false)
+            {
+                logger.LogDebug("AutoCrawl disabled");
                 return;
             }
 
@@ -50,26 +57,54 @@ namespace Crawler.App
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    logger.LogInformation("Starting Crawler");
-                    tasks.SmartMatch = ComponentStatus.Ready;
-
-                    await PullFiles();
-                    CheckFiles();
-                    await DownloadFiles();
-                    CheckBuildReady();
-
-                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    logger.LogInformation("Starting Crawler - Auto mode");
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                    await this.ExecuteAsync(stoppingToken);
                 }
+            }
+            catch (TaskCanceledException e)
+            {
+                logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
-                tasks.SmartMatch = ComponentStatus.Error;
                 logger.LogError(e.Message);
             }
         }
 
-        private async Task PullFiles()
+        public async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                logger.LogInformation("Starting Crawler");
+                tasks.SmartMatch = ComponentStatus.InProgress;
+                connection.SendMessage();
+
+                await PullFiles(stoppingToken);
+                CheckFiles(stoppingToken);
+                await DownloadFiles(stoppingToken);
+                CheckBuildReady(stoppingToken);
+
+                tasks.SmartMatch = ComponentStatus.Ready;
+                connection.SendMessage();
+            }
+            catch (TaskCanceledException e)
+            {
+                tasks.SmartMatch = ComponentStatus.Ready;
+                connection.SendMessage();
+                logger.LogDebug(e.Message);
+            }
+            catch (System.Exception e)
+            {
+                tasks.SmartMatch = ComponentStatus.Error;
+                connection.SendMessage();
+                logger.LogError(e.Message);
+            }
+        }
+
+        private async Task PullFiles(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -95,9 +130,9 @@ namespace Crawler.App
 
                         await page.WaitForSelectorAsync(@"#email");
                         await page.FocusAsync(@"#email");
-                        await page.Keyboard.TypeAsync(settings.UserName);
+                        await page.Keyboard.TypeAsync(Settings.UserName);
                         await page.FocusAsync(@"#password");
-                        await page.Keyboard.TypeAsync(settings.Password);
+                        await page.Keyboard.TypeAsync(Settings.Password);
 
                         await page.ClickAsync(@"#login");
 
@@ -171,7 +206,7 @@ namespace Crawler.App
             }
         }
 
-        private void CheckFiles()
+        private void CheckFiles(CancellationToken stoppingToken)
         {
             // Cancellation requested or PullFile failed
             if (stoppingToken.IsCancellationRequested == true)
@@ -187,7 +222,7 @@ namespace Crawler.App
                 if (!fileInDb)
                 {
                     // Check if file exists on the disk 
-                    if (!File.Exists(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle, file.FileName)))
+                    if (!File.Exists(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle, file.FileName)))
                     {
                         file.OnDisk = false;
                     }
@@ -225,7 +260,7 @@ namespace Crawler.App
             tempFiles.Clear();
         }
 
-        private async Task DownloadFiles()
+        private async Task DownloadFiles(CancellationToken stoppingToken)
         {
             List<UspsFile> offDisk = context.UspsFiles.Where(x => x.OnDisk == false).ToList();
 
@@ -240,8 +275,8 @@ namespace Crawler.App
             foreach (UspsFile file in offDisk)
             {
                 // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle));
-                Cleanup(Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle));
+                Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle));
+                Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle), stoppingToken);
             }
 
             // Download local chromium binary to launch browser
@@ -263,9 +298,9 @@ namespace Crawler.App
 
                         await page.WaitForSelectorAsync(@"#email");
                         await page.FocusAsync(@"#email");
-                        await page.Keyboard.TypeAsync(settings.UserName);
+                        await page.Keyboard.TypeAsync(Settings.UserName);
                         await page.FocusAsync(@"#password");
-                        await page.Keyboard.TypeAsync(settings.Password);
+                        await page.Keyboard.TypeAsync(Settings.Password);
 
                         await page.ClickAsync(@"#login");
 
@@ -281,21 +316,21 @@ namespace Crawler.App
                         // Changed behavior, start download and wait for indivdual file to download. USPS website corrupts downloads if you do them all at once sometimes
                         foreach (var file in offDisk)
                         {
-                            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle);
+                            string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle);
                             await page.Client.SendAsync(@"Page.setDownloadBehavior", new { behavior = @"allow", downloadPath = path });
 
                             await page.EvaluateExpressionAsync(@"getFileForDownload(" + file.ProductKey + "," + file.FileId + ",rw_" + file.FileId + ");");
                             await Task.Delay(TimeSpan.FromSeconds(5));
 
                             logger.LogInformation("Currently downloading: " + file.FileName + " " + file.DataMonth + "/" + file.DataYear + " " + file.Cycle);
-                            await WaitForDownload(file);
+                            await WaitForDownload(file, stoppingToken);
                         }
                     }
                 }
             }
         }
 
-        private void CheckBuildReady()
+        private void CheckBuildReady(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -313,14 +348,41 @@ namespace Crawler.App
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 6)
                 {
                     bundle.IsReadyForBuild = true;
-                    logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear + " " + bundle.Cycle);
+
+                    DateTime timestamp = DateTime.Now;
+                    string hour;
+                    string minute;
+                    string ampm;
+                    if (timestamp.Minute < 10)
+                    {
+                        minute = timestamp.Minute.ToString().PadLeft(2, '0');
+                    }
+                    else
+                    {
+                        minute = timestamp.Minute.ToString();
+                    }
+                    if (timestamp.Hour > 12)
+                    {
+                        hour = (timestamp.Hour - 12).ToString();
+                        ampm = "pm";
+                    }
+                    else
+                    {
+                        hour = timestamp.Hour.ToString();
+                        ampm = "am";
+                    }
+                    bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+                    bundle.DownloadTime = hour + ":" + minute + ampm;
+                    bundle.FileCount = bundle.BuildFiles.Count;
+
+                    logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear);
                 }
 
                 context.SaveChanges();
             }
         }
 
-        private async Task WaitForDownload(UspsFile file)
+        private async Task WaitForDownload(UspsFile file, CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -328,7 +390,7 @@ namespace Crawler.App
                 return;
             }
 
-            string path = Path.Combine(settings.AddressDataPath, file.DataYearMonth, file.Cycle);
+            string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle);
             if (!File.Exists(Path.Combine(path, file.FileName + @".CRDOWNLOAD")))
             {
                 logger.LogDebug("Finished downloading");
@@ -340,10 +402,10 @@ namespace Crawler.App
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-            await WaitForDownload(file);
+            await WaitForDownload(file, stoppingToken);
         }
 
-        private void Cleanup(string path)
+        private void Cleanup(string path, CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {

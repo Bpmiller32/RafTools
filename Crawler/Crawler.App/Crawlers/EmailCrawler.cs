@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using MailKit.Search;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Common.Data;
 using Crawler.App.Utils;

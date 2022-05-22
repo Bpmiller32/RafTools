@@ -8,45 +8,49 @@ using System.Threading.Tasks;
 using Common.Data;
 using Crawler.App.Utils;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 
 namespace Crawler.App
 {
-    public class RoyalCrawler : BackgroundService
+    public class RoyalCrawler
     {
-        private readonly ILogger logger;
+        public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
+
+        private readonly ILogger<RoyalCrawler> logger;
         private readonly IConfiguration config;
         private readonly ComponentTask tasks;
+        private readonly SocketConnection connection;
         private readonly DatabaseContext context;
-
-        private CancellationToken stoppingToken;
-        private Settings settings = new Settings() { Name = "RoyalMail" };
-        private SocketConnection connection;
 
         private RoyalFile tempFile = new RoyalFile();
 
-        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, IServiceScopeFactory factory, ComponentTask tasks)
+        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
         {
             this.logger = logger;
             this.config = config;
             this.tasks = tasks;
-            this.context = factory.CreateScope().ServiceProvider.GetRequiredService<DatabaseContext>();
+            this.connection = connection;
+            this.context = context;
+
+            Settings = Settings.Validate(Settings, config);
         }
 
-        protected override async Task ExecuteAsync(CancellationToken serviceStoppingToken)
+        public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            stoppingToken = serviceStoppingToken;
-            settings = Settings.Validate(settings, config);
+            connection.SendMessage();
 
-            if (settings.CrawlerEnabled == false)
+            if (Settings.CrawlerEnabled == false)
             {
+                logger.LogInformation("Crawler disabled");
                 tasks.RoyalMail = ComponentStatus.Disabled;
                 connection.SendMessage();
-                logger.LogInformation("Crawler disabled");
+                return;
+            }
+            if (Settings.AutoCrawlEnabled == false)
+            {
+                logger.LogDebug("AutoCrawl disabled");
                 return;
             }
 
@@ -54,21 +58,44 @@ namespace Crawler.App
             {
                 while (!stoppingToken.IsCancellationRequested)
                 {
-                    logger.LogInformation("Starting Crawler");
-                    tasks.RoyalMail = ComponentStatus.InProgress;
-                    connection.SendMessage();
-
-                    PullFile();
-                    CheckFile();
-                    await DownloadFile();
-                    CheckBuildReady();
-
-                    tasks.RoyalMail = ComponentStatus.Ready;
-                    connection.SendMessage();
-
-                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    logger.LogInformation("Starting Crawler - Auto mode");
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                    await this.ExecuteAsync(stoppingToken);
                 }
+            }
+            catch (TaskCanceledException e)
+            {
+                logger.LogDebug(e.Message);
+            }
+            catch (System.Exception e)
+            {
+                logger.LogError(e.Message);
+            }
+        }
+
+        public async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            try
+            {
+                logger.LogInformation("Starting Crawler");
+                tasks.RoyalMail = ComponentStatus.InProgress;
+                connection.SendMessage();
+
+                PullFile(stoppingToken);
+                CheckFile(stoppingToken);
+                await DownloadFile(stoppingToken);
+                CheckBuildReady(stoppingToken);
+
+                tasks.RoyalMail = ComponentStatus.Ready;
+                connection.SendMessage();
+            }
+            catch (TaskCanceledException e)
+            {
+                tasks.RoyalMail = ComponentStatus.Ready;
+                connection.SendMessage();
+                logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
@@ -78,7 +105,7 @@ namespace Crawler.App
             }
         }
 
-        public void PullFile()
+        public void PullFile(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -86,7 +113,7 @@ namespace Crawler.App
             }
 
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
-            request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
+            request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
             request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
 
             DateTime lastModified;
@@ -111,7 +138,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckFile()
+        public void CheckFile(CancellationToken stoppingToken)
         {
             // Cancellation requested or PullFile failed
             if (stoppingToken.IsCancellationRequested == true)
@@ -125,7 +152,7 @@ namespace Crawler.App
             if (!fileInDb)
             {
                 // Check if the folder exists on the disk
-                if (!Directory.Exists(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
+                if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
                 {
                     tempFile.OnDisk = false;
                 }
@@ -160,7 +187,7 @@ namespace Crawler.App
             }
         }
 
-        public async Task DownloadFile()
+        public async Task DownloadFile(CancellationToken stoppingToken)
         {
             List<RoyalFile> offDisk = context.RoyalFiles.Where(x => x.OnDisk == false).ToList();
 
@@ -174,7 +201,7 @@ namespace Crawler.App
 
             using (WebClient request = new WebClient())
             {
-                request.Credentials = new NetworkCredential(settings.UserName, settings.Password);
+                request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
                 byte[] fileData;
 
                 using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
@@ -184,9 +211,9 @@ namespace Crawler.App
                     fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
                 }
 
-                Directory.CreateDirectory(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth));
+                Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth));
 
-                using (FileStream file = File.Create(Path.Combine(settings.AddressDataPath, tempFile.DataYearMonth, @"SetupRM.exe")))
+                using (FileStream file = File.Create(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, @"SetupRM.exe")))
                 {
                     file.Write(fileData, 0, fileData.Length);
                     file.Close();
@@ -201,7 +228,7 @@ namespace Crawler.App
             }
         }
 
-        public void CheckBuildReady()
+        public void CheckBuildReady(CancellationToken stoppingToken)
         {
             if (stoppingToken.IsCancellationRequested == true)
             {
@@ -219,6 +246,33 @@ namespace Crawler.App
                 if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 1)
                 {
                     bundle.IsReadyForBuild = true;
+
+                    DateTime timestamp = DateTime.Now;
+                    string hour;
+                    string minute;
+                    string ampm;
+                    if (timestamp.Minute < 10)
+                    {
+                        minute = timestamp.Minute.ToString().PadLeft(2, '0');
+                    }
+                    else
+                    {
+                        minute = timestamp.Minute.ToString();
+                    }
+                    if (timestamp.Hour > 12)
+                    {
+                        hour = (timestamp.Hour - 12).ToString();
+                        ampm = "pm";
+                    }
+                    else
+                    {
+                        hour = timestamp.Hour.ToString();
+                        ampm = "am";
+                    }
+                    bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+                    bundle.DownloadTime = hour + ":" + minute + ampm;
+                    bundle.FileCount = bundle.BuildFiles.Count;
+
                     logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear);
                 }
 

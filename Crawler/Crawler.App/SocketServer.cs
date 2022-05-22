@@ -1,4 +1,3 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
@@ -41,7 +40,9 @@ namespace Crawler.App
 
             SocketConnection.SocketServer = server.WebSocketServices;
             SocketConnection.EmailCrawler = emailCrawler;
+            SocketConnection.SmartMatchCrawler = smartmatchCrawler;
             SocketConnection.ParascriptCrawler = parascriptCrawler;
+            SocketConnection.RoyalCrawler = royalCrawler;
 
             server.AddWebSocketService<SocketConnection>("/", () =>
             {
