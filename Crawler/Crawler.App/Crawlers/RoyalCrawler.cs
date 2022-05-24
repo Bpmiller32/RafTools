@@ -39,13 +39,13 @@ namespace Crawler.App
 
         public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            connection.SendMessage();
+            connection.SendMessage(royalMail: true);
 
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
                 tasks.RoyalMail = ComponentStatus.Disabled;
-                connection.SendMessage();
+                connection.SendMessage(royalMail: true);
                 return;
             }
             if (Settings.AutoCrawlEnabled == false)
@@ -81,7 +81,7 @@ namespace Crawler.App
             {
                 logger.LogInformation("Starting Crawler");
                 tasks.RoyalMail = ComponentStatus.InProgress;
-                connection.SendMessage();
+                connection.SendMessage(royalMail: true);
 
                 PullFile(stoppingToken);
                 CheckFile(stoppingToken);
@@ -89,18 +89,18 @@ namespace Crawler.App
                 CheckBuildReady(stoppingToken);
 
                 tasks.RoyalMail = ComponentStatus.Ready;
-                connection.SendMessage();
+                // connection.SendMessage(royalMail: true);
             }
             catch (TaskCanceledException e)
             {
                 tasks.RoyalMail = ComponentStatus.Ready;
-                connection.SendMessage();
+                connection.SendMessage(royalMail: true);
                 logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
                 tasks.RoyalMail = ComponentStatus.Error;
-                connection.SendMessage();
+                connection.SendMessage(royalMail: true);
                 logger.LogError(e.Message);
             }
         }

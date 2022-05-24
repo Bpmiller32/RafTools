@@ -38,13 +38,13 @@ namespace Crawler.App
 
         public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            connection.SendMessage();
+            connection.SendMessage(smartMatch: true);
 
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
                 tasks.SmartMatch = ComponentStatus.Disabled;
-                connection.SendMessage();
+                connection.SendMessage(smartMatch: true);
                 return;
             }
             if (Settings.AutoCrawlEnabled == false)
@@ -80,7 +80,7 @@ namespace Crawler.App
             {
                 logger.LogInformation("Starting Crawler");
                 tasks.SmartMatch = ComponentStatus.InProgress;
-                connection.SendMessage();
+                connection.SendMessage(smartMatch: true);
 
                 await PullFiles(stoppingToken);
                 CheckFiles(stoppingToken);
@@ -88,18 +88,18 @@ namespace Crawler.App
                 CheckBuildReady(stoppingToken);
 
                 tasks.SmartMatch = ComponentStatus.Ready;
-                connection.SendMessage();
+                // connection.SendMessage(smartMatch: true);
             }
             catch (TaskCanceledException e)
             {
                 tasks.SmartMatch = ComponentStatus.Ready;
-                connection.SendMessage();
+                connection.SendMessage(smartMatch: true);
                 logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
                 tasks.SmartMatch = ComponentStatus.Error;
-                connection.SendMessage();
+                connection.SendMessage(smartMatch: true);
                 logger.LogError(e.Message);
             }
         }

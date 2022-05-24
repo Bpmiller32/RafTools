@@ -131,89 +131,113 @@ public class SocketConnection : WebSocketBehavior
         }
     }
 
-    public void SendMessage()
+    public void SendMessage(bool smartMatch = false, bool parascript = false, bool royalMail = false)
     {
-        string data = ReportStatus();
+        string data = ReportStatus(smartMatch, parascript, royalMail);
         SocketServer.Broadcast(data);
     }
 
 
 
-    private string ReportStatus()
+    private string ReportStatus(bool smartMatch = false, bool parascript = false, bool royalMail = false)
     {
-        List<List<BuildInfo>> buildBundle = GetAvailableBuilds();
+        List<List<BuildInfo>> buildBundle = GetAvailableBuilds(smartMatch, parascript, royalMail);
 
         Dictionary<ComponentStatus, string> statusMap = new Dictionary<ComponentStatus, string>() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
 
-        SocketResponse SmartMatch = new SocketResponse()
+        if (smartMatch)
         {
-            AutoCrawlStatus = statusMap[tasks.SmartMatch],
-            AutoCrawlEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
-            AvailableBuilds = buildBundle[0],
-            AutoCrawlDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
-        };
-        SocketResponse Parascript = new SocketResponse()
-        {
-            AutoCrawlStatus = statusMap[tasks.Parascript],
-            AutoCrawlEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
-            AvailableBuilds = buildBundle[1],
-            AutoCrawlDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
-        };
-        SocketResponse RoyalMail = new SocketResponse()
-        {
-            AutoCrawlStatus = statusMap[tasks.RoyalMail],
-            AutoCrawlEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
-            AvailableBuilds = buildBundle[2],
-            AutoCrawlDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
-        };
+            SocketResponse SmartMatch = new SocketResponse()
+            {
+                AutoCrawlStatus = statusMap[tasks.SmartMatch],
+                AutoCrawlEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[0],
+                AutoCrawlDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
+            };
 
-        string serializedObject = JsonConvert.SerializeObject(new { SmartMatch, Parascript, RoyalMail });
+            string serializedObject = JsonConvert.SerializeObject(new { SmartMatch });
+            return serializedObject;
+        }
+        if (parascript)
+        {
+            SocketResponse Parascript = new SocketResponse()
+            {
+                AutoCrawlStatus = statusMap[tasks.Parascript],
+                AutoCrawlEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[1],
+                AutoCrawlDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
+            };
 
-        return serializedObject;
+            string serializedObject = JsonConvert.SerializeObject(new { Parascript });
+            return serializedObject;
+        }
+        if (royalMail)
+        {
+            SocketResponse RoyalMail = new SocketResponse()
+            {
+                AutoCrawlStatus = statusMap[tasks.RoyalMail],
+                AutoCrawlEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[2],
+                AutoCrawlDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
+            };
+
+            string serializedObject = JsonConvert.SerializeObject(new { RoyalMail });
+            return serializedObject;
+        }
+
+        return "No Directory specified";
     }
 
-    private List<List<BuildInfo>> GetAvailableBuilds()
+    private List<List<BuildInfo>> GetAvailableBuilds(bool smartMatch = false, bool parascript = false, bool royalMail = false)
     {
         List<BuildInfo> smBuilds = new List<BuildInfo>();
         List<BuildInfo> psBuilds = new List<BuildInfo>();
         List<BuildInfo> rmBuilds = new List<BuildInfo>();
-
-        List<UspsBundle> uspsBundles = context.UspsBundles.Where(x => (x.IsReadyForBuild == true)).ToList();
-        List<ParaBundle> paraBundles = context.ParaBundles.Where(x => (x.IsReadyForBuild == true)).ToList();
-        List<RoyalBundle> royalBundles = context.RoyalBundles.Where(x => (x.IsReadyForBuild == true)).ToList();
-
-        foreach (UspsBundle bundle in uspsBundles)
-        {
-            smBuilds.Add(new BuildInfo()
-            {
-                Name = bundle.DataYearMonth,
-                DownloadDate = bundle.DownloadDate,
-                DownloadTime = bundle.DownloadTime,
-                FileCount = bundle.FileCount
-            });
-        }
-        foreach (ParaBundle bundle in paraBundles)
-        {
-            psBuilds.Add(new BuildInfo()
-            {
-                Name = bundle.DataYearMonth,
-                DownloadDate = bundle.DownloadDate,
-                DownloadTime = bundle.DownloadTime,
-                FileCount = bundle.FileCount
-            });
-        }
-        foreach (RoyalBundle bundle in royalBundles)
-        {
-            rmBuilds.Add(new BuildInfo()
-            {
-                Name = bundle.DataYearMonth,
-                DownloadDate = bundle.DownloadDate,
-                DownloadTime = bundle.DownloadTime,
-                FileCount = bundle.FileCount
-            });
-        }
-
         List<List<BuildInfo>> buildBundle = new List<List<BuildInfo>>();
+
+        if (smartMatch)
+        {
+            List<UspsBundle> uspsBundles = context.UspsBundles.Where(x => (x.IsReadyForBuild == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (UspsBundle bundle in uspsBundles)
+            {
+                smBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    DownloadDate = bundle.DownloadDate,
+                    DownloadTime = bundle.DownloadTime,
+                    FileCount = bundle.FileCount
+                });
+            }
+        }
+        if (parascript)
+        {
+            List<ParaBundle> paraBundles = context.ParaBundles.Where(x => (x.IsReadyForBuild == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (ParaBundle bundle in paraBundles)
+            {
+                psBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    DownloadDate = bundle.DownloadDate,
+                    DownloadTime = bundle.DownloadTime,
+                    FileCount = bundle.FileCount
+                });
+            }
+        }
+        if (royalMail)
+        {
+            List<RoyalBundle> royalBundles = context.RoyalBundles.Where(x => (x.IsReadyForBuild == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (RoyalBundle bundle in royalBundles)
+            {
+                rmBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    DownloadDate = bundle.DownloadDate,
+                    DownloadTime = bundle.DownloadTime,
+                    FileCount = bundle.FileCount
+                });
+            }
+        }
+
         buildBundle.Add(smBuilds);
         buildBundle.Add(psBuilds);
         buildBundle.Add(rmBuilds);
