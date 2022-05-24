@@ -58,6 +58,7 @@ public class SocketConnection : WebSocketBehavior
 
     protected override async void OnMessage(MessageEventArgs e)
     {
+        // TODO: switch to System.Text.Json to remove Newtonsoft dependency
         SocketMessage message = JsonConvert.DeserializeObject<SocketMessage>(e.Data);
 
         if (message.Crawler == "SmartMatch")

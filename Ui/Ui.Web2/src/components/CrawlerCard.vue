@@ -16,10 +16,7 @@ import { useStore } from "../store";
 const props = defineProps(["dirType"]);
 const store = useStore();
 
-// Store refs
-// const autoCrawlStatus = ref(store.crawlers[props.dirType].autoCrawlStatus);
-// const autoCrawlEnabled = ref(store.crawlers[props.dirType].autoCrawlEnabled);
-// const autoCrawlDate = ref(store.crawlers[props.dirType].autoCrawlDate);
+// Store refs (local convienence to writing store.crawlers[props.dirType]...)
 const autoCrawlStatus = ref(null);
 const autoCrawlEnabled = ref(null);
 const autoCrawlDate = ref(null);
@@ -28,8 +25,12 @@ const autoCrawlDate = ref(null);
 const refCrawlButtonIcon = ref(null);
 const refEditPanelIcon = ref(null);
 
+const refTest = ref(null);
+watch(autoCrawlStatus, () => {
+  anime({ targets: refTest, duration: 5000, opacity: [0, 0.99999] });
+});
+
 // States
-const firstAnimationSupressed = ref(false);
 const crawlButtonState = ref({
   isActive: null,
   label: null,
@@ -46,36 +47,24 @@ const crawlButtonState = ref({
 
     if (autoCrawlStatus.value == "Ready") {
       crawlButtonState.value.label = "Force Crawl";
-      crawlButtonState.value.isActive = true;
-      anime.remove(el);
-      if (firstAnimationSupressed.value == false) {
-        return;
-      }
       crawlButtonState.value.animation = "ButtonFill";
+      anime.remove(el);
+      crawlButtonState.value.isActive = true;
     } else if (autoCrawlStatus.value == "In Progress") {
       crawlButtonState.value.label = "Crawling ....";
-      crawlButtonState.value.isActive = false;
-      animation.play();
-      if (firstAnimationSupressed.value == false) {
-        return;
-      }
       crawlButtonState.value.animation = "ButtonDrain";
+      animation.play();
+      crawlButtonState.value.isActive = false;
     } else if (autoCrawlStatus.value == "Error") {
       crawlButtonState.value.label = "Force Crawl";
-      crawlButtonState.value.isActive = false;
-      anime.remove(el);
-      if (firstAnimationSupressed.value == false) {
-        return;
-      }
       crawlButtonState.value.animation = "ButtonDrain";
+      anime.remove(el);
+      crawlButtonState.value.isActive = false;
     } else if (autoCrawlStatus.value == "Disabled") {
       crawlButtonState.value.label = "Force Crawl";
-      crawlButtonState.value.isActive = false;
-      anime.remove(el);
-      if (firstAnimationSupressed.value == false) {
-        return;
-      }
       crawlButtonState.value.animation = "ButtonDrain";
+      anime.remove(el);
+      crawlButtonState.value.isActive = false;
     }
   },
 });
@@ -106,7 +95,7 @@ const editPanelState = ref({
     today.setHours(0, 0, 0, 0);
 
     if (newDate >= today) {
-      store.SendMessageCrawler(
+      store.SendMessageUpdate(
         props.dirType,
         "autoCrawlDate",
         dateString[1] + "/" + dateString[2] + "/" + dateString[0]
@@ -139,9 +128,6 @@ const statusState = ref({
       statusState.value.currentIcon = statusState.value.icons[3];
     }
 
-    if (firstAnimationSupressed.value == false) {
-      return;
-    }
     statusState.value.animation = "FadeIn";
   },
 });
@@ -165,31 +151,28 @@ const logoState = ref({
   },
 });
 
-// OnMounted functions
+// OnMounted
 onMounted(() => {
+  autoCrawlStatus.value = store.crawlers[props.dirType].AutoCrawlStatus;
+  autoCrawlEnabled.value = store.crawlers[props.dirType].AutoCrawlEnabled;
+  autoCrawlDate.value = store.crawlers[props.dirType].AutoCrawlDate;
+
   logoState.value.SetIcon();
-  // statusState.value.SetState();
-  // crawlButtonState.value.SetState();
-  // await new Promise((resolve) => {
-  //   setTimeout(console.log("timeout"), 5000);
-  //   resolve();
-  // });
-  // editPanelState.value.MenuRotate;
+  statusState.value.SetState();
+  crawlButtonState.value.SetState();
 });
 
 // Watchers
-// Deep watch to check store updates
+// Deep watch to check store changes
 watch(
   () => store.crawlers[props.dirType],
   () => {
-    autoCrawlStatus.value = store.crawlers[props.dirType].autoCrawlStatus;
-    autoCrawlEnabled.value = store.crawlers[props.dirType].autoCrawlEnabled;
-    autoCrawlDate.value = store.crawlers[props.dirType].autoCrawlDate;
+    autoCrawlStatus.value = store.crawlers[props.dirType].AutoCrawlStatus;
+    autoCrawlEnabled.value = store.crawlers[props.dirType].AutoCrawlEnabled;
+    autoCrawlDate.value = store.crawlers[props.dirType].AutoCrawlDate;
 
-    // logoState.value.SetIcon();
     statusState.value.SetState();
     crawlButtonState.value.SetState();
-    firstAnimationSupressed.value = true;
   },
   { deep: true }
 );
@@ -209,36 +192,29 @@ function PanelButtonClicked(isPanelOpen, ClosePanel) {
   editPanelState.value.RotateMenu(isPanelOpen);
 }
 function CrawlButtonClicked(ClosePanel) {
-  if (crawlButtonState.value.isActive) {
-    crawlButtonState.value.isActive = false;
-    crawlButtonState.value.label = "Crawling ....";
-    crawlButtonState.value.animation = "ButtonDrain";
-    ClosePanel();
-
-    // TODO: remove 2nd arg, move out of if statement
-    store.SendMessageForceCrawl(props.dirType, "In Progress");
-  } else {
-    crawlButtonState.value.isActive = true;
-    crawlButtonState.value.label = "Force Crawl";
-    crawlButtonState.value.animation = "ButtonFill";
-
-    // TODO: remove 2nd arg
-    store.SendMessageForceCrawl(props.dirType, "Ready");
+  if (crawlButtonState.value.isActive == false) {
+    return;
   }
-  crawlButtonState.value.SetState();
+
+  ClosePanel();
+  store.SendMessageForce(props.dirType);
 }
 function CheckboxClicked() {
-  if (store.crawlers[props.dirType].autoCrawlEnabled == true) {
-    store.SendMessageCrawler(props.dirType, "autoCrawlEnabled", false);
+  if (crawlButtonState.value.isActive == false) {
+    return;
+  }
+
+  if (autoCrawlEnabled.value == true) {
+    store.SendMessageUpdate(props.dirType, "autoCrawlEnabled", false);
   } else {
-    store.SendMessageCrawler(props.dirType, "autoCrawlEnabled", true);
+    store.SendMessageUpdate(props.dirType, "autoCrawlEnabled", true);
   }
 }
 </script>
 
 <template>
   <div
-    class="overflow-hidden select-none min-w-[22rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
+    class="overflow-hidden select-none min-w-[23rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
   >
     <div class="flex items-center justify-between p-6">
       <div class="shrink-0">
@@ -283,7 +259,14 @@ function CheckboxClicked() {
             type="checkbox"
             v-model="autoCrawlEnabled"
             @click="CheckboxClicked()"
-            class="flex items-center ml-2 cursor-pointer focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+            :disabled="!crawlButtonState.isActive"
+            :class="{
+              'text-indigo-600 cursor-pointer':
+                crawlButtonState.isActive == true,
+              'text-gray-400 cursor-not-allowed':
+                crawlButtonState.isActive == false,
+              'flex items-center ml-2 h-4 w-4 focus:ring-indigo-500 border-gray-300 rounded disabled:bg-gray-400': true,
+            }"
           />
         </div>
         <div class="text-gray-500 text-sm">
@@ -292,7 +275,6 @@ function CheckboxClicked() {
             <span :key="autoCrawlDate" class="mr-16">{{ autoCrawlDate }}</span>
           </AnimationHandler>
         </div>
-        <!-- <div class="bg-red-200 min-w-full pr-16">&nbsp;</div> -->
       </div>
       <img class="w-20 h-20 border rounded-full" :src="logoState.currentIcon" />
     </div>
@@ -361,7 +343,7 @@ function CheckboxClicked() {
           <button
             type="button"
             :key="crawlButtonState.isActive"
-            @click="CrawlButtonClicked(close, $event)"
+            @click="CrawlButtonClicked(close)"
             :class="{
               'bg-indigo-600 bg-[length:150%,150%] hover:bg-[length:0%,0%] hover:bg-indigo-700':
                 crawlButtonState.isActive == true,

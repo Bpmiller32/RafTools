@@ -1,7 +1,6 @@
 <script setup>
 import anime from "animejs/lib/anime.es.js";
 
-// const props = defineProps(["animation", "args", "transitionMode"]);
 const props = defineProps({
   animation: { type: String, default: "Empty" },
   args: { type: null, required: false },
@@ -12,6 +11,7 @@ const props = defineProps({
 function Handler(el, done, state) {
   if (state == "enter") {
     const enterHandler = props.animation + "Enter";
+
     if (typeof animations[enterHandler] !== "undefined") {
       animations[enterHandler](el, done);
     } else {
@@ -21,6 +21,7 @@ function Handler(el, done, state) {
     return;
   } else if (state == "leave") {
     const leaveHandler = props.animation + "Leave";
+
     if (typeof animations[leaveHandler] !== "undefined") {
       animations[leaveHandler](el, done);
     } else {
@@ -122,10 +123,16 @@ animations.HeadShakeEnter = (el, done) => {
 
 // SlideDown
 animations.SlideDownEnter = (el, done) => {
+  let height = "7rem";
+
+  if (props.args == "nav") {
+    height = "9.65rem";
+  }
+
   anime({
     targets: el,
     duration: 500,
-    height: "7rem",
+    height: height,
     easing: "easeInOutQuad",
     complete: done,
   });
@@ -195,30 +202,52 @@ animations.FadeInEnter = (el, done) => {
   });
 };
 
-// FadeInLeft
-animations.FadeInLeftEnter = (el, done) => {
+// Nav FadeIn
+animations.NavFadeInEnter = (el, done) => {
   anime({
     targets: el,
-    duration: 1000,
-    opacity: [0, 0.99999],
-    translateX: ["-100%", "0%"],
-    complete: () => {
-      el.removeAttribute("style");
-      done?.();
-    },
+    duration: 5000,
+    // borderBottomColor: ["rgba(79, 70, 229, 0)", "rgba(79, 70, 229, 0.99999)"],
+    borderBottomColor: ["rgb(209 213 219)", "rgb(79 70 229)"],
+    complete: done,
   });
 };
-animations.FadeInLeftLeave = (el, done) => {
+
+// Page Transitions
+animations.FromRightToLeftEnter = (el, done) => {
   anime({
     targets: el,
-    duration: 1000,
-    opacity: [0.99999, 0],
+    duration: 500,
+    translateX: ["-100%", "0%"],
+    easing: "easeInOutQuad",
+    complete: done,
+  });
+};
+animations.FromRightToLeftLeave = (el, done) => {
+  anime({
+    targets: el,
+    duration: 500,
+    translateX: ["0%", "100%"],
+    easing: "easeInOutQuad",
+    complete: done,
+  });
+};
+animations.FromLeftToRightEnter = (el, done) => {
+  anime({
+    targets: el,
+    duration: 500,
+    translateX: ["100%", "0%"],
+    easing: "easeInOutQuad",
+    complete: done,
+  });
+};
+animations.FromLeftToRightLeave = (el, done) => {
+  anime({
+    targets: el,
+    duration: 500,
     translateX: ["0%", "-100%"],
     easing: "easeInOutQuad",
-    complete: () => {
-      el.removeAttribute("style");
-      done?.();
-    },
+    complete: done,
   });
 };
 
@@ -266,16 +295,6 @@ animations.ButtonDrainEnter = (el, done) => {
       el.removeAttribute("style");
       done?.();
     },
-  });
-};
-
-// Nav FadeIn
-animations.NavFadeInEnter = (el, done) => {
-  anime({
-    targets: el,
-    duration: 5000,
-    borderBottomColor: ["rgba(79, 70, 229, 0)", "rgba(79, 70, 229, 0.99999)"],
-    complete: done,
   });
 };
 </script>

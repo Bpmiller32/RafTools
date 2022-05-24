@@ -1,15 +1,14 @@
 <script setup>
 import { DocumentDownloadIcon } from "@heroicons/vue/outline";
-import { onBeforeMount, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import anime from "animejs/lib/anime.es.js";
 import { useStore } from "../store";
-import AnimationHandler from "./AnimationHandler.vue";
 
 const props = defineProps(["dirType"]);
 const store = useStore();
 
 // Store refs
-const dirs = ref(store.crawlers[props.dirType].directories);
+const dirs = ref(null);
 
 // States
 const logoState = ref({
@@ -67,17 +66,17 @@ const directoriesState = ref({
     const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     for (let index = 0; index < dirs.value.length; index++) {
-      const monthNum = dirs.value[index].name.substring(4, 6);
-      const yearNum = dirs.value[index].name.substring(0, 4);
+      const monthNum = dirs.value[index].Name.substring(4, 6);
+      const yearNum = dirs.value[index].Name.substring(0, 4);
       let isNew = false;
 
       const name =
         directoriesState.value.monthNames.get(monthNum) + " " + yearNum;
       const icon = directoriesState.value.icons.get(monthNum);
 
-      const dateString = dirs.value[index].downloadDate.split("/");
+      const dateString = dirs.value[index].DownloadDate.split("/");
       const dirDate = new Date(
-        "20" + dateString[2],
+        dateString[2],
         dateString[0] - 1,
         parseInt(dateString[1])
       );
@@ -88,8 +87,9 @@ const directoriesState = ref({
 
       const dir = {
         name: name,
-        fileCount: dirs.value[index].fileCount,
-        downloadDate: dirs.value[index].downloadDate,
+        fileCount: dirs.value[index].FileCount,
+        downloadDate: dirs.value[index].DownloadDate,
+        downloadTime: dirs.value[index].DownloadTime,
         icon: icon,
         isNew: isNew,
       };
@@ -102,7 +102,6 @@ const directoriesState = ref({
       targets: el,
       duration: 5000,
       delay: el.dataset.index * 500,
-      // translateY: [-100, 0],
       opacity: [0, 0.99999],
       complete: () => {
         el.removeAttribute("style");
@@ -114,22 +113,24 @@ const directoriesState = ref({
 
 // onMounted
 onMounted(() => {
+  dirs.value = store.crawlers[props.dirType].AvailableBuilds;
+
   logoState.value.SetIcon();
   directoriesState.value.FormatData();
 });
 
 // Watchers
 watch(
-  () => store.crawlers[props.dirType].directories.length,
+  () => store.crawlers[props.dirType].AvailableBuilds.length,
   () => {
-    dirs.value = store.crawlers[props.dirType].directories;
+    dirs.value = store.crawlers[props.dirType].AvailableBuilds;
+
     directoriesState.value.FormatData();
   }
 );
 </script>
 
 <template>
-  <!-- TODO: Put screen vertical height vh into pinia, put on watch(), conditionally class set height of all cards + nav -->
   <div class="select-none bg-white pb-4 rounded-lg shadow max-w-sm">
     <div
       class="flex justify-between items-center px-6 py-4 border-b-[1px] border-gray-400"
@@ -168,7 +169,7 @@ watch(
               </span>
             </div>
             <p class="text-sm text-gray-500">
-              Downloaded {{ dir.downloadDate }}
+              Downloaded {{ dir.downloadDate }} @ {{ dir.downloadTime }}
             </p>
           </div>
         </div>

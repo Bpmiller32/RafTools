@@ -1,3 +1,3 @@
 <script setup></script>
 
-<template><div>Hello World</div></template>
+<template><div>Builder placeholder</div></template>

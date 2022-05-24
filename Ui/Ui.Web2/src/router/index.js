@@ -1,39 +1,42 @@
-import { createRouter, createWebHistory, useRoute } from "vue-router";
-import HelloWorld from "../components/HelloWorld.vue";
+import { createRouter, createWebHistory } from "vue-router";
+import LoadingPage from "../components/LoadingPage.vue";
 import CrawlerPage from "../components/CrawlerPage.vue";
-import { useStore } from "../store";
+import BuilderPage from "../components/BuilderPage.vue";
+
+import HelloWorld2 from "../components/HelloWorld2.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: "/",
+      alias: "/Crawler",
       name: "Home",
       component: CrawlerPage,
-      alias: "/Crawler",
+      meta: { fromRoute: null, toRoute: null },
     },
-    // { path: "/Crawler", name: "Crawler", component: CrawlerCard },
     {
       path: "/Builder",
       name: "Builder",
-      component: HelloWorld,
+      component: BuilderPage,
+      meta: { fromRoute: null, toRoute: null },
     },
     {
       path: "/Tester",
       name: "Tester",
-      component: HelloWorld,
+      component: HelloWorld2,
+      meta: { fromRoute: null, toRoute: null },
     },
   ],
 });
 
-router.beforeEach((to) => {
-  const store = useStore();
-  store.prevRoute = store.currRoute;
-});
-
-router.afterEach((to) => {
-  const store = useStore();
-  store.currRoute = to.name;
+router.beforeEach((to, from) => {
+  to.meta.toRoute = to.name;
+  if (typeof from.name === "undefined") {
+    to.meta.fromRoute = to.name;
+  } else {
+    to.meta.fromRoute = from.name;
+  }
 });
 
 export default router;

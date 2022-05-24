@@ -1,121 +1,91 @@
 <script setup>
-// This starter template is using Vue 3 <script setup> SFCs
-// Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
 import { onMounted, ref } from "vue";
 import { useStore } from "./store";
-import { useRouter } from "vue-router";
 import NavBar from "./components/NavBar.vue";
 import ErrorPage from "./components/ErrorPage.vue";
 import AnimationHandler from "./components/AnimationHandler.vue";
-import CrawlerPageVue from "./components/CrawlerPage.vue";
-import HelloWorldVue from "./components/HelloWorld.vue";
-
-// ****
-// TODO: Take out routing, simply swap components in component tag
-// ****
+import LoadingPage from "./components/LoadingPage.vue";
 
 const store = useStore();
-const backendConnected = ref(true);
-const router = useRouter();
-
-const routerState = ref({
-  currentComponent: CrawlerPageVue,
-  components: [CrawlerPageVue, HelloWorldVue],
-  routeAnimation: null,
-  routes: new Map([
-    ["Home Home", "FadeInDown"],
-    ["Home Builder", "FadeInDown"],
-    ["Home Tester", "FadeInDown"],
-    ["Builder Builder", "FadeInDown"],
-    ["Builder Home", "FadeInDown"],
-    ["Builder Tester", "FadeInDown"],
-    ["Tester Tester", "FadeInDown"],
-    ["Tester Home", "FadeInDown"],
-    ["Tester Builder", "FadeInDown"],
-  ]),
-  SetAnimation: () => {
-    console.log("mounted in app prevRoute: ", store.prevRoute);
-    console.log("mounted in app currRoute: ", store.currRoute);
-
-    routerState.value.routeAnimation = routerState.value.routes.get(
-      `${store.prevRoute} ${store.currRoute}`
-    );
-
-    console.log(routerState.value.routes.get(routerState.value.routeAnimation));
-  },
+const backendConnected = ref("loading");
+const loadedData = ref({
+  SmartMatch: false,
+  Parascript: false,
+  RoyalMail: false,
 });
 
-onMounted(async () => {
-  await router.isReady();
-  // routerState.value.SetAnimation();
+const routes = ref(
+  new Map([
+    ["Home Home", "FadeIn"],
+    ["Home Builder", "FromLeftToRight"],
+    ["Home Tester", "FromLeftToRight"],
 
-  // if (sessionStorage.getItem("Store-Key")) {
-  //   console.log("Store-Key exists already");
-  // }
+    ["Builder Builder", "FadeIn"],
+    ["Builder Home", "FromRightToLeft"],
+    ["Builder Tester", "FromLeftToRight"],
 
-  // Tests
-  // store.crawlers.SmartMatch.directories.push({
-  //   name: "202205",
-  //   fileCount: 6,
-  //   downloadDate: "05/01/22",
-  // });
-  // store.crawlers.SmartMatch.directories.push({
-  //   name: "202204",
-  //   fileCount: 6,
-  //   downloadDate: "04/15/22",
-  // });
-  store.crawlers.SmartMatch.autoCrawlStatus = "Ready";
-  store.crawlers.SmartMatch.autoCrawlEnabled = true;
-  store.crawlers.SmartMatch.autoCrawlDate = "10/02/1991";
-  store.crawlers.Parascript.autoCrawlStatus = "Error";
-  store.crawlers.Parascript.autoCrawlEnabled = true;
-  store.crawlers.Parascript.autoCrawlDate = "10/02/1991";
-  store.crawlers.RoyalMail.autoCrawlStatus = "In Progress";
-  store.crawlers.RoyalMail.autoCrawlEnabled = true;
-  store.crawlers.RoyalMail.autoCrawlDate = "10/02/1991";
-  setTimeout(() => {
-    store.crawlers.SmartMatch.autoCrawlStatus = "In Progress";
-    store.crawlers.SmartMatch.autoCrawlEnabled = false;
-    store.crawlers.SmartMatch.autoCrawlDate = "11/11/1111";
-    store.crawlers.SmartMatch.directories.push({
-      name: "202203",
-      fileCount: 6,
-      downloadDate: "03/12/22",
-    });
-  }, 15000);
+    ["Tester Tester", "FadeIn"],
+    ["Tester Home", "FromRightToLeft"],
+    ["Tester Builder", "FromRightToLeft"],
+  ])
+);
 
-  // Websocket
-  // console.log("Starting connection to websocket server");
-  // store.connection = new WebSocket("ws://192.168.50.184:10022");
-  // store.connection.onmessage = function (event) {
-  //   console.log(JSON.parse(event.data));
-  //   store.response = JSON.parse(event.data);
-  // };
-  // store.connection.onopen = function () {
-  //   console.log("Successfully connected to the echo websocket server...");
-  //   backendConnected.value = true;
-  // };
-  // store.connection.onclose = function () {
-  //   // backendConnected.value = false;
-  // };
-  // store.connection.onerror = function () {
-  //   // backendConnected.value = false;
-  // };
+onMounted(() => {
+  store.connection = new WebSocket("ws://192.168.50.184:10022");
+
+  store.connection.onopen = () => {
+    console.log("Successfully connected to back end");
+  };
+  store.connection.onclose = () => {
+    console.log("Unable to connect to back end");
+    backendConnected.value = "error";
+  };
+
+  store.connection.onmessage = (event) => {
+    console.log("Data: ", JSON.parse(event.data), Date());
+    const response = JSON.parse(event.data);
+
+    if (response.SmartMatch != null) {
+      store.crawlers.SmartMatch = response.SmartMatch;
+      loadedData.value.SmartMatch = true;
+    }
+    if (response.Parascript != null) {
+      store.crawlers.Parascript = response.Parascript;
+      loadedData.value.Parascript = true;
+    }
+    if (response.RoyalMail != null) {
+      store.crawlers.RoyalMail = response.RoyalMail;
+      loadedData.value.RoyalMail = true;
+    }
+
+    if (
+      loadedData.value.SmartMatch == true &&
+      loadedData.value.Parascript == true &&
+      loadedData.value.RoyalMail == true
+    ) {
+      backendConnected.value = "connected";
+    }
+  };
 });
 </script>
 
 <template>
-  <div v-if="backendConnected">
+  <div v-if="backendConnected == 'connected'">
     <NavBar class="fixed top-0 left-0 right-0 z-50" />
-    <router-view class="absolute top-16 left-0 right-0" v-slot="{ Component }">
+    <router-view
+      class="absolute top-16 left-0 right-0"
+      v-slot="{ Component, route }"
+    >
       <AnimationHandler
-        :animation="
-          routerState.routes.get(`${store.prevRoute} ${store.currRoute}`)
-        "
+        :animation="routes.get(`${route.meta.fromRoute} ${route.meta.toRoute}`)"
+        transitionMode="default"
       >
         <component :is="Component" />
       </AnimationHandler>
     </router-view>
+  </div>
+  <div v-else-if="backendConnected == 'loading'">
+    <LoadingPage />
   </div>
   <div v-else>
     <ErrorPage />
