@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
-using Crawler.App.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -35,7 +34,7 @@ namespace Crawler.App
         {
             context.Database.EnsureCreated();
 
-            WebSocketServer server = new WebSocketServer(10022);
+            WebSocketServer server = new WebSocketServer(10021);
             server.Log.Output = (logdata, str) => { logger.LogError(logdata.Message); };
 
             SocketConnection.SocketServer = server.WebSocketServices;

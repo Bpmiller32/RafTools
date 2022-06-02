@@ -11,19 +11,19 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Common.Data;
-using Crawler.App.Utils;
 
 namespace Crawler.App
 {
     public class EmailCrawler
     {
+        public Settings Settings { get; set; } = new Settings() { Name = "Email" };
+
         private readonly ILogger logger;
         private readonly IConfiguration config;
         private readonly ComponentTask tasks;
         private readonly SocketConnection connection;
         private readonly DatabaseContext context;
 
-        private Settings settings = new Settings() { Name = "Email" };
         private PafKey tempKey = new PafKey();
 
         public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
@@ -33,13 +33,13 @@ namespace Crawler.App
             this.tasks = tasks;
             this.connection = connection;
             this.context = context;
+
+            Settings = Settings.Validate(Settings, config);
         }
 
-        public async Task ExecuteAsync(CancellationToken stoppingToken)
+        public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
         {
-            settings = Settings.Validate(settings, config);
-
-            if (settings.CrawlerEnabled == false)
+            if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
                 tasks.Email = ComponentStatus.Disabled;
@@ -58,7 +58,7 @@ namespace Crawler.App
                     GetKey(stoppingToken);
                     SaveKey(stoppingToken);
 
-                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, settings);
+                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                     await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
                 }
             }
@@ -80,7 +80,7 @@ namespace Crawler.App
             using (var client = new ImapClient())
             {
                 client.Connect(@"outlook.office365.com", 993, true);
-                client.Authenticate(settings.UserName, settings.Password);
+                client.Authenticate(Settings.UserName, Settings.Password);
 
                 client.Inbox.Open(FolderAccess.ReadOnly);
 

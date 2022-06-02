@@ -2,7 +2,6 @@ using System;
 using System.Security.Principal;
 using System.Threading;
 using Common.Data;
-using Crawler.App.Utils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -72,11 +71,6 @@ namespace Crawler.App
             Host.CreateDefaultBuilder(args)
                 .UseWindowsService()
                 .UseSerilog()
-                .ConfigureAppConfiguration((hostContext, config) =>
-                {
-                    // config.Sources.Clear();
-                    // config.AddJsonFile("appsettings.json", false, true);
-                })
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddHostedService<SocketServer>();

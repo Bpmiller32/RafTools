@@ -2,51 +2,79 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export const useStore = defineStore("main", () => {
-  const connection = ref(null);
+  const connectionCrawler = ref(null);
+  const connectionBuilder = ref(null);
+
   const crawlers = ref({
     SmartMatch: {
-      AutoCrawlStatus: null,
-      AutoCrawlEnabled: null,
-      AutoCrawlDate: null,
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
+
       AvailableBuilds: [],
     },
     Parascript: {
-      AutoCrawlStatus: null,
-      AutoCrawl: null,
-      AutoCrawlDate: null,
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
+
       AvailableBuilds: [],
     },
     RoyalMail: {
-      AutoCrawlStatus: null,
-      AutoCrawl: null,
-      AutoCrawlDate: null,
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
+
       AvailableBuilds: [],
     },
   });
+  const builders = ref({
+    SmartMatch: {
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
 
-  function SendMessageUpdate(crawler, property, value) {
-    connection.value.send(JSON.stringify({ crawler, property, value }));
+      CompiledBuilds: [],
+      CurrentBuild: null,
+      Progress: null,
+    },
+    Parascript: {
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
+
+      CompiledBuilds: [],
+      CurrentBuild: null,
+      Progress: null,
+    },
+    RoyalMail: {
+      DirectoryStatus: null,
+      AutoEnabled: null,
+      AutoDate: null,
+
+      CompiledBuilds: [],
+      CurrentBuild: null,
+      Progress: null,
+    },
+  });
+
+  function SendMessage(Directory, Property, Value) {
+    connectionCrawler.value.send(
+      JSON.stringify({ Directory, Property, Value })
+    );
   }
-  function SendMessageForce(crawler) {
-    if (crawler == "SmartMatch") {
-      connection.value.send(
-        JSON.stringify({ crawler: crawler, property: "Force", value: "Force" })
-      );
-    } else if (crawler == "Parascript") {
-      connection.value.send(
-        JSON.stringify({ crawler: crawler, property: "Force", value: "Force" })
-      );
-    } else if (crawler == "RoyalMail") {
-      connection.value.send(
-        JSON.stringify({ crawler: crawler, property: "Force", value: "Force" })
-      );
-    }
+  function SendMessageTest(Directory, Property, Value) {
+    connectionBuilder.value.send(
+      JSON.stringify({ Directory, Property, Value })
+    );
   }
 
   return {
-    connection,
+    connectionCrawler,
+    connectionBuilder,
     crawlers,
-    SendMessageUpdate,
-    SendMessageForce,
+    builders,
+    SendMessage,
+    SendMessageTest,
   };
 });

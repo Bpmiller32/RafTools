@@ -1,121 +1,171 @@
-using Common.Data;
-
-namespace Builder.App.Utils;
-
 public class Settings
 {
-    public const string SmartMatch = nameof(SmartMatch);
-    public const string Parascript = nameof(Parascript);
-    public const string RoyalMail = nameof(RoyalMail);
-
     public string Name { get; set; }
-    public string origAddressDataPath { get; set; }
     public string AddressDataPath { get; set; }
     // Can optionally set WorkingPath and OutputPath in appsettings
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
-    // Will be overridden every time by BE SocketMessage
-    public string User { get; set; }
-    public string Pass { get; set; }
+    // ----------
+    public bool BuilderEnabled { get; set; }
+    public bool AutoBuildEnabled { get; set; }
+
+    public string UserName { get; set; }
+    public string Password { get; set; }
     public string Key { get; set; }
-    public string DataMonth { get; set; }
-    public string DataYear { get; set; }
     public string DataYearMonth { get; set; }
 
-    public static Settings Validate(Settings settings, SocketMessage message)
+    public int ExecYear { get; set; }
+    public int ExecMonth { get; set; }
+    public int ExecDay { get; set; }
+    public int ExecHour { get; set; }
+    public int ExecMinute { get; set; }
+    public int ExecSecond { get; set; }
+
+    public void Validate(IConfiguration config, string DataYearMonth)
     {
         // Check that appsettings.json exists at all
         if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"appsettings.json")))
         {
             throw new Exception("appsettings.json is missing, make sure there is a valid appsettings.json file in the same directory as the application");
         }
-        // Check that a directory with PAF data is provided
-        if (String.IsNullOrEmpty(settings.AddressDataPath))
+        // Check for BuildUtils
+        if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\BuildUtils").Any())
         {
-            throw new Exception("No path to address data provided, check appsettings.json");
-        }
-        // Check if provided directory exists on the filesystem
-        if (!Directory.Exists(settings.AddressDataPath))
-        {
-            throw new Exception("Address data directory provided doesn't exist: " + settings.AddressDataPath);
-        }
-        // Check that there are files in the provided directory
-        if (!Directory.EnumerateFileSystemEntries(settings.AddressDataPath).Any())
-        {
-            throw new Exception("Address data directory provided is empty: " + settings.AddressDataPath);
+            throw new Exception("BuildUtils folder is missing");
         }
 
-
-
-        // Set input path from base directory path
-        if (int.Parse(message.Month) < 10)
+        // Verify for each directory
+        List<string> directories = new List<string>() { "SmartMatch", "Parascript", "RoyalMail" };
+        foreach (string dir in directories)
         {
-            message.Month = "0" + message.Month;
-        }
-        settings.DataMonth = message.Month;
-        settings.DataYear = message.Year;
-        settings.DataYearMonth = message.Year + message.Month;
-        
-        settings.AddressDataPath = settings.origAddressDataPath;
-        settings.AddressDataPath = Path.Combine(settings.AddressDataPath, settings.DataYearMonth);
-        // SmartMatch specific, look into cycle
-        if (settings.Name == "SmartMatch")
-        {
-            settings.AddressDataPath = Path.Combine(settings.AddressDataPath, @"Cycle-N");
-        }
-        // If WorkingPath is empty in appsettings set to default
-        if (String.IsNullOrEmpty(settings.WorkingPath))
-        {
-            if (settings.Name != "SmartMatch")
+            if (dir == Name)
             {
-                Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Working", settings.Name));
-                settings.WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), @"Working", settings.Name);                
+                // If WorkingPath is empty in appsettings set to default
+                if (string.IsNullOrEmpty(config.GetValue<string>("settings:" + dir + ":WorkingPath")))
+                {
+                    if (Name != "SmartMatch")
+                    {
+                        Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Working", Name));
+                        WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), @"Working", Name);
+                    }
+                }
+                // If OutputPath is empty in appsettings set to default
+                if (string.IsNullOrEmpty(config.GetValue<string>("settings:" + dir + ":OutputPath")))
+                {
+                    Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", Name, DataYearMonth));
+                    OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", Name, DataYearMonth);
+                }
+
+
+                // AddressDataPath checks
+                if (string.IsNullOrEmpty(config.GetValue<string>("settings:" + dir + ":AddressDataPath")))
+                {
+                    throw new Exception("No path to address data provided, check appsettings.json");
+                }
+                else
+                {
+                    AddressDataPath = Path.Combine(config.GetValue<string>("settings:" + dir + ":AddressDataPath"), DataYearMonth);
+                }
+                // Check if provided directory exists on the filesystem
+                if (!Directory.Exists(AddressDataPath))
+                {
+                    throw new Exception("Address data directory provided doesn't exist: " + AddressDataPath);
+                }
+                // Check that there are files in the provided directory
+                if (!Directory.EnumerateFileSystemEntries(AddressDataPath).Any())
+                {
+                    throw new Exception("Address data directory provided is empty: " + AddressDataPath);
+                }
+                // SmartMatch specific, look into cycle
+                if (Name == "SmartMatch")
+                {
+                    AddressDataPath = Path.Combine(AddressDataPath, @"Cycle-N");
+                }
+
+
+                if (config.GetValue<bool>("settings:" + dir + ":BuilderEnabled"))
+                {
+                    BuilderEnabled = true;
+                }
+                if (config.GetValue<bool>("settings:" + dir + ":AutoBuildEnabled"))
+                {
+                    AutoBuildEnabled = true;
+                }
+
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Year") != 0)
+                {
+                    ExecYear = config.GetValue<int>("settings:" + dir + ":ExecTime:Year");
+                }
+                else
+                {
+                    ExecYear = DateTime.Now.Year;
+                }
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Month") != 0)
+                {
+                    ExecMonth = config.GetValue<int>("settings:" + dir + ":ExecTime:Month");
+                }
+                else
+                {
+                    ExecMonth = DateTime.Now.Month;
+                }
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Day") != 0)
+                {
+                    ExecDay = config.GetValue<int>("settings:" + dir + ":ExecTime:Day");
+                }
+                else
+                {
+                    ExecDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
+                }
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Hour") != 0)
+                {
+                    ExecHour = config.GetValue<int>("settings:" + dir + ":ExecTime:Hour");
+                }
+                else
+                {
+                    ExecHour = 15;
+                }
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Minute") != 0)
+                {
+                    ExecMinute = config.GetValue<int>("settings:" + dir + ":ExecTime:Minute");
+                }
+                else
+                {
+                    ExecMinute = 15;
+                }
+                if (config.GetValue<int>("settings:" + dir + ":ExecTime:Second") != 0)
+                {
+                    ExecSecond = config.GetValue<int>("settings:" + dir + ":ExecTime:Second");
+                }
+                else
+                {
+                    ExecSecond = 15;
+                }
+
+                // Check that day hasn't passed, display next month
+                if (ExecDay < DateTime.Now.Day)
+                {
+                    ExecMonth = DateTime.Now.AddMonths(1).Month;
+                }
             }
         }
-        // If OutputPath is empty in appsettings set to default
-        if (String.IsNullOrEmpty(settings.OutputPath))
-        {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, settings.DataYearMonth));
-            settings.OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", settings.Name, settings.DataYearMonth);
-        }
-
-
-
-        // Directory specific
-        settings.User = message.SmUser;
-        settings.Pass = message.SmPass;
-        settings.Key = message.Key;
-
-        // if (settings.Name == "SmartMatch" && (String.IsNullOrEmpty(settings.User) || String.IsNullOrEmpty(settings.Pass)))
-        // {   
-        //     throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
-        // }
-        // if (settings.Name == "RoyalMail" && String.IsNullOrEmpty(settings.Key))
-        // {
-        //     throw new Exception("Missing a Username/Password/Key for: " + settings.Name);            
-        // }
-
-
 
         // Check for any missing files
-        if (settings.Name == "SmartMatch")
+        if (Name == "SmartMatch")
         {
-            CheckMissingSmFiles(settings);
+            CheckMissingSmFiles();
         }
-        if (settings.Name == "Parascript")
+        if (Name == "Parascript")
         {
-            CheckMissingPsFiles(settings);
+            CheckMissingPsFiles();
         }
-        if (settings.Name == "RoyalMail")
+        if (Name == "RoyalMail")
         {
-            CheckMissingRmFiles(settings);
-            CheckMissingToolFiles(settings);
+            CheckMissingRmFiles();
+            CheckMissingToolFiles();
         }
-
-        return settings;
     }
 
-    public static void CheckMissingSmFiles(Settings settings)
+    public void CheckMissingSmFiles()
     {
         List<string> smFiles = new List<string>
         {
@@ -131,7 +181,7 @@ public class Settings
 
         foreach (string file in smFiles)
         {
-            if (!File.Exists(Path.Combine(settings.AddressDataPath, file)))
+            if (!File.Exists(Path.Combine(AddressDataPath, file)))
             {
                 missingFiles += file + ", ";
             }
@@ -143,7 +193,7 @@ public class Settings
         }
     }
 
-    public static void CheckMissingPsFiles(Settings settings)
+    public void CheckMissingPsFiles()
     {
         List<string> psFiles = new List<string>
         {
@@ -154,7 +204,7 @@ public class Settings
 
         foreach (string file in psFiles)
         {
-            if (!File.Exists(Path.Combine(settings.AddressDataPath, file)))
+            if (!File.Exists(Path.Combine(AddressDataPath, file)))
             {
                 missingFiles += file + ", ";
             }
@@ -166,7 +216,7 @@ public class Settings
         }
     }
 
-    public static void CheckMissingRmFiles(Settings settings)
+    public void CheckMissingRmFiles()
     {
         List<string> rmFiles = new List<string>
         {
@@ -177,7 +227,7 @@ public class Settings
 
         foreach (string file in rmFiles)
         {
-            if (!File.Exists(Path.Combine(settings.AddressDataPath, file)))
+            if (!File.Exists(Path.Combine(AddressDataPath, file)))
             {
                 missingFiles += file + ", ";
             }
@@ -189,10 +239,10 @@ public class Settings
         }
     }
 
-    private static void CheckMissingToolFiles(Settings settings)
+    private void CheckMissingToolFiles()
     {
-        List<string> toolFiles = new List<string> 
-        { 
+        List<string> toolFiles = new List<string>
+        {
             @"BrazilPostProcessor.dll",
             @"dafs.dll",
             @"DirectoryDataCompiler.exe",
@@ -207,7 +257,7 @@ public class Settings
 
         foreach (var file in toolFiles)
         {
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"BuildUtils", "3.0" , file)))
+            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"BuildUtils", "3.0", file)))
             {
                 missingFiles += file + ", ";
             }

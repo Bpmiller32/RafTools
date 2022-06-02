@@ -95,9 +95,9 @@ const editPanelState = ref({
     today.setHours(0, 0, 0, 0);
 
     if (newDate >= today) {
-      store.SendMessageUpdate(
+      store.SendMessage(
         props.dirType,
-        "autoCrawlDate",
+        "AutoDate",
         dateString[1] + "/" + dateString[2] + "/" + dateString[0]
       );
       editPanelState.value.animation = "Flash";
@@ -153,9 +153,9 @@ const logoState = ref({
 
 // OnMounted
 onMounted(() => {
-  autoCrawlStatus.value = store.crawlers[props.dirType].AutoCrawlStatus;
-  autoCrawlEnabled.value = store.crawlers[props.dirType].AutoCrawlEnabled;
-  autoCrawlDate.value = store.crawlers[props.dirType].AutoCrawlDate;
+  autoCrawlStatus.value = store.crawlers[props.dirType].DirectoryStatus;
+  autoCrawlEnabled.value = store.crawlers[props.dirType].AutoEnabled;
+  autoCrawlDate.value = store.crawlers[props.dirType].AutoDate;
 
   logoState.value.SetIcon();
   statusState.value.SetState();
@@ -167,9 +167,9 @@ onMounted(() => {
 watch(
   () => store.crawlers[props.dirType],
   () => {
-    autoCrawlStatus.value = store.crawlers[props.dirType].AutoCrawlStatus;
-    autoCrawlEnabled.value = store.crawlers[props.dirType].AutoCrawlEnabled;
-    autoCrawlDate.value = store.crawlers[props.dirType].AutoCrawlDate;
+    autoCrawlStatus.value = store.crawlers[props.dirType].DirectoryStatus;
+    autoCrawlEnabled.value = store.crawlers[props.dirType].AutoEnabled;
+    autoCrawlDate.value = store.crawlers[props.dirType].AutoDate;
 
     statusState.value.SetState();
     crawlButtonState.value.SetState();
@@ -197,7 +197,7 @@ function CrawlButtonClicked(ClosePanel) {
   }
 
   ClosePanel();
-  store.SendMessageForce(props.dirType);
+  store.SendMessage(props.dirType, "Force", "Force");
 }
 function CheckboxClicked() {
   if (crawlButtonState.value.isActive == false) {
@@ -205,9 +205,9 @@ function CheckboxClicked() {
   }
 
   if (autoCrawlEnabled.value == true) {
-    store.SendMessageUpdate(props.dirType, "autoCrawlEnabled", false);
+    store.SendMessage(props.dirType, "AutoEnabled", "false");
   } else {
-    store.SendMessageUpdate(props.dirType, "autoCrawlEnabled", true);
+    store.SendMessage(props.dirType, "AutoEnabled", "true");
   }
 }
 </script>

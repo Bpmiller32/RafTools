@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace Builder.App.Utils;
-
 public class Utils
 {
     public static string WrapQuotes(string input)

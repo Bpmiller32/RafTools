@@ -1,25 +1,24 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
+using Crawler.App;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
 #pragma warning disable CS4014 // ignore that I'm not awaiting a task, by design 
 
-namespace Crawler.App.Utils;
-
 public class SocketConnection : WebSocketBehavior
 {
-    static public WebSocketServiceManager SocketServer;
-    static public EmailCrawler EmailCrawler;
-    static public SmartmatchCrawler SmartMatchCrawler;
-    static public ParascriptCrawler ParascriptCrawler;
-    static public RoyalCrawler RoyalCrawler;
+    public static WebSocketServiceManager SocketServer { get; set; }
+    public static EmailCrawler EmailCrawler { get; set; }
+    public static SmartmatchCrawler SmartMatchCrawler { get; set; }
+    public static ParascriptCrawler ParascriptCrawler { get; set; }
+    public static RoyalCrawler RoyalCrawler { get; set; }
 
     private readonly ILogger<SocketConnection> logger;
     private readonly IConfiguration config;
@@ -45,7 +44,7 @@ public class SocketConnection : WebSocketBehavior
         ipAddress = Context.UserEndPoint.Address;
         logger.LogInformation("Connected to client: {0}, Total clients: {1}", ipAddress, Sessions.Count);
 
-        Task.Run(() => EmailCrawler.ExecuteAsync(emailTokenSource.Token));
+        Task.Run(() => EmailCrawler.ExecuteAsyncAuto(emailTokenSource.Token));
         Task.Run(() => SmartMatchCrawler.ExecuteAsyncAuto(smTokenSource.Token));
         Task.Run(() => ParascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
         Task.Run(() => RoyalCrawler.ExecuteAsyncAuto(rmTokenSource.Token));
@@ -58,10 +57,9 @@ public class SocketConnection : WebSocketBehavior
 
     protected override async void OnMessage(MessageEventArgs e)
     {
-        // TODO: switch to System.Text.Json to remove Newtonsoft dependency
-        SocketMessage message = JsonConvert.DeserializeObject<SocketMessage>(e.Data);
+        SocketMessage message = JsonSerializer.Deserialize<SocketMessage>(e.Data);
 
-        if (message.Crawler == "SmartMatch")
+        if (message.Directory == "SmartMatch")
         {
             smTokenSource.Cancel();
             smTokenSource = new CancellationTokenSource();
@@ -70,11 +68,11 @@ public class SocketConnection : WebSocketBehavior
             {
                 await Task.Run(() => SmartMatchCrawler.ExecuteAsync(smTokenSource.Token));
             }
-            if (message.Property == "autoCrawlEnabled")
+            if (message.Property == "AutoEnabled")
             {
                 SmartMatchCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
             }
-            if (message.Property == "autoCrawlDate")
+            if (message.Property == "AutoDate")
             {
                 string[] newDay = message.Value.Split('/');
                 SmartMatchCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
@@ -84,7 +82,7 @@ public class SocketConnection : WebSocketBehavior
 
             Task.Run(() => SmartMatchCrawler.ExecuteAsyncAuto(smTokenSource.Token));
         }
-        if (message.Crawler == "Parascript")
+        if (message.Directory == "Parascript")
         {
             psTokenSource.Cancel();
             psTokenSource = new CancellationTokenSource();
@@ -93,11 +91,11 @@ public class SocketConnection : WebSocketBehavior
             {
                 await Task.Run(() => ParascriptCrawler.ExecuteAsync(psTokenSource.Token));
             }
-            if (message.Property == "autoCrawlEnabled")
+            if (message.Property == "AutoEnabled")
             {
                 ParascriptCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
             }
-            if (message.Property == "autoCrawlDate")
+            if (message.Property == "AutoDate")
             {
                 string[] newDay = message.Value.Split('/');
                 ParascriptCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
@@ -107,7 +105,7 @@ public class SocketConnection : WebSocketBehavior
 
             Task.Run(() => ParascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
         }
-        if (message.Crawler == "RoyalMail")
+        if (message.Directory == "RoyalMail")
         {
             rmTokenSource.Cancel();
             rmTokenSource = new CancellationTokenSource();
@@ -116,11 +114,11 @@ public class SocketConnection : WebSocketBehavior
             {
                 await Task.Run(() => RoyalCrawler.ExecuteAsync(rmTokenSource.Token));
             }
-            if (message.Property == "autoCrawlEnabled")
+            if (message.Property == "AutoEnabled")
             {
                 RoyalCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
             }
-            if (message.Property == "autoCrawlDate")
+            if (message.Property == "AutoDate")
             {
                 string[] newDay = message.Value.Split('/');
                 RoyalCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
@@ -150,39 +148,39 @@ public class SocketConnection : WebSocketBehavior
         {
             SocketResponse SmartMatch = new SocketResponse()
             {
-                AutoCrawlStatus = statusMap[tasks.SmartMatch],
-                AutoCrawlEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
+                DirectoryStatus = statusMap[tasks.SmartMatch],
+                AutoEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[0],
-                AutoCrawlDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
+                AutoDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
             };
 
-            string serializedObject = JsonConvert.SerializeObject(new { SmartMatch });
+            string serializedObject = JsonSerializer.Serialize(new { SmartMatch });
             return serializedObject;
         }
         if (parascript)
         {
             SocketResponse Parascript = new SocketResponse()
             {
-                AutoCrawlStatus = statusMap[tasks.Parascript],
-                AutoCrawlEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
+                DirectoryStatus = statusMap[tasks.Parascript],
+                AutoEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[1],
-                AutoCrawlDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
+                AutoDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
             };
 
-            string serializedObject = JsonConvert.SerializeObject(new { Parascript });
+            string serializedObject = JsonSerializer.Serialize(new { Parascript });
             return serializedObject;
         }
         if (royalMail)
         {
             SocketResponse RoyalMail = new SocketResponse()
             {
-                AutoCrawlStatus = statusMap[tasks.RoyalMail],
-                AutoCrawlEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
+                DirectoryStatus = statusMap[tasks.RoyalMail],
+                AutoEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[2],
-                AutoCrawlDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
+                AutoDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
             };
 
-            string serializedObject = JsonConvert.SerializeObject(new { RoyalMail });
+            string serializedObject = JsonSerializer.Serialize(new { RoyalMail });
             return serializedObject;
         }
 

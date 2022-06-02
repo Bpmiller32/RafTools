@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Common.Data;
 
 public class ParaBundle

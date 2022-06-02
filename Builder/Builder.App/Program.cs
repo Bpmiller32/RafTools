@@ -1,8 +1,4 @@
-using System.Configuration;
 using System.Security.Principal;
-using Builder.App;
-using Builder.App.Builders;
-using Builder.App.Utils;
 using Common.Data;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -11,7 +7,7 @@ using Serilog.Templates;
 
 try
 {
-    using(var mutex = new Mutex(false, "DirBuilder"))
+    using (var mutex = new Mutex(false, "DirBuilder"))
     {
         // Configure logger
         Log.Logger = new LoggerConfiguration()
@@ -53,17 +49,17 @@ try
             .UseSerilog()
             .ConfigureServices((context, services) =>
             {
-                services.Configure<Settings>(Settings.SmartMatch, context.Configuration.GetSection("Settings:SmartMatch"));
-                services.Configure<Settings>(Settings.Parascript, context.Configuration.GetSection("Settings:Parascript"));
-                services.Configure<Settings>(Settings.RoyalMail, context.Configuration.GetSection("Settings:RoyalMail"));
-                
-                services.AddDbContext<DatabaseContext>(opt => 
+                services.AddHostedService<SocketServer>();
+                services.AddTransient<SocketConnection>();
+
+                services.AddSingleton<ComponentTask>();
+                services.AddSingleton<ParaBuilder>();
+
+                services.AddDbContext<DatabaseContext>(opt =>
                 {
-                    opt.UseSqlite(@"FileName=C:\Users\billy\Desktop\Github\RafTools\Crawler\Crawler.App\bin\Debug\net6.0\DirectoryCollection.db");
-                });
-                
-                services.AddHostedService<ServerManager>();
-                services.AddSingleton<BuildManager>();
+                    // opt.UseSqlite(@"Filename=.\DirectoryCollection.db");
+                    opt.UseSqlite(@"Filename=C:\Users\billy\Documents\GitHub\RafTools\Crawler\Crawler.App\bin\Debug\net6.0\DirectoryCollection.db");
+                }, ServiceLifetime.Transient);
             })
             .Build();
 
@@ -72,7 +68,7 @@ try
 }
 catch (System.Exception e)
 {
-    Log.Fatal("There was a problem with a service");
+    Log.Fatal("There was a problem");
     Log.Fatal(e.Message);
 }
 finally
