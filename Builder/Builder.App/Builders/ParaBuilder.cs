@@ -1,71 +1,90 @@
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Text.RegularExpressions;
-using Builder.App.Utils;
 using Common.Data;
-
-namespace Builder.App.Builders;
 
 public class ParaBuilder
 {
-    private readonly string inputPath;
-    private readonly string workingPath;
-    private readonly string outputPath;
-    private readonly Settings settings;
+    public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
+
+    private readonly ILogger<ParaBuilder> logger;
+    private readonly IConfiguration config;
+    private readonly ComponentTask tasks;
+    private readonly SocketConnection connection;
     private readonly DatabaseContext context;
-    private readonly Action<int> progress;
-    private string month;
-    private string year;
 
-    public ParaBuilder(Settings settings, DatabaseContext context, Action<int> progress)
+    private string DataMonth;
+    private string DataYear;
+
+    public ParaBuilder(ILogger<ParaBuilder> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
     {
-        this.inputPath = settings.AddressDataPath;
-        this.workingPath = settings.WorkingPath;
-        this.outputPath = settings.OutputPath;
-        this.settings = settings;
+        this.logger = logger;
+        this.config = config;
+        this.tasks = tasks;
+        this.connection = connection;
         this.context = context;
-        this.progress = progress;
 
-        this.month = settings.DataMonth;
-        this.year = settings.DataYear;
     }
 
-    public void CheckInput()
+    public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
     {
-        if (!Directory.EnumerateFileSystemEntries(inputPath).Any())
+        try
         {
-            throw new Exception("No files to work with in input");
-        }
-        if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\BuildUtils").Any())
-        {
-            throw new Exception("BuildUtils folder is missing");
-        }
+            logger.LogInformation("Starting Builder");
+            tasks.Parascript = ComponentStatus.InProgress;
+            connection.SendMessage(parascript: true);
 
-        progress(1);
+            DataYear = DataYearMonth.Substring(0, 4);
+            DataMonth = DataYearMonth.Substring(3, 2);
+            Settings.Validate(config, DataYearMonth);
+
+            ExtractDownload();
+            Cleanup(fullClean: true);
+            await Extract();
+            await Archive();
+            Cleanup(fullClean: false);
+            CheckBuildComplete();
+
+            tasks.Parascript = ComponentStatus.Ready;
+        }
+        catch (TaskCanceledException e)
+        {
+            tasks.Parascript = ComponentStatus.Ready;
+            connection.SendMessage(parascript: true);
+            logger.LogDebug(e.Message);
+        }
+        catch (System.Exception e)
+        {
+            tasks.Parascript = ComponentStatus.Error;
+            connection.SendMessage(parascript: true);
+            logger.LogError(e.Message);
+        }
     }
+
 
     public void ExtractDownload()
     {
-        DirectoryInfo ip = new DirectoryInfo(inputPath);
-        
+        DirectoryInfo ip = new DirectoryInfo(Settings.AddressDataPath);
+
         foreach (DirectoryInfo dir in ip.GetDirectories())
         {
             dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
             dir.Delete(true);
         }
 
-        ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"Files.zip"), inputPath);
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"Files.zip"), Settings.AddressDataPath);
+
+        tasks.ChangeProgress(DirectoryType.Parascript, 1);
     }
 
     public void Cleanup(bool fullClean)
     {
-        Utils.Utils.KillPsProcs();
+        Utils.KillPsProcs();
 
-        Directory.CreateDirectory(workingPath);
-        Directory.CreateDirectory(outputPath);
+        Directory.CreateDirectory(Settings.WorkingPath);
+        Directory.CreateDirectory(Settings.OutputPath);
 
-        DirectoryInfo wp = new DirectoryInfo(workingPath);
-        DirectoryInfo op = new DirectoryInfo(outputPath);
+        DirectoryInfo wp = new DirectoryInfo(Settings.WorkingPath);
+        DirectoryInfo op = new DirectoryInfo(Settings.OutputPath);
 
         if (!fullClean)
         {
@@ -79,9 +98,9 @@ public class ParaBuilder
                 dir.Delete(true);
             }
 
-            Directory.Delete(workingPath, true);
+            Directory.Delete(Settings.WorkingPath, true);
 
-            progress(2);
+            tasks.ChangeProgress(DirectoryType.Parascript, 2);
             return;
         }
 
@@ -103,39 +122,39 @@ public class ParaBuilder
             dir.Delete(true);
         }
 
-        progress(1);
+        tasks.ChangeProgress(DirectoryType.Parascript, 1);
     }
 
     public async Task Extract()
     {
-        string shortYear = year.Substring(2, 2);
+        string shortYear = Settings.DataYearMonth.Substring(2, 2);
 
-        Dictionary<string, Task> tasks = new Dictionary<string, Task>();
+        Dictionary<string, Task> buildTasks = new Dictionary<string, Task>();
 
-        tasks.Add("zip", Task.Run(() =>
+        buildTasks.Add("zip", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"ads6", @"ads_zip_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"zip"));
-            File.Create(Path.Combine(workingPath, @"zip", @"live.txt")).Close();
+            ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"ads6", @"ads_zip_09_" + DataMonth + shortYear + ".exe"), Path.Combine(Settings.WorkingPath, @"zip"));
+            File.Create(Path.Combine(Settings.WorkingPath, @"zip", @"live.txt")).Close();
         }));
-        tasks.Add("lacs", Task.Run(() =>
+        buildTasks.Add("lacs", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"LACSLink", @"ads_lac_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"lacs"));
-            File.Create(Path.Combine(workingPath, @"lacs", @"live.txt")).Close();
+            ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"DPVandLACS", @"LACSLink", @"ads_lac_09_" + DataMonth + shortYear + ".exe"), Path.Combine(Settings.WorkingPath, @"lacs"));
+            File.Create(Path.Combine(Settings.WorkingPath, @"lacs", @"live.txt")).Close();
         }));
-        tasks.Add("suite", Task.Run(() =>
+        buildTasks.Add("suite", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"SuiteLink", @"ads_slk_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"suite"));
-            File.Create(Path.Combine(workingPath, @"suite", @"live.txt")).Close();
+            ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"DPVandLACS", @"SuiteLink", @"ads_slk_09_" + DataMonth + shortYear + ".exe"), Path.Combine(Settings.WorkingPath, @"suite"));
+            File.Create(Path.Combine(Settings.WorkingPath, @"suite", @"live.txt")).Close();
         }));
-        tasks.Add("dpv", Task.Run(() =>
+        buildTasks.Add("dpv", Task.Run(() =>
         {
-            ZipFile.ExtractToDirectory(Path.Combine(inputPath, @"DPVandLACS", @"DPVfull", @"ads_dpv_09_" + month + shortYear + ".exe"), Path.Combine(workingPath, @"dpv"));
-            File.Create(Path.Combine(workingPath, @"dpv", @"live.txt")).Close();
+            ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"DPVandLACS", @"DPVfull", @"ads_dpv_09_" + DataMonth + shortYear + ".exe"), Path.Combine(Settings.WorkingPath, @"dpv"));
+            File.Create(Path.Combine(Settings.WorkingPath, @"dpv", @"live.txt")).Close();
 
             ProcessStartInfo startInfo = new ProcessStartInfo()
             {
                 FileName = Directory.GetCurrentDirectory() + @"\BuildUtils\PDBIntegrity.exe",
-                Arguments = Path.Combine(workingPath, @"dpv", @"fileinfo_log.txt"),
+                Arguments = Path.Combine(Settings.WorkingPath, @"dpv", @"fileinfo_log.txt"),
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true
@@ -157,48 +176,48 @@ public class ParaBuilder
             }
         }));
 
-        await Task.WhenAll(tasks.Values);
+        await Task.WhenAll(buildTasks.Values);
 
-        progress(18);
+        tasks.ChangeProgress(DirectoryType.Parascript, 18);
     }
 
     public async Task Archive()
     {
-        Dictionary<string, Task> tasks = new Dictionary<string, Task>();
+        Dictionary<string, Task> buildTasks = new Dictionary<string, Task>();
 
-        tasks.Add("zip", Task.Run(() =>
+        buildTasks.Add("zip", Task.Run(() =>
         {
-            Directory.CreateDirectory(Path.Combine(outputPath, @"Zip4"));
-            ZipFile.CreateFromDirectory(Path.Combine(workingPath, @"zip"), Path.Combine(outputPath, @"Zip4", @"Zip4.zip"));
+            Directory.CreateDirectory(Path.Combine(Settings.OutputPath, @"Zip4"));
+            ZipFile.CreateFromDirectory(Path.Combine(Settings.WorkingPath, @"zip"), Path.Combine(Settings.OutputPath, @"Zip4", @"Zip4.zip"));
         }));
-        tasks.Add("dpv", Task.Run(() =>
+        buildTasks.Add("dpv", Task.Run(() =>
         {
-            Directory.CreateDirectory(Path.Combine(outputPath, @"DPV"));
-            ZipFile.CreateFromDirectory(Path.Combine(workingPath, @"dpv"), Path.Combine(outputPath, @"DPV", @"DPV.zip"));
+            Directory.CreateDirectory(Path.Combine(Settings.OutputPath, @"DPV"));
+            ZipFile.CreateFromDirectory(Path.Combine(Settings.WorkingPath, @"dpv"), Path.Combine(Settings.OutputPath, @"DPV", @"DPV.zip"));
         }));
-        tasks.Add("suite", Task.Run(() =>
+        buildTasks.Add("suite", Task.Run(() =>
         {
-            Directory.CreateDirectory(Path.Combine(outputPath, @"Suite"));
-            ZipFile.CreateFromDirectory(Path.Combine(workingPath, @"suite"), Path.Combine(outputPath, @"Suite", @"SUITE.zip"));
+            Directory.CreateDirectory(Path.Combine(Settings.OutputPath, @"Suite"));
+            ZipFile.CreateFromDirectory(Path.Combine(Settings.WorkingPath, @"suite"), Path.Combine(Settings.OutputPath, @"Suite", @"SUITE.zip"));
         }));
-        tasks.Add("lacs", Task.Run(() =>
+        buildTasks.Add("lacs", Task.Run(() =>
         {
-            Directory.CreateDirectory(Path.Combine(outputPath, @"LACS"));
-            foreach (var file in Directory.GetFiles(Path.Combine(workingPath, @"lacs")))
+            Directory.CreateDirectory(Path.Combine(Settings.OutputPath, @"LACS"));
+            foreach (var file in Directory.GetFiles(Path.Combine(Settings.WorkingPath, @"lacs")))
             {
-                File.Copy(file, Path.Combine(Path.Combine(outputPath, @"LACS"), Path.GetFileName(file)));
+                File.Copy(file, Path.Combine(Path.Combine(Settings.OutputPath, @"LACS"), Path.GetFileName(file)));
             }
         }));
 
-        await Task.WhenAll(tasks.Values);
+        await Task.WhenAll(buildTasks.Values);
 
-        progress(78);
+        tasks.ChangeProgress(DirectoryType.Parascript, 78);
     }
 
     public void CheckBuildComplete()
     {
         // Will be null if Crawler never made a record for it, watch out if running standalone
-        ParaBundle bundle = context.ParaBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear)).FirstOrDefault();
+        ParaBundle bundle = context.ParaBundles.Where(x => (int.Parse(DataMonth) == x.DataMonth) && (int.Parse(DataYear) == x.DataYear)).FirstOrDefault();
         bundle.IsBuildComplete = true;
 
         context.SaveChanges();

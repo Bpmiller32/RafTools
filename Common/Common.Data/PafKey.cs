@@ -1,5 +1,3 @@
-using System;
-
 namespace Common.Data;
 
 public class PafKey

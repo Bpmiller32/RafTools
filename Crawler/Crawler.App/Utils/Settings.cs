@@ -72,7 +72,7 @@ namespace Crawler.App
                     }
                     else
                     {
-                        settings.ExecDay = 15;
+                        settings.ExecDay = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
                     }
                     if (config.GetValue<int>("settings:" + dir + ":ExecTime:Hour") != 0)
                     {
@@ -99,6 +99,11 @@ namespace Crawler.App
                         settings.ExecSecond = 15;
                     }
 
+                    // Check that day hasn't passed, display next month
+                    if (settings.ExecDay < DateTime.Now.Day)
+                    {
+                        settings.ExecMonth = DateTime.Now.AddMonths(1).Month;
+                    }
 
                     if (settings.Name == "SmartMatch" || settings.Name == "RoyalMail" || settings.Name == "Email")
                     {
@@ -135,8 +140,13 @@ namespace Crawler.App
                 logger.LogInformation("Waiting for pass, starting sleep until: " + execTime);
             }
 
+            // Check that day hasn't passed, display next month
+            // if (settings.ExecDay < DateTime.Now.Day)
+            // {
+            //     settings.ExecMonth = DateTime.Now.AddMonths(1).Month;
+            // }
+
             return waitTime;
         }
     }
 }
-

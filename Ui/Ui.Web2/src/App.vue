@@ -31,17 +31,25 @@ const routes = ref(
 );
 
 onMounted(() => {
-  store.connection = new WebSocket("ws://192.168.50.184:10022");
+  store.connectionCrawler = new WebSocket("ws://192.168.50.184:10021");
+  store.connectionBuilder = new WebSocket("ws://192.168.50.184:10022");
 
-  store.connection.onopen = () => {
+  store.connectionCrawler.onopen = () => {
     console.log("Successfully connected to back end");
   };
-  store.connection.onclose = () => {
+  store.connectionCrawler.onclose = () => {
+    console.log("Unable to connect to back end");
+    backendConnected.value = "error";
+  };
+  store.connectionBuilder.onopen = () => {
+    console.log("Successfully connected to back end");
+  };
+  store.connectionBuilder.onclose = () => {
     console.log("Unable to connect to back end");
     backendConnected.value = "error";
   };
 
-  store.connection.onmessage = (event) => {
+  store.connectionCrawler.onmessage = (event) => {
     console.log("Data: ", JSON.parse(event.data), Date());
     const response = JSON.parse(event.data);
 

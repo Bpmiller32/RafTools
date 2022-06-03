@@ -6,12 +6,11 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Common.Data;
-using Crawler.App.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
-// TODO: switch to httpClient
+// TODO: switch to httpClient? There is no replacement for FtpRequest....
 
 namespace Crawler.App
 {

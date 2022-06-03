@@ -1,20 +1,17 @@
-using System;
-using System.Collections.Generic;
-
 namespace Common.Data;
-
-// public class SocketResponse
-// {
-//     public ComponentStatus Status { get; set; }
-//     public int Progress { get; set; }
-//     public List<string> AvailableBuilds { get; set; }
-//     public string CurrentBuild { get; set; }
-// }
 
 public class SocketResponse
 {
-    public string AutoCrawlStatus { get; set; }
-    public bool AutoCrawlEnabled { get; set; }
+    // Universal
+    public string DirectoryStatus { get; set; }
+    public bool AutoEnabled { get; set; }
+    public string AutoDate { get; set; }
+
+    // Specific to Crawler
     public List<BuildInfo> AvailableBuilds { get; set; }
-    public string AutoCrawlDate { get; set; }
+
+    // Specific to Builder
+    public List<BuildInfo> CompiledBuilds { get; set; }
+    public string CurrentBuild { get; set; }
+    public int Progress { get; set; }
 }

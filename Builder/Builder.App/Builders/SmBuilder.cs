@@ -1,175 +1,175 @@
-namespace Builder.App.Builders;
-using FlaUI.Core;
-using FlaUI.UIA2;
-using FlaUI.Core.AutomationElements;
-using System.Diagnostics;
-using System.Text.RegularExpressions;
-using Builder.App.Utils;
-using Common.Data;
+// namespace Builder.App.Builders;
+// using FlaUI.Core;
+// using FlaUI.UIA2;
+// using FlaUI.Core.AutomationElements;
+// using System.Diagnostics;
+// using System.Text.RegularExpressions;
+// using Builder.App.Utils;
+// using Common.Data;
 
-public class SmBuilder
-{
-    private readonly string inputPath;
-    private readonly string outputPath;
-    private readonly string month;
-    private readonly string year;
-    private readonly string user;
-    private readonly string pass;
-    private readonly DatabaseContext context;
-    private readonly Action<int> progress;
+// public class SmBuilder
+// {
+//     private readonly string inputPath;
+//     private readonly string outputPath;
+//     private readonly string month;
+//     private readonly string year;
+//     private readonly string user;
+//     private readonly string pass;
+//     private readonly DatabaseContext context;
+//     private readonly Action<int> progress;
 
-    public SmBuilder(Settings settings, DatabaseContext context, Action<int> progress)
-    {
-        this.inputPath = settings.AddressDataPath;
-        this.outputPath = settings.OutputPath;
-        this.month = settings.DataMonth;
-        this.year = settings.DataYear;
-        this.user = settings.User;
-        this.pass = settings.Pass;
-        this.context = context;
-        this.progress = progress;
-    }
+//     public SmBuilder(Settings settings, DatabaseContext context, Action<int> progress)
+//     {
+//         this.inputPath = settings.AddressDataPath;
+//         this.outputPath = settings.OutputPath;
+//         this.month = settings.DataMonth;
+//         this.year = settings.DataYear;
+//         this.user = settings.User;
+//         this.pass = settings.Pass;
+//         this.context = context;
+//         this.progress = progress;
+//     }
 
-    public void Cleanup()
-    {
-        progress(2);
-        Thread.Sleep(10000);
-        progress(2);
-        Thread.Sleep(10000);
-        progress(2);
-        Thread.Sleep(10000);
-        
+//     public void Cleanup()
+//     {
+//         progress(2);
+//         Thread.Sleep(10000);
+//         progress(2);
+//         Thread.Sleep(10000);
+//         progress(2);
+//         Thread.Sleep(10000);
 
-        Utils.KillSmProcs();
 
-        // Ensure working and output directories are created and clear them if they already exist
-        Directory.CreateDirectory(outputPath);
+//         Utils.KillSmProcs();
 
-        DirectoryInfo op = new DirectoryInfo(outputPath);
+//         // Ensure working and output directories are created and clear them if they already exist
+//         Directory.CreateDirectory(outputPath);
 
-        foreach (FileInfo file in op.GetFiles())
-        {
-            file.Delete();
-        }
-        foreach (DirectoryInfo dir in op.GetDirectories())
-        {
-            dir.Delete(true);
-        }
-    }
+//         DirectoryInfo op = new DirectoryInfo(outputPath);
 
-    public async Task Build()
-    {
-        Dictionary<string, Task> tasks = new Dictionary<string, Task>();
+//         foreach (FileInfo file in op.GetFiles())
+//         {
+//             file.Delete();
+//         }
+//         foreach (DirectoryInfo dir in op.GetDirectories())
+//         {
+//             dir.Delete(true);
+//         }
+//     }
 
-        tasks.Add("Build", Task.Run(() => BuildRunner()));
-        tasks.Add("Timeout", Task.Run(async () => await Task.Delay(TimeSpan.FromMinutes(40))));
+//     public async Task Build()
+//     {
+//         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
-        if (await Task.WhenAny(tasks.Values) == tasks["Timeout"])
-        {
-            Utils.KillSmProcs();
-            throw new Exception("Build process took longer than 30 minutes, error likely, check logs");
-        }
-        if (await Task.WhenAny(tasks.Values) == tasks["Build"])
-        {
-            if (tasks["Build"].Status == TaskStatus.Faulted)
-            {
-                throw new Exception("Build process ran into an error");
-            }
-        }
-    }
+//         tasks.Add("Build", Task.Run(() => BuildRunner()));
+//         tasks.Add("Timeout", Task.Run(async () => await Task.Delay(TimeSpan.FromMinutes(40))));
 
-    public void CheckBuildComplete()
-    {
-        UspsBundle bundle = context.UspsBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear) && ("Cycle-N" == x.Cycle)).FirstOrDefault();
-        bundle.IsBuildComplete = true;
+//         if (await Task.WhenAny(tasks.Values) == tasks["Timeout"])
+//         {
+//             Utils.KillSmProcs();
+//             throw new Exception("Build process took longer than 30 minutes, error likely, check logs");
+//         }
+//         if (await Task.WhenAny(tasks.Values) == tasks["Build"])
+//         {
+//             if (tasks["Build"].Status == TaskStatus.Faulted)
+//             {
+//                 throw new Exception("Build process ran into an error");
+//             }
+//         }
+//     }
 
-        context.SaveChanges();
-    }
+//     public void CheckBuildComplete()
+//     {
+//         UspsBundle bundle = context.UspsBundles.Where(x => (int.Parse(month) == x.DataMonth) && (int.Parse(year) == x.DataYear) && ("Cycle-N" == x.Cycle)).FirstOrDefault();
+//         bundle.IsBuildComplete = true;
 
-    private async Task BuildRunner()
-    {
-        using (UIA2Automation automation = new UIA2Automation())
-        {
-            // Critical: Make sure you are in the XtlBuilder directory...
-            Directory.SetCurrentDirectory(@"C:\ProgramData\RAF\XtlBuildingWizard");
+//         context.SaveChanges();
+//     }
 
-            // Launch app
-            Application app = Application.Launch(@"C:\ProgramData\RAF\XtlBuildingWizard\XtlBuildingWizard.exe");
+//     private async Task BuildRunner()
+//     {
+//         using (UIA2Automation automation = new UIA2Automation())
+//         {
+//             // Critical: Make sure you are in the XtlBuilder directory...
+//             Directory.SetCurrentDirectory(@"C:\ProgramData\RAF\XtlBuildingWizard");
 
-            // Wait a few seconds for "splash screen" effect
-            await Task.Delay(TimeSpan.FromSeconds(3));
-            Window window = app.GetMainWindow(automation);
+//             // Launch app
+//             Application app = Application.Launch(@"C:\ProgramData\RAF\XtlBuildingWizard\XtlBuildingWizard.exe");
 
-            // Check that main window elements can be found
-            AutomationElement nextButton = window.FindFirstDescendant(cf => cf.ByName(@"Next"));
-            if (nextButton == null)
-            {
-                throw new Exception("Could not find the window elements");
-            }
+//             // Wait a few seconds for "splash screen" effect
+//             await Task.Delay(TimeSpan.FromSeconds(3));
+//             Window window = app.GetMainWindow(automation);
 
-            int id = app.ProcessId;
+//             // Check that main window elements can be found
+//             AutomationElement nextButton = window.FindFirstDescendant(cf => cf.ByName(@"Next"));
+//             if (nextButton == null)
+//             {
+//                 throw new Exception("Could not find the window elements");
+//             }
 
-            // 1st page
-            nextButton.AsButton().Invoke();
-            await Task.Delay(TimeSpan.FromSeconds(3));
+//             int id = app.ProcessId;
 
-            // 2nd page
-            app = Application.Attach(id);
-            Window[] newWindows = app.GetAllTopLevelWindows(automation);
-            var editBoxes = newWindows[0].FindAllDescendants(cf => cf.ByLocalizedControlType(@"edit"));
+//             // 1st page
+//             nextButton.AsButton().Invoke();
+//             await Task.Delay(TimeSpan.FromSeconds(3));
 
-            // Have to edit in this order or the rest autofill with values....
-            editBoxes[5].AsTextBox().Enter(year.Substring(2, 2) + month + @"1");
-            editBoxes[2].AsTextBox().Enter(inputPath);
-            editBoxes[4].AsTextBox().Enter(user);
-            editBoxes[3].AsTextBox().Enter(pass);
-            editBoxes[0].AsTextBox().Enter(Path.Combine(outputPath, year + month + @"_SHA2"));
+//             // 2nd page
+//             app = Application.Attach(id);
+//             Window[] newWindows = app.GetAllTopLevelWindows(automation);
+//             var editBoxes = newWindows[0].FindAllDescendants(cf => cf.ByLocalizedControlType(@"edit"));
 
-            AutomationElement buildButton = newWindows[0].FindFirstDescendant(cf => cf.ByName(@"Build"));
-            buildButton.AsButton().Invoke();
+//             // Have to edit in this order or the rest autofill with values....
+//             editBoxes[5].AsTextBox().Enter(year.Substring(2, 2) + month + @"1");
+//             editBoxes[2].AsTextBox().Enter(inputPath);
+//             editBoxes[4].AsTextBox().Enter(user);
+//             editBoxes[3].AsTextBox().Enter(pass);
+//             editBoxes[0].AsTextBox().Enter(Path.Combine(outputPath, year + month + @"_SHA2"));
 
-            await WaitForBuild(newWindows[0]);
+//             AutomationElement buildButton = newWindows[0].FindFirstDescendant(cf => cf.ByName(@"Build"));
+//             buildButton.AsButton().Invoke();
 
-            newWindows[0].Close();
+//             await WaitForBuild(newWindows[0]);
 
-            progress(2);
-        }
+//             newWindows[0].Close();
 
-    }
+//             progress(2);
+//         }
 
-    private async Task WaitForBuild(Window window)
-    {
-        Regex stage = new Regex(@"(Stage \d)");
-        Regex package = new Regex(@"(Packaged )(\w+)( data)");
-        Regex finish = new Regex(@"(Successfully built XTLs to)");
+//     }
 
-        AutomationElement statusBox = window.FindFirstDescendant(cf => cf.ByName(@"XTL test data:"));
-        AutomationElement[] logs = statusBox.FindAllDescendants();
+//     private async Task WaitForBuild(Window window)
+//     {
+//         Regex stage = new Regex(@"(Stage \d)");
+//         Regex package = new Regex(@"(Packaged )(\w+)( data)");
+//         Regex finish = new Regex(@"(Successfully built XTLs to)");
 
-        foreach (var log in logs)
-        {
-            Match matchStage = stage.Match(log.Name);
-            Match matchPackaging = package.Match(log.Name);
-            Match matchfinish = finish.Match(log.Name);
+//         AutomationElement statusBox = window.FindFirstDescendant(cf => cf.ByName(@"XTL test data:"));
+//         AutomationElement[] logs = statusBox.FindAllDescendants();
 
-            if (matchStage.Success == true)
-            {
-                progress(10);
-            }
+//         foreach (var log in logs)
+//         {
+//             Match matchStage = stage.Match(log.Name);
+//             Match matchPackaging = package.Match(log.Name);
+//             Match matchfinish = finish.Match(log.Name);
 
-            if (matchPackaging.Success == true)
-            {
-                progress(9);
-            }
+//             if (matchStage.Success == true)
+//             {
+//                 progress(10);
+//             }
 
-            if (matchfinish.Success == true)
-            {
-                progress(2);
-                return;
-            }
-        }
+//             if (matchPackaging.Success == true)
+//             {
+//                 progress(9);
+//             }
 
-        await Task.Delay(TimeSpan.FromMinutes(2));
-        await WaitForBuild(window);
-    }
-}
+//             if (matchfinish.Success == true)
+//             {
+//                 progress(2);
+//                 return;
+//             }
+//         }
+
+//         await Task.Delay(TimeSpan.FromMinutes(2));
+//         await WaitForBuild(window);
+//     }
+// }

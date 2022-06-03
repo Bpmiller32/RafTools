@@ -9,7 +9,6 @@ using System.Linq;
 using System.IO;
 using Microsoft.Extensions.Configuration;
 using Common.Data;
-using Crawler.App.Utils;
 
 namespace Crawler.App
 {
