@@ -214,7 +214,7 @@ function CheckboxClicked() {
 
 <template>
   <div
-    class="overflow-hidden select-none min-w-[23rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
+    class="overflow-hidden select-none min-w-[24rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
   >
     <div class="flex items-center justify-between p-6">
       <div class="shrink-0">

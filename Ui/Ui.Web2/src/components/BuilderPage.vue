@@ -5,7 +5,7 @@ import BuilderCard from "./BuilderCard.vue";
 <template>
   <div class="flex flex-wrap justify-evenly items-start">
     <div class="m-6">
-      <BuilderCard />
+      <BuilderCard dirType="SmartMatch" />
     </div>
   </div>
 </template>
