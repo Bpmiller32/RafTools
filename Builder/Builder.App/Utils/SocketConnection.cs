@@ -10,10 +10,10 @@ public class SocketConnection : WebSocketBehavior
 {
     public static WebSocketServiceManager SocketServer { get; set; }
     public static ParaBuilder ParaBuilder { get; set; }
+    public static RoyalBuilder RoyalBuilder { get; set; }
 
     private readonly ILogger<SocketConnection> logger;
     private readonly IConfiguration config;
-    private readonly ComponentTask tasks;
     private readonly DatabaseContext context;
 
     private CancellationTokenSource smTokenSource = new CancellationTokenSource();
@@ -21,11 +21,10 @@ public class SocketConnection : WebSocketBehavior
     private CancellationTokenSource rmTokenSource = new CancellationTokenSource();
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, IConfiguration config, ComponentTask tasks, DatabaseContext context)
+    public SocketConnection(ILogger<SocketConnection> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
         this.config = config;
-        this.tasks = tasks;
         this.context = context;
     }
 
@@ -55,28 +54,120 @@ public class SocketConnection : WebSocketBehavior
 
             if (message.Property == "Force")
             {
-                // await Task.Run(() => ParascriptCrawler.ExecuteAsync(psTokenSource.Token));
                 await Task.Run(() => ParaBuilder.ExecuteAsync(message.Value, psTokenSource.Token));
             }
-            if (message.Property == "AutoEnabled")
-            {
-                // ParascriptCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
-            }
-            if (message.Property == "AutoDate")
-            {
-                // string[] newDay = message.Value.Split('/');
-                // ParascriptCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
-                // ParascriptCrawler.Settings.ExecDay = int.Parse(newDay[1]);
-                // ParascriptCrawler.Settings.ExecYear = int.Parse(newDay[2]);
-            }
+        }
+        if (message.Directory == "RoyalMail")
+        {
+            rmTokenSource.Cancel();
+            rmTokenSource = new CancellationTokenSource();
 
-            // Task.Run(() => ParascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
+            if (message.Property == "Force")
+            {
+                await Task.Run(() => RoyalBuilder.ExecuteAsync(message.Value, rmTokenSource.Token));
+            }
         }
     }
 
-    public void SendMessage(bool smartMatch = false, bool parascript = false, bool royalMail = false)
+    public void SendMessage(DirectoryType directoryType)
     {
-        // string data = ReportStatus(smartMatch, parascript, royalMail);
-        // SocketServer.Broadcast(data);
+        Dictionary<ComponentStatus, string> statusMap = new Dictionary<ComponentStatus, string>() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
+        string serializedObject = "";
+
+        if (directoryType == DirectoryType.Parascript)
+        {
+            SocketResponse Parascript = new SocketResponse()
+            {
+                DirectoryStatus = statusMap[ParaBuilder.Status],
+                AutoEnabled = ParaBuilder.Settings.AutoBuildEnabled,
+                AutoDate = ParaBuilder.Settings.ExecMonth + "/" + ParaBuilder.Settings.ExecDay + "/" + ParaBuilder.Settings.ExecYear,
+                CurrentBuild = ParaBuilder.Settings.DataYearMonth,
+                Progress = ParaBuilder.Progress
+            };
+
+            if (ParaBuilder.Progress == 0 || ParaBuilder.Progress == 100)
+            {
+                List<List<BuildInfo>> buildBundle = GetCompiledBuilds(parascript: true);
+                Parascript.CompiledBuilds = buildBundle[1];
+            }
+
+            serializedObject = JsonSerializer.Serialize(new { Parascript });
+        }
+        if (directoryType == DirectoryType.RoyalMail)
+        {
+            SocketResponse RoyalMail = new SocketResponse()
+            {
+                DirectoryStatus = statusMap[RoyalBuilder.Status],
+                AutoEnabled = RoyalBuilder.Settings.AutoBuildEnabled,
+                AutoDate = RoyalBuilder.Settings.ExecMonth + "/" + RoyalBuilder.Settings.ExecDay + "/" + RoyalBuilder.Settings.ExecYear,
+                CurrentBuild = RoyalBuilder.Settings.DataYearMonth,
+                Progress = RoyalBuilder.Progress
+            };
+
+            if (RoyalBuilder.Progress == 0 || RoyalBuilder.Progress == 100)
+            {
+                List<List<BuildInfo>> buildBundle = GetCompiledBuilds(royalMail: true);
+                RoyalMail.CompiledBuilds = buildBundle[1];
+            }
+
+            serializedObject = JsonSerializer.Serialize(new { RoyalMail });
+        }
+
+        SocketServer.Broadcast(serializedObject);
+    }
+
+
+    private List<List<BuildInfo>> GetCompiledBuilds(bool smartMatch = false, bool parascript = false, bool royalMail = false)
+    {
+        List<BuildInfo> smBuilds = new List<BuildInfo>();
+        List<BuildInfo> psBuilds = new List<BuildInfo>();
+        List<BuildInfo> rmBuilds = new List<BuildInfo>();
+        List<List<BuildInfo>> buildBundle = new List<List<BuildInfo>>();
+
+        if (smartMatch)
+        {
+            List<UspsBundle> uspsBundles = context.UspsBundles.Where(x => (x.IsBuildComplete == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (UspsBundle bundle in uspsBundles)
+            {
+                smBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    Date = bundle.CompileDate,
+                    Time = bundle.CompileTime,
+                });
+            }
+        }
+        if (parascript)
+        {
+            List<ParaBundle> paraBundles = context.ParaBundles.Where(x => (x.IsBuildComplete == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (ParaBundle bundle in paraBundles)
+            {
+                psBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    Date = bundle.CompileDate,
+                    Time = bundle.CompileTime,
+                });
+            }
+        }
+        if (royalMail)
+        {
+            List<RoyalBundle> royalBundles = context.RoyalBundles.Where(x => (x.IsBuildComplete == true)).OrderByDescending(x => x.DataYearMonth).ToList();
+            foreach (RoyalBundle bundle in royalBundles)
+            {
+                rmBuilds.Add(new BuildInfo()
+                {
+                    Name = bundle.DataYearMonth,
+                    Date = bundle.CompileDate,
+                    Time = bundle.CompileTime,
+                });
+            }
+        }
+
+        buildBundle.Add(smBuilds);
+        buildBundle.Add(psBuilds);
+        buildBundle.Add(rmBuilds);
+
+        return buildBundle;
     }
 }

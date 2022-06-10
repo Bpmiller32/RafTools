@@ -5,24 +5,23 @@ using Common.Data;
 public class ParaBuilder
 {
     public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
+    public ComponentStatus Status { get; set; }
+    public int Progress { get; set; }
 
     private readonly ILogger<ParaBuilder> logger;
     private readonly IConfiguration config;
-    private readonly ComponentTask tasks;
     private readonly SocketConnection connection;
     private readonly DatabaseContext context;
 
     private string DataMonth;
     private string DataYear;
 
-    public ParaBuilder(ILogger<ParaBuilder> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
+    public ParaBuilder(ILogger<ParaBuilder> logger, IConfiguration config, SocketConnection connection, DatabaseContext context)
     {
         this.logger = logger;
         this.config = config;
-        this.tasks = tasks;
         this.connection = connection;
         this.context = context;
-
     }
 
     public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
@@ -30,11 +29,11 @@ public class ParaBuilder
         try
         {
             logger.LogInformation("Starting Builder");
-            tasks.Parascript = ComponentStatus.InProgress;
-            connection.SendMessage(parascript: true);
+            Status = ComponentStatus.InProgress;
+            ChangeProgress(0, reset: true);
 
             DataYear = DataYearMonth.Substring(0, 4);
-            DataMonth = DataYearMonth.Substring(3, 2);
+            DataMonth = DataYearMonth.Substring(4, 2);
             Settings.Validate(config, DataYearMonth);
 
             ExtractDownload();
@@ -44,24 +43,41 @@ public class ParaBuilder
             Cleanup(fullClean: false);
             CheckBuildComplete();
 
-            tasks.Parascript = ComponentStatus.Ready;
+            logger.LogInformation("Build Complete: {0}", DataYearMonth);
+            Status = ComponentStatus.Ready;
+            connection.SendMessage(DirectoryType.Parascript);
         }
         catch (TaskCanceledException e)
         {
-            tasks.Parascript = ComponentStatus.Ready;
-            connection.SendMessage(parascript: true);
+            Status = ComponentStatus.Ready;
+            connection.SendMessage(DirectoryType.Parascript);
             logger.LogDebug(e.Message);
         }
         catch (System.Exception e)
         {
-            tasks.Parascript = ComponentStatus.Error;
-            connection.SendMessage(parascript: true);
+            Status = ComponentStatus.Error;
+            connection.SendMessage(DirectoryType.Parascript);
             logger.LogError(e.Message);
         }
     }
 
+    public void ChangeProgress(int changeAmount, bool reset = false)
+    {
+        if (reset)
+        {
+            Progress = 0;
+        }
+        else
+        {
+            Progress = Progress + changeAmount;
+        }
 
-    public void ExtractDownload()
+        connection.SendMessage(DirectoryType.Parascript);
+    }
+
+
+
+    private void ExtractDownload()
     {
         DirectoryInfo ip = new DirectoryInfo(Settings.AddressDataPath);
 
@@ -73,10 +89,10 @@ public class ParaBuilder
 
         ZipFile.ExtractToDirectory(Path.Combine(Settings.AddressDataPath, @"Files.zip"), Settings.AddressDataPath);
 
-        tasks.ChangeProgress(DirectoryType.Parascript, 1);
+        ChangeProgress(1);
     }
 
-    public void Cleanup(bool fullClean)
+    private void Cleanup(bool fullClean)
     {
         Utils.KillPsProcs();
 
@@ -100,7 +116,7 @@ public class ParaBuilder
 
             Directory.Delete(Settings.WorkingPath, true);
 
-            tasks.ChangeProgress(DirectoryType.Parascript, 2);
+            ChangeProgress(2);
             return;
         }
 
@@ -122,10 +138,10 @@ public class ParaBuilder
             dir.Delete(true);
         }
 
-        tasks.ChangeProgress(DirectoryType.Parascript, 1);
+        ChangeProgress(1);
     }
 
-    public async Task Extract()
+    private async Task Extract()
     {
         string shortYear = Settings.DataYearMonth.Substring(2, 2);
 
@@ -178,10 +194,10 @@ public class ParaBuilder
 
         await Task.WhenAll(buildTasks.Values);
 
-        tasks.ChangeProgress(DirectoryType.Parascript, 18);
+        ChangeProgress(18);
     }
 
-    public async Task Archive()
+    private async Task Archive()
     {
         Dictionary<string, Task> buildTasks = new Dictionary<string, Task>();
 
@@ -211,14 +227,39 @@ public class ParaBuilder
 
         await Task.WhenAll(buildTasks.Values);
 
-        tasks.ChangeProgress(DirectoryType.Parascript, 78);
+        ChangeProgress(78);
     }
 
-    public void CheckBuildComplete()
+    private void CheckBuildComplete()
     {
         // Will be null if Crawler never made a record for it, watch out if running standalone
         ParaBundle bundle = context.ParaBundles.Where(x => (int.Parse(DataMonth) == x.DataMonth) && (int.Parse(DataYear) == x.DataYear)).FirstOrDefault();
         bundle.IsBuildComplete = true;
+
+        DateTime timestamp = DateTime.Now;
+        string hour;
+        string minute;
+        string ampm;
+        if (timestamp.Minute < 10)
+        {
+            minute = timestamp.Minute.ToString().PadLeft(2, '0');
+        }
+        else
+        {
+            minute = timestamp.Minute.ToString();
+        }
+        if (timestamp.Hour > 12)
+        {
+            hour = (timestamp.Hour - 12).ToString();
+            ampm = "pm";
+        }
+        else
+        {
+            hour = timestamp.Hour.ToString();
+            ampm = "am";
+        }
+        bundle.CompileDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+        bundle.CompileTime = hour + ":" + minute + ampm;
 
         context.SaveChanges();
     }

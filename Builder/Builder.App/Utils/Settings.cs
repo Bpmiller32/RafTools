@@ -28,10 +28,19 @@ public class Settings
         {
             throw new Exception("appsettings.json is missing, make sure there is a valid appsettings.json file in the same directory as the application");
         }
-        // Check for BuildUtils
+        // Check that BuildUtils exist
         if (!Directory.EnumerateFileSystemEntries(Directory.GetCurrentDirectory() + @"\BuildUtils").Any())
         {
             throw new Exception("BuildUtils folder is missing");
+        }
+        // Check that DataYearMonth is provided
+        if (string.IsNullOrEmpty(DataYearMonth))
+        {
+            throw new Exception("DataYearMonth not provided");
+        }
+        else
+        {
+            this.DataYearMonth = DataYearMonth;
         }
 
         // Verify for each directory
@@ -82,7 +91,7 @@ public class Settings
                     AddressDataPath = Path.Combine(AddressDataPath, @"Cycle-N");
                 }
 
-
+                // Enabled checks
                 if (config.GetValue<bool>("settings:" + dir + ":BuilderEnabled"))
                 {
                     BuilderEnabled = true;
@@ -92,6 +101,7 @@ public class Settings
                     AutoBuildEnabled = true;
                 }
 
+                // Autobuild time and date checks
                 if (config.GetValue<int>("settings:" + dir + ":ExecTime:Year") != 0)
                 {
                     ExecYear = config.GetValue<int>("settings:" + dir + ":ExecTime:Year");

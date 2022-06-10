@@ -17,6 +17,7 @@ namespace Crawler.App
     public class EmailCrawler
     {
         public Settings Settings { get; set; } = new Settings() { Name = "Email" };
+        public ComponentStatus Status { get; set; }
 
         private readonly ILogger logger;
         private readonly IConfiguration config;
@@ -42,7 +43,7 @@ namespace Crawler.App
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
-                tasks.Email = ComponentStatus.Disabled;
+                Status = ComponentStatus.Disabled;
                 // connection.SendMessage();
                 return;
             }
@@ -52,7 +53,7 @@ namespace Crawler.App
                 while (!stoppingToken.IsCancellationRequested)
                 {
                     logger.LogInformation("Starting Crawler");
-                    tasks.Email = ComponentStatus.InProgress;
+                    Status = ComponentStatus.InProgress;
                     // connection.SendMessage();
 
                     GetKey(stoppingToken);
@@ -64,7 +65,7 @@ namespace Crawler.App
             }
             catch (System.Exception e)
             {
-                tasks.Email = ComponentStatus.Error;
+                Status = ComponentStatus.Error;
                 // connection.SendMessage();
                 logger.LogError(e.Message);
             }

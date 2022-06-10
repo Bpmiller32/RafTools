@@ -8,14 +8,16 @@ public class SocketServer : BackgroundService
     private readonly IServiceScopeFactory factory;
 
     private readonly ParaBuilder paraBuilder;
+    private readonly RoyalBuilder royalBuilder;
 
-    public SocketServer(ILogger<SocketServer> logger, DatabaseContext context, IServiceScopeFactory factory, ParaBuilder paraBuilder)
+    public SocketServer(ILogger<SocketServer> logger, DatabaseContext context, IServiceScopeFactory factory, ParaBuilder paraBuilder, RoyalBuilder royalBuilder)
     {
         this.logger = logger;
         this.context = context;
         this.factory = factory;
 
         this.paraBuilder = paraBuilder;
+        this.royalBuilder = royalBuilder;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -27,6 +29,7 @@ public class SocketServer : BackgroundService
 
         SocketConnection.SocketServer = server.WebSocketServices;
         SocketConnection.ParaBuilder = paraBuilder;
+        SocketConnection.RoyalBuilder = royalBuilder;
 
         server.AddWebSocketService<SocketConnection>("/", () =>
         {

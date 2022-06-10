@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoadingPage from "../components/LoadingPage.vue";
 import CrawlerPage from "../components/CrawlerPage.vue";
 import BuilderPage from "../components/BuilderPage.vue";
 

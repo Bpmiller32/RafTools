@@ -9,14 +9,15 @@ using Common.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 // TODO: switch to httpClient? There is no replacement for FtpRequest....
+#pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 
 namespace Crawler.App
 {
     public class RoyalCrawler
     {
         public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
+        public ComponentStatus Status { get; set; }
 
         private readonly ILogger<RoyalCrawler> logger;
         private readonly IConfiguration config;
@@ -44,7 +45,7 @@ namespace Crawler.App
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
-                tasks.RoyalMail = ComponentStatus.Disabled;
+                Status = ComponentStatus.Disabled;
                 connection.SendMessage(royalMail: true);
                 return;
             }
@@ -80,7 +81,7 @@ namespace Crawler.App
             try
             {
                 logger.LogInformation("Starting Crawler");
-                tasks.RoyalMail = ComponentStatus.InProgress;
+                Status = ComponentStatus.InProgress;
                 connection.SendMessage(royalMail: true);
 
                 PullFile(stoppingToken);
@@ -88,18 +89,18 @@ namespace Crawler.App
                 await DownloadFile(stoppingToken);
                 CheckBuildReady(stoppingToken);
 
-                tasks.RoyalMail = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 // connection.SendMessage(royalMail: true);
             }
             catch (TaskCanceledException e)
             {
-                tasks.RoyalMail = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 connection.SendMessage(royalMail: true);
                 logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
-                tasks.RoyalMail = ComponentStatus.Error;
+                Status = ComponentStatus.Error;
                 connection.SendMessage(royalMail: true);
                 logger.LogError(e.Message);
             }

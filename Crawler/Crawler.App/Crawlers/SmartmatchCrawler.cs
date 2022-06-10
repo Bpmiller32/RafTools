@@ -15,6 +15,7 @@ namespace Crawler.App
     public class SmartmatchCrawler
     {
         public Settings Settings { get; set; } = new Settings { Name = "SmartMatch" };
+        public ComponentStatus Status { get; set; }
 
         private readonly ILogger<SmartmatchCrawler> logger;
         private readonly IConfiguration config;
@@ -42,7 +43,7 @@ namespace Crawler.App
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
-                tasks.SmartMatch = ComponentStatus.Disabled;
+                Status = ComponentStatus.Disabled;
                 connection.SendMessage(smartMatch: true);
                 return;
             }
@@ -78,7 +79,7 @@ namespace Crawler.App
             try
             {
                 logger.LogInformation("Starting Crawler");
-                tasks.SmartMatch = ComponentStatus.InProgress;
+                Status = ComponentStatus.InProgress;
                 connection.SendMessage(smartMatch: true);
 
                 await PullFiles(stoppingToken);
@@ -86,18 +87,18 @@ namespace Crawler.App
                 await DownloadFiles(stoppingToken);
                 CheckBuildReady(stoppingToken);
 
-                tasks.SmartMatch = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 // connection.SendMessage(smartMatch: true);
             }
             catch (TaskCanceledException e)
             {
-                tasks.SmartMatch = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 connection.SendMessage(smartMatch: true);
                 logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
-                tasks.SmartMatch = ComponentStatus.Error;
+                Status = ComponentStatus.Error;
                 connection.SendMessage(smartMatch: true);
                 logger.LogError(e.Message);
             }

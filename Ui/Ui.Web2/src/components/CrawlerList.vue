@@ -74,7 +74,7 @@ const directoriesState = ref({
         directoriesState.value.monthNames.get(monthNum) + " " + yearNum;
       const icon = directoriesState.value.icons.get(monthNum);
 
-      const dateString = dirs.value[index].DownloadDate.split("/");
+      const dateString = dirs.value[index].Date.split("/");
       const dirDate = new Date(
         dateString[2],
         dateString[0] - 1,

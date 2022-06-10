@@ -52,12 +52,11 @@ try
                 services.AddHostedService<SocketServer>();
                 services.AddTransient<SocketConnection>();
 
-                services.AddSingleton<ComponentTask>();
                 services.AddSingleton<ParaBuilder>();
+                services.AddSingleton<RoyalBuilder>();
 
                 services.AddDbContext<DatabaseContext>(opt =>
                 {
-                    // opt.UseSqlite(@"Filename=.\DirectoryCollection.db");
                     opt.UseSqlite(@"Filename=C:\Users\billy\Documents\GitHub\RafTools\Crawler\Crawler.App\bin\Debug\net6.0\DirectoryCollection.db");
                 }, ServiceLifetime.Transient);
             })

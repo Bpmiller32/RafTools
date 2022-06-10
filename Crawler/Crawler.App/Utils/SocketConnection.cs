@@ -22,7 +22,6 @@ public class SocketConnection : WebSocketBehavior
 
     private readonly ILogger<SocketConnection> logger;
     private readonly IConfiguration config;
-    private readonly ComponentTask tasks;
     private readonly DatabaseContext context;
 
     private CancellationTokenSource emailTokenSource = new CancellationTokenSource();
@@ -31,11 +30,10 @@ public class SocketConnection : WebSocketBehavior
     private CancellationTokenSource rmTokenSource = new CancellationTokenSource();
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, IConfiguration config, ComponentTask tasks, DatabaseContext context)
+    public SocketConnection(ILogger<SocketConnection> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
         this.config = config;
-        this.tasks = tasks;
         this.context = context;
     }
 
@@ -148,7 +146,7 @@ public class SocketConnection : WebSocketBehavior
         {
             SocketResponse SmartMatch = new SocketResponse()
             {
-                DirectoryStatus = statusMap[tasks.SmartMatch],
+                DirectoryStatus = statusMap[SmartMatchCrawler.Status],
                 AutoEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[0],
                 AutoDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
@@ -161,7 +159,7 @@ public class SocketConnection : WebSocketBehavior
         {
             SocketResponse Parascript = new SocketResponse()
             {
-                DirectoryStatus = statusMap[tasks.Parascript],
+                DirectoryStatus = statusMap[ParascriptCrawler.Status],
                 AutoEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[1],
                 AutoDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
@@ -174,7 +172,7 @@ public class SocketConnection : WebSocketBehavior
         {
             SocketResponse RoyalMail = new SocketResponse()
             {
-                DirectoryStatus = statusMap[tasks.RoyalMail],
+                DirectoryStatus = statusMap[RoyalCrawler.Status],
                 AutoEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[2],
                 AutoDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
@@ -202,8 +200,8 @@ public class SocketConnection : WebSocketBehavior
                 smBuilds.Add(new BuildInfo()
                 {
                     Name = bundle.DataYearMonth,
-                    DownloadDate = bundle.DownloadDate,
-                    DownloadTime = bundle.DownloadTime,
+                    Date = bundle.DownloadDate,
+                    Time = bundle.DownloadTime,
                     FileCount = bundle.FileCount
                 });
             }
@@ -216,8 +214,8 @@ public class SocketConnection : WebSocketBehavior
                 psBuilds.Add(new BuildInfo()
                 {
                     Name = bundle.DataYearMonth,
-                    DownloadDate = bundle.DownloadDate,
-                    DownloadTime = bundle.DownloadTime,
+                    Date = bundle.DownloadDate,
+                    Time = bundle.DownloadTime,
                     FileCount = bundle.FileCount
                 });
             }
@@ -230,8 +228,8 @@ public class SocketConnection : WebSocketBehavior
                 rmBuilds.Add(new BuildInfo()
                 {
                     Name = bundle.DataYearMonth,
-                    DownloadDate = bundle.DownloadDate,
-                    DownloadTime = bundle.DownloadTime,
+                    Date = bundle.DownloadDate,
+                    Time = bundle.DownloadTime,
                     FileCount = bundle.FileCount
                 });
             }

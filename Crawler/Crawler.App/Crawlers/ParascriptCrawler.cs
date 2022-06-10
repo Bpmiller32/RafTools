@@ -15,6 +15,7 @@ namespace Crawler.App
     public class ParascriptCrawler
     {
         public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
+        public ComponentStatus Status { get; set; }
 
         private readonly ILogger<ParascriptCrawler> logger;
         private readonly IConfiguration config;
@@ -42,7 +43,7 @@ namespace Crawler.App
             if (Settings.CrawlerEnabled == false)
             {
                 logger.LogInformation("Crawler disabled");
-                tasks.Parascript = ComponentStatus.Disabled;
+                Status = ComponentStatus.Disabled;
                 connection.SendMessage(parascript: true);
                 return;
             }
@@ -78,7 +79,7 @@ namespace Crawler.App
             try
             {
                 logger.LogInformation("Starting Crawler");
-                tasks.Parascript = ComponentStatus.InProgress;
+                Status = ComponentStatus.InProgress;
                 connection.SendMessage(parascript: true);
 
                 await PullFiles(stoppingToken);
@@ -86,18 +87,18 @@ namespace Crawler.App
                 await DownloadFiles(stoppingToken);
                 CheckBuildReady(stoppingToken);
 
-                tasks.Parascript = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 // connection.SendMessage(parascript: true);
             }
             catch (TaskCanceledException e)
             {
-                tasks.Parascript = ComponentStatus.Ready;
+                Status = ComponentStatus.Ready;
                 connection.SendMessage(parascript: true);
                 logger.LogDebug(e.Message);
             }
             catch (System.Exception e)
             {
-                tasks.Parascript = ComponentStatus.Error;
+                Status = ComponentStatus.Error;
                 connection.SendMessage(parascript: true);
                 logger.LogError(e.Message);
             }

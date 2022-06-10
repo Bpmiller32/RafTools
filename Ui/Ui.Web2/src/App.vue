@@ -50,7 +50,7 @@ onMounted(() => {
   };
 
   store.connectionCrawler.onmessage = (event) => {
-    console.log("Data: ", JSON.parse(event.data), Date());
+    console.log("CrawlerData: ", JSON.parse(event.data), Date());
     const response = JSON.parse(event.data);
 
     if (response.SmartMatch != null) {
@@ -73,6 +73,9 @@ onMounted(() => {
     ) {
       backendConnected.value = "connected";
     }
+  };
+  store.connectionBuilder.onmessage = (event) => {
+    console.log("BuilderData: ", JSON.parse(event.data), Date());
   };
 });
 </script>
