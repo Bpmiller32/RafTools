@@ -297,7 +297,7 @@ public class RoyalBuilder
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
+        // tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
 
@@ -309,7 +309,7 @@ public class RoyalBuilder
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
+        // tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
 
@@ -320,6 +320,31 @@ public class RoyalBuilder
     {
         RoyalBundle bundle = context.RoyalBundles.Where(x => (int.Parse(DataMonth) == x.DataMonth) && (int.Parse(DataYear) == x.DataYear)).FirstOrDefault();
         bundle.IsBuildComplete = true;
+
+        DateTime timestamp = DateTime.Now;
+        string hour;
+        string minute;
+        string ampm;
+        if (timestamp.Minute < 10)
+        {
+            minute = timestamp.Minute.ToString().PadLeft(2, '0');
+        }
+        else
+        {
+            minute = timestamp.Minute.ToString();
+        }
+        if (timestamp.Hour > 12)
+        {
+            hour = (timestamp.Hour - 12).ToString();
+            ampm = "pm";
+        }
+        else
+        {
+            hour = timestamp.Hour.ToString();
+            ampm = "am";
+        }
+        bundle.CompileDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+        bundle.CompileTime = hour + ":" + minute + ampm;
 
         context.SaveChanges();
     }

@@ -137,6 +137,7 @@ const logoState = ref({
     new URL("../assets/SmartMatchLogo.png", import.meta.url).href,
     new URL("../assets/ParascriptLogo.png", import.meta.url).href,
     new URL("../assets/RoyalMailLogo.png", import.meta.url).href,
+    new URL("../assets/ErrorLogo.png", import.meta.url).href,
   ],
   SetIcon: () => {
     if (props.dirType == "SmartMatch") {
@@ -146,7 +147,7 @@ const logoState = ref({
     } else if (props.dirType == "RoyalMail") {
       logoState.value.currentIcon = logoState.value.icons[2];
     } else {
-      logoState.value.currentIcon = "Error";
+      logoState.value.currentIcon = logoState.value.icons[3];
     }
   },
 });
@@ -214,7 +215,7 @@ function CheckboxClicked() {
 
 <template>
   <div
-    class="overflow-hidden select-none min-w-[24rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
+    class="overflow-hidden select-none min-w-[23rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
   >
     <div class="flex items-center justify-between p-6">
       <div class="shrink-0">

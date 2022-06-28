@@ -35,17 +35,17 @@ onMounted(() => {
   store.connectionBuilder = new WebSocket("ws://192.168.50.184:10022");
 
   store.connectionCrawler.onopen = () => {
-    console.log("Successfully connected to back end");
+    console.log("Successfully connected to Crawler back end");
   };
   store.connectionCrawler.onclose = () => {
-    console.log("Unable to connect to back end");
+    console.log("Unable to connect to Crawler back end");
     backendConnected.value = "error";
   };
   store.connectionBuilder.onopen = () => {
-    console.log("Successfully connected to back end");
+    console.log("Successfully connected to Builder back end");
   };
   store.connectionBuilder.onclose = () => {
-    console.log("Unable to connect to back end");
+    console.log("Unable to connect to Builder back end");
     backendConnected.value = "error";
   };
 

@@ -76,7 +76,6 @@ namespace Crawler.App
                     services.AddHostedService<SocketServer>();
                     services.AddTransient<SocketConnection>();
 
-                    services.AddSingleton<ComponentTask>();
                     services.AddSingleton<EmailCrawler>();
                     services.AddSingleton<SmartmatchCrawler>();
                     services.AddSingleton<ParascriptCrawler>();

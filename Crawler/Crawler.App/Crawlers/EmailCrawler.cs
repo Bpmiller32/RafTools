@@ -21,17 +21,15 @@ namespace Crawler.App
 
         private readonly ILogger logger;
         private readonly IConfiguration config;
-        private readonly ComponentTask tasks;
         private readonly SocketConnection connection;
         private readonly DatabaseContext context;
 
         private PafKey tempKey = new PafKey();
 
-        public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, ComponentTask tasks, SocketConnection connection, DatabaseContext context)
+        public EmailCrawler(ILogger<EmailCrawler> logger, IConfiguration config, SocketConnection connection, DatabaseContext context)
         {
             this.logger = logger;
             this.config = config;
-            this.tasks = tasks;
             this.connection = connection;
             this.context = context;
 

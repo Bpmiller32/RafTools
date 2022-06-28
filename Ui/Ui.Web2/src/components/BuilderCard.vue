@@ -1,21 +1,17 @@
 <script setup>
 import { onMounted, ref, watch } from "vue";
+import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
+import AnimationHandler from "./AnimationHandler.vue";
+import anime from "animejs/lib/anime.es.js";
 import {
-  Listbox,
-  ListboxButton,
-  ListboxLabel,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/vue";
-import {
-  MailIcon,
-  PhoneIcon,
-  RefreshIcon,
   StatusOnlineIcon,
   ArrowCircleDownIcon,
   ExclamationCircleIcon,
   XCircleIcon,
-} from "@heroicons/vue/solid";
+  ChevronDoubleRightIcon,
+  RefreshIcon,
+} from "@heroicons/vue/outline";
+import { useStore } from "../store";
 
 const props = defineProps(["dirType"]);
 
@@ -87,6 +83,7 @@ const logoState = ref({
     new URL("../assets/SmartMatchLogo.png", import.meta.url).href,
     new URL("../assets/ParascriptLogo.png", import.meta.url).href,
     new URL("../assets/RoyalMailLogo.png", import.meta.url).href,
+    new URL("../assets/ErrorLogo.png", import.meta.url).href,
   ],
   SetIcon: () => {
     if (props.dirType == "SmartMatch") {
@@ -96,7 +93,7 @@ const logoState = ref({
     } else if (props.dirType == "RoyalMail") {
       logoState.value.currentIcon = logoState.value.icons[2];
     } else {
-      logoState.value.currentIcon = "Error";
+      logoState.value.currentIcon = logoState.value.icons[3];
     }
   },
 });
@@ -109,131 +106,148 @@ onMounted(() => {
 
 <template>
   <div
-    class="overflow-hidden select-none min-w-[18rem] max-w-[18rem] bg-white rounded-lg shadow divide-y divide-gray-200"
+    class="overflow-hidden select-none min-w-[23rem] max-w-sm bg-white rounded-lg shadow divide-y divide-gray-200"
   >
-    <div class="flex flex-col items-center py-8">
-      <img class="w-20 h-20 border rounded-full" :src="logoState.currentIcon" />
-      <div class="flex mt-2">
-        <p class="text-gray-900 text-sm font-medium">
-          {{ props.dirType }}
-        </p>
-        <div
-          :class="{
-            'text-green-800 bg-green-100': true,
-            // 'text-yellow-800 bg-yellow-100': autoCrawlStatus == 'In Progress',
-            // 'text-red-800 bg-red-100': autoCrawlStatus == 'Error',
-            // 'text-gray-800 bg-gray-100': autoCrawlStatus == 'Disabled',
-            'ml-3 px-2 py-0.5 text-xs font-medium rounded-full': true,
-          }"
-        >
-          Ready
+    <div class="flex items-center justify-between p-6">
+      <div class="shrink-0">
+        <div class="flex items-center">
+          <p class="text-gray-900 text-sm font-medium">
+            {{ props.dirType }}
+          </p>
+          <AnimationHandler :animation="statusState.animation">
+            <div
+              :key="autoCrawlStatus"
+              :class="{
+                'text-green-800 bg-green-100': autoCrawlStatus == 'Ready',
+                'text-yellow-800 bg-yellow-100':
+                  autoCrawlStatus == 'In Progress',
+                'text-red-800 bg-red-100': autoCrawlStatus == 'Error',
+                'text-gray-800 bg-gray-100': autoCrawlStatus == 'Disabled',
+                'ml-3 px-2 py-0.5 text-xs font-medium rounded-full': true,
+              }"
+            >
+              {{ autoCrawlStatus }}
+            </div>
+          </AnimationHandler>
+          <AnimationHandler :animation="statusState.animation">
+            <component
+              :is="statusState.currentIcon"
+              :class="{
+                'text-green-500':
+                  statusState.currentIcon == statusState.icons[0],
+                'text-yellow-500':
+                  statusState.currentIcon == statusState.icons[1],
+                'text-red-500': statusState.currentIcon == statusState.icons[2],
+                'text-gray-500':
+                  statusState.currentIcon == statusState.icons[3],
+                'h-5 w-5 ml-1': true,
+              }"
+            ></component>
+          </AnimationHandler>
         </div>
-        <component
-          :is="statusState.currentIcon"
-          :class="{
-            'text-green-500': true,
-            // 'text-green-500': statusState.currentIcon == statusState.icons[0],
-            // 'text-yellow-500': statusState.currentIcon == statusState.icons[1],
-            // 'text-red-500': statusState.currentIcon == statusState.icons[2],
-            // 'text-gray-500': statusState.currentIcon == statusState.icons[3],
-            'h-5 w-5 ml-1': true,
-          }"
-        ></component>
+        <div class="flex items-center mt-2 text-gray-500 text-sm">
+          <p>AutoCrawl:</p>
+          <input
+            type="checkbox"
+            v-model="autoCrawlEnabled"
+            @click="CheckboxClicked()"
+            :disabled="!crawlButtonState.isActive"
+            :class="{
+              'text-indigo-600 cursor-pointer':
+                crawlButtonState.isActive == true,
+              'text-gray-400 cursor-not-allowed':
+                crawlButtonState.isActive == false,
+              'flex items-center ml-2 h-4 w-4 focus:ring-indigo-500 border-gray-300 rounded disabled:bg-gray-400': true,
+            }"
+          />
+        </div>
+        <div class="text-gray-500 text-sm">
+          <span>Next AutoCrawl: </span>
+          <AnimationHandler :animation="statusState.animation">
+            <span :key="autoCrawlDate" class="mr-16">{{ autoCrawlDate }}</span>
+          </AnimationHandler>
+        </div>
       </div>
-
-      <!-- <Listbox as="div" v-model="selected">
-        <ListboxLabel class="mt-4 block text-sm font-medium text-gray-700">
-          Select Directory:
-        </ListboxLabel>
-        <div class="mt-1">
-          <ListboxButton
-            class="min-w-[15rem] bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+      <img class="w-20 h-20 border rounded-full" :src="logoState.currentIcon" />
+    </div>
+    <Disclosure
+      as="div"
+      v-slot="{ open, close }"
+      class="flex justify-between divide-x divide-gray-200"
+    >
+      <div class="flex flex-1 justify-center">
+        <div class="shrink-0">
+          <AnimationHandler
+            :animation="crawlButtonState.animation"
+            args="panelbutton"
           >
-            <span class="flex items-center">
-              <span
-                :class="{
-                  'bg-green-400': true,
-                  'flex-shrink-0 inline-block h-2 w-2 rounded-full': true,
-                }"
-              />
-              <span class="ml-3 block truncate">May 2022</span>
-            </span>
-            <span
-              class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none"
-            >
-              <SelectorIcon class="h-5 w-5 text-gray-400" />
-            </span>
-          </ListboxButton>
-
-          <transition
-            leave-active-class="transition ease-in duration-100"
-            leave-from-class="opacity-100"
-            leave-to-class="opacity-0"
-          >
-            <ListboxOptions
-              class="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-            >
-              <ListboxOption
-                as="template"
-                v-for="person in people"
-                :key="person.id"
-                :value="person"
-                v-slot="{ active, selected }"
+            <DisclosureButton
+              :key="crawlButtonState.isActive"
+              @click="PanelButtonClicked(open, close)"
+              :class="{
+                'bg-indigo-100 text-indigo-700':
+                  crawlButtonState.isActive == true,
+                'bg-gray-500 text-white bg-[length:0%,0%] cursor-not-allowed':
+                  crawlButtonState.isActive == false,
+                'bg-[length:0%,0%] bg-indigo-200 hover:bg-indigo-100':
+                  crawlButtonState.isActive == true && open == true,
+                'bg-[length:0%,0%] bg-indigo-100 hover:bg-indigo-200':
+                  crawlButtonState.isActive == true && open == false,
+                'flex items-center mx-5 my-4 px-2 py-2 max-h-8 bg-gradient-to-r from-indigo-100 to-indigo-100 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
+              }"
+              ><ChevronDoubleRightIcon
+                ref="refEditPanelIcon"
+                class="h-5 w-5 mr-1"
+              />Edit AutoCrawl
+            </DisclosureButton>
+          </AnimationHandler>
+          <AnimationHandler animation="SlideDown">
+            <DisclosurePanel class="overflow-hidden h-0 ml-2">
+              <label class="mx-1 text-sm font-medium text-gray-700"
+                >New AutoCrawl Date</label
               >
-                <li
-                  :class="[
-                    active ? 'text-white bg-indigo-600' : 'text-gray-900',
-                    'cursor-default select-none relative py-2 pl-3 pr-9',
-                  ]"
+              <div class="mt-1">
+                <input
+                  type="date"
+                  v-model="editPanelState.editDate"
+                  class="mx-1 px-2 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md"
+                  placeholder="MM/DD/YYYY"
+                />
+              </div>
+              <AnimationHandler :animation="editPanelState.animation">
+                <p
+                  :key="editPanelState.editDate"
+                  class="mx-1 text-gray-500 mt-2 mb-4 t)ext-sm"
                 >
-                  <div class="flex items-center">
-                    <span
-                      :class="[
-                        person.online ? 'bg-green-400' : 'bg-gray-200',
-                        'flex-shrink-0 inline-block h-2 w-2 rounded-full',
-                      ]"
-                      aria-hidden="true"
-                    />
-                    <span
-                      :class="[
-                        selected ? 'font-semibold' : 'font-normal',
-                        'ml-3 block truncate',
-                      ]"
-                    >
-                      {{ person.name }}
-                      <span class="sr-only">
-                        is {{ person.online ? "online" : "offline" }}</span
-                      >
-                    </span>
-                  </div>
-
-                  <span
-                    v-if="selected"
-                    :class="[
-                      active ? 'text-white' : 'text-indigo-600',
-                      'absolute inset-y-0 right-0 flex items-center pr-4',
-                    ]"
-                  >
-                    <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                  </span>
-                </li>
-              </ListboxOption>
-            </ListboxOptions>
-          </transition>
+                  {{ editPanelState.label }}
+                </p>
+              </AnimationHandler>
+            </DisclosurePanel>
+          </AnimationHandler>
         </div>
-      </Listbox> -->
-    </div>
-    <div class="flex justify-center items-center -space-x-7">
-      <RefreshIcon class="shrink-0 h-5 w-5 text-white z-10" />
-      <button
-        type="button"
-        :class="{
-          'bg-indigo-600 bg-[length:150%,150%] hover:bg-[length:0%,0%] hover:bg-indigo-700': true,
-          'flex shrink-0 items-center my-4 pl-8 pr-2 py-2 max-h-8 bg-gradient-to-r from-indigo-600 to-indigo-600 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
-        }"
-      >
-        Build
-      </button>
-    </div>
+      </div>
+      <div class="flex flex-1 justify-center items-center -space-x-7">
+        <RefreshIcon
+          ref="refCrawlButtonIcon"
+          class="shrink-0 h-5 w-5 text-white z-10"
+        />
+        <AnimationHandler :animation="crawlButtonState.animation">
+          <button
+            type="button"
+            :key="crawlButtonState.isActive"
+            @click="CrawlButtonClicked(close)"
+            :class="{
+              'bg-indigo-600 bg-[length:150%,150%] hover:bg-[length:0%,0%] hover:bg-indigo-700':
+                crawlButtonState.isActive == true,
+              'bg-gray-500 bg-[length:0%,0%] cursor-not-allowed':
+                crawlButtonState.isActive == false,
+              'flex shrink-0 items-center my-4 pl-8 pr-2 py-2 max-h-8 bg-gradient-to-r from-indigo-600 to-indigo-600 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500': true,
+            }"
+          >
+            {{ crawlButtonState.label }}
+          </button>
+        </AnimationHandler>
+      </div>
+    </Disclosure>
   </div>
 </template>

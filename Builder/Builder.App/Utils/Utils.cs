@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
-public class Utils
+public static class Utils
 {
     public static string WrapQuotes(string input)
     {
