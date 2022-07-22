@@ -7,9 +7,6 @@ import { useStore } from "../store";
 const props = defineProps(["dirType"]);
 const store = useStore();
 
-// Store refs
-const dirs = ref(null);
-
 // States
 const logoState = ref({
   currentIcon: null,
@@ -65,16 +62,25 @@ const directoriesState = ref({
     const today = new Date();
     const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    for (let index = 0; index < dirs.value.length; index++) {
-      const monthNum = dirs.value[index].Name.substring(4, 6);
-      const yearNum = dirs.value[index].Name.substring(0, 4);
+    for (
+      let index = 0;
+      index < store.crawlers[props.dirType].AvailableBuilds.length;
+      index++
+    ) {
+      const monthNum = store.crawlers[props.dirType].AvailableBuilds[
+        index
+      ].Name.substring(4, 6);
+      const yearNum = store.crawlers[props.dirType].AvailableBuilds[
+        index
+      ].Name.substring(0, 4);
       let isNew = false;
 
       const name =
         directoriesState.value.monthNames.get(monthNum) + " " + yearNum;
       const icon = directoriesState.value.icons.get(monthNum);
 
-      const dateString = dirs.value[index].Date.split("/");
+      const dateString =
+        store.crawlers[props.dirType].AvailableBuilds[index].Date.split("/");
       const dirDate = new Date(
         dateString[2],
         dateString[0] - 1,
@@ -87,9 +93,10 @@ const directoriesState = ref({
 
       const dir = {
         name: name,
-        fileCount: dirs.value[index].FileCount,
-        downloadDate: dirs.value[index].DownloadDate,
-        downloadTime: dirs.value[index].DownloadTime,
+        fileCount:
+          store.crawlers[props.dirType].AvailableBuilds[index].FileCount,
+        date: store.crawlers[props.dirType].AvailableBuilds[index].Date,
+        time: store.crawlers[props.dirType].AvailableBuilds[index].Time,
         icon: icon,
         isNew: isNew,
       };
@@ -113,8 +120,6 @@ const directoriesState = ref({
 
 // onMounted
 onMounted(() => {
-  dirs.value = store.crawlers[props.dirType].AvailableBuilds;
-
   logoState.value.SetIcon();
   directoriesState.value.FormatData();
 });
@@ -123,8 +128,6 @@ onMounted(() => {
 watch(
   () => store.crawlers[props.dirType].AvailableBuilds.length,
   () => {
-    dirs.value = store.crawlers[props.dirType].AvailableBuilds;
-
     directoriesState.value.FormatData();
   }
 );
@@ -169,7 +172,7 @@ watch(
               </span>
             </div>
             <p class="text-sm text-gray-500">
-              Downloaded {{ dir.downloadDate }} @ {{ dir.downloadTime }}
+              Downloaded {{ dir.date }} @ {{ dir.time }}
             </p>
           </div>
         </div>

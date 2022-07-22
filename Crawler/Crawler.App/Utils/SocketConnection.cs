@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -144,12 +145,14 @@ public class SocketConnection : WebSocketBehavior
 
         if (smartMatch)
         {
+            DateTime nextDate = Settings.CalculateNextDate(SmartMatchCrawler.Settings);
+
             SocketResponse SmartMatch = new SocketResponse()
             {
                 DirectoryStatus = statusMap[SmartMatchCrawler.Status],
                 AutoEnabled = SmartMatchCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[0],
-                AutoDate = SmartMatchCrawler.Settings.ExecMonth + "/" + SmartMatchCrawler.Settings.ExecDay + "/" + SmartMatchCrawler.Settings.ExecYear
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
             };
 
             string serializedObject = JsonSerializer.Serialize(new { SmartMatch });
@@ -157,12 +160,14 @@ public class SocketConnection : WebSocketBehavior
         }
         if (parascript)
         {
+            DateTime nextDate = Settings.CalculateNextDate(ParascriptCrawler.Settings);
+
             SocketResponse Parascript = new SocketResponse()
             {
                 DirectoryStatus = statusMap[ParascriptCrawler.Status],
                 AutoEnabled = ParascriptCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[1],
-                AutoDate = ParascriptCrawler.Settings.ExecMonth + "/" + ParascriptCrawler.Settings.ExecDay + "/" + ParascriptCrawler.Settings.ExecYear
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
             };
 
             string serializedObject = JsonSerializer.Serialize(new { Parascript });
@@ -170,12 +175,14 @@ public class SocketConnection : WebSocketBehavior
         }
         if (royalMail)
         {
+            DateTime nextDate = Settings.CalculateNextDate(RoyalCrawler.Settings);
+
             SocketResponse RoyalMail = new SocketResponse()
             {
                 DirectoryStatus = statusMap[RoyalCrawler.Status],
                 AutoEnabled = RoyalCrawler.Settings.AutoCrawlEnabled,
                 AvailableBuilds = buildBundle[2],
-                AutoDate = RoyalCrawler.Settings.ExecMonth + "/" + RoyalCrawler.Settings.ExecDay + "/" + RoyalCrawler.Settings.ExecYear
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
             };
 
             string serializedObject = JsonSerializer.Serialize(new { RoyalMail });

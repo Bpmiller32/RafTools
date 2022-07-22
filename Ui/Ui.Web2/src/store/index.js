@@ -63,7 +63,7 @@ export const useStore = defineStore("main", () => {
       JSON.stringify({ Directory, Property, Value })
     );
   }
-  function SendMessageTest(Directory, Property, Value) {
+  function SendMessageBuilder(Directory, Property, Value) {
     connectionBuilder.value.send(
       JSON.stringify({ Directory, Property, Value })
     );
@@ -75,6 +75,6 @@ export const useStore = defineStore("main", () => {
     crawlers,
     builders,
     SendMessage,
-    SendMessageTest,
+    SendMessageBuilder,
   };
 });

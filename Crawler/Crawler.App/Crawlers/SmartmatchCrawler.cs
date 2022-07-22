@@ -155,15 +155,15 @@ namespace Crawler.App
                         {
                             UspsFile file = new UspsFile();
                             file.FileName = fileRow.ChildNodes[5].InnerText.Trim();
-                            file.UploadDate = DateTime.Parse(fileRow.ChildNodes[4].InnerText.Trim());
+                            file.UploadDate = DateTime.Parse(fileRow.ChildNodes[3].InnerText.Trim());
                             file.Size = fileRow.ChildNodes[6].InnerText.Trim();
                             file.OnDisk = true;
 
                             file.ProductKey = fileRow.Attributes[0].Value.Trim().Substring(19, 5);
                             file.FileId = fileRow.Attributes[1].Value.Trim().Substring(3, 7);
 
-                            file.DataMonth = DateTime.Parse(fileRow.ChildNodes[4].InnerText.Trim()).Month;
-                            file.DataYear = DateTime.Parse(fileRow.ChildNodes[4].InnerText.Trim()).Year;
+                            file.DataMonth = DateTime.Parse(fileRow.ChildNodes[3].InnerText.Trim()).Month;
+                            file.DataYear = DateTime.Parse(fileRow.ChildNodes[3].InnerText.Trim()).Year;
 
                             if (file.DataMonth < 10)
                             {

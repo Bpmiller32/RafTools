@@ -28,6 +28,11 @@ public class RoyalBuilder
         this.context = context;
     }
 
+    public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+    {
+        connection.SendMessage(DirectoryType.RoyalMail);
+    }
+
     public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
     {
         try

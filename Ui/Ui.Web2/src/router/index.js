@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import CrawlerPage from "../components/CrawlerPage.vue";
 import BuilderPage from "../components/BuilderPage.vue";
 
-import HelloWorld2 from "../components/HelloWorld2.vue";
+import PlaceHolder from "../components/PlaceHolder.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,7 +23,7 @@ const router = createRouter({
     {
       path: "/Tester",
       name: "Tester",
-      component: HelloWorld2,
+      component: PlaceHolder,
       meta: { fromRoute: null, toRoute: null },
     },
   ],

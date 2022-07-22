@@ -129,7 +129,6 @@ namespace Crawler.App
             DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 59, 59);
             TimeSpan waitTime = execTime - DateTime.Now;
 
-            waitTime = execTime - DateTime.Now;
             if (waitTime.TotalSeconds <= 0)
             {
                 waitTime = (endOfMonth - DateTime.Now) + TimeSpan.FromSeconds(5);
@@ -140,13 +139,21 @@ namespace Crawler.App
                 logger.LogInformation("Waiting for pass, starting sleep until: " + execTime);
             }
 
-            // Check that day hasn't passed, display next month
-            // if (settings.ExecDay < DateTime.Now.Day)
-            // {
-            //     settings.ExecMonth = DateTime.Now.AddMonths(1).Month;
-            // }
-
             return waitTime;
+        }
+
+        public static DateTime CalculateNextDate(Settings settings)
+        {
+            DateTime execTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
+            DateTime endOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 59, 59);
+            TimeSpan waitTime = execTime - DateTime.Now;
+
+            if (waitTime.TotalSeconds <= 0)
+            {
+                return endOfMonth;
+            }
+
+            return execTime;
         }
     }
 }

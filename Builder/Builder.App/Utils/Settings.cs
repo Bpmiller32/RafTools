@@ -21,6 +21,24 @@ public class Settings
     public int ExecMinute { get; set; }
     public int ExecSecond { get; set; }
 
+    public static TimeSpan CalculateWaitTime(ILogger logger, Settings settings)
+    {
+        DateTime today = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
+        DateTime tomorrow = today.AddDays(1);
+
+        TimeSpan waitToday = today - DateTime.Now;
+        TimeSpan waitTomorrow = tomorrow - DateTime.Now;
+
+        if (waitToday.TotalSeconds <= 0)
+        {
+            logger.LogInformation("Waiting for pass, starting sleep until : " + today);
+            return waitToday;
+        }
+
+        logger.LogInformation("Waiting for pass, starting sleep until: " + tomorrow);
+        return waitTomorrow;
+    }
+
     public void Validate(IConfiguration config, string DataYearMonth)
     {
         // Check that appsettings.json exists at all
@@ -132,7 +150,7 @@ public class Settings
                 }
                 else
                 {
-                    ExecHour = 15;
+                    ExecHour = 11;
                 }
                 if (config.GetValue<int>("settings:" + dir + ":ExecTime:Minute") != 0)
                 {
@@ -140,7 +158,7 @@ public class Settings
                 }
                 else
                 {
-                    ExecMinute = 15;
+                    ExecMinute = 59;
                 }
                 if (config.GetValue<int>("settings:" + dir + ":ExecTime:Second") != 0)
                 {
@@ -148,7 +166,7 @@ public class Settings
                 }
                 else
                 {
-                    ExecSecond = 15;
+                    ExecSecond = 59;
                 }
 
                 // Check that day hasn't passed, display next month

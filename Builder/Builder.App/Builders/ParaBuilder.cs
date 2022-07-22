@@ -24,6 +24,49 @@ public class ParaBuilder
         this.context = context;
     }
 
+    public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+    {
+        connection.SendMessage(DirectoryType.Parascript);
+
+        // if (Settings.BuilderEnabled == false)
+        // {
+        //     logger.LogInformation("Builder disabled");
+        //     Status = ComponentStatus.Disabled;
+        //     connection.SendMessage(DirectoryType.Parascript);
+        //     return;
+        // }
+        if (Settings.AutoBuildEnabled == false)
+        {
+            logger.LogDebug("AutoBuild disabled");
+            return;
+        }
+
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Builder - Auto mode");
+                TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
+                await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
+
+                // await this.ExecuteAsync(stoppingToken);
+                List<ParaBundle> bundles = context.ParaBundles.Where(x => !x.IsBuildComplete).ToList();
+                foreach (ParaBundle bundle in bundles)
+                {
+                    await this.ExecuteAsync(bundle.DataYearMonth, stoppingToken);
+                }
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug(e.Message);
+        }
+        catch (System.Exception e)
+        {
+            logger.LogError(e.Message);
+        }
+    }
+
     public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
     {
         try

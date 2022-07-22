@@ -34,8 +34,8 @@ public class SocketConnection : WebSocketBehavior
         logger.LogInformation("Connected to client: {0}, Total clients: {1}", ipAddress, Sessions.Count);
 
         // Task.Run(() => SmartMatchCrawler.ExecuteAsyncAuto(smTokenSource.Token));
-        // Task.Run(() => ParascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
-        // Task.Run(() => RoyalCrawler.ExecuteAsyncAuto(rmTokenSource.Token));
+        Task.Run(() => ParaBuilder.ExecuteAsyncAuto(psTokenSource.Token));
+        Task.Run(() => RoyalBuilder.ExecuteAsyncAuto(rmTokenSource.Token));
     }
 
     protected override void OnClose(CloseEventArgs e)
@@ -56,6 +56,12 @@ public class SocketConnection : WebSocketBehavior
             {
                 await Task.Run(() => ParaBuilder.ExecuteAsync(message.Value, psTokenSource.Token));
             }
+            if (message.Property == "AutoEnabled")
+            {
+                ParaBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Value);
+            }
+
+            Task.Run(() => ParaBuilder.ExecuteAsyncAuto(psTokenSource.Token));
         }
         if (message.Directory == "RoyalMail")
         {
@@ -66,6 +72,12 @@ public class SocketConnection : WebSocketBehavior
             {
                 await Task.Run(() => RoyalBuilder.ExecuteAsync(message.Value, rmTokenSource.Token));
             }
+            if (message.Property == "AutoEnabled")
+            {
+                RoyalBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Value);
+            }
+
+            Task.Run(() => RoyalBuilder.ExecuteAsyncAuto(psTokenSource.Token));
         }
     }
 
@@ -76,39 +88,33 @@ public class SocketConnection : WebSocketBehavior
 
         if (directoryType == DirectoryType.Parascript)
         {
+            List<List<BuildInfo>> buildBundle = GetCompiledBuilds(parascript: true);
+
             SocketResponse Parascript = new SocketResponse()
             {
                 DirectoryStatus = statusMap[ParaBuilder.Status],
                 AutoEnabled = ParaBuilder.Settings.AutoBuildEnabled,
                 AutoDate = ParaBuilder.Settings.ExecMonth + "/" + ParaBuilder.Settings.ExecDay + "/" + ParaBuilder.Settings.ExecYear,
                 CurrentBuild = ParaBuilder.Settings.DataYearMonth,
-                Progress = ParaBuilder.Progress
+                Progress = ParaBuilder.Progress,
+                CompiledBuilds = buildBundle[1]
             };
-
-            if (ParaBuilder.Progress == 0 || ParaBuilder.Progress == 100)
-            {
-                List<List<BuildInfo>> buildBundle = GetCompiledBuilds(parascript: true);
-                Parascript.CompiledBuilds = buildBundle[1];
-            }
 
             serializedObject = JsonSerializer.Serialize(new { Parascript });
         }
         if (directoryType == DirectoryType.RoyalMail)
         {
+            List<List<BuildInfo>> buildBundle = GetCompiledBuilds(royalMail: true);
+
             SocketResponse RoyalMail = new SocketResponse()
             {
                 DirectoryStatus = statusMap[RoyalBuilder.Status],
                 AutoEnabled = RoyalBuilder.Settings.AutoBuildEnabled,
                 AutoDate = RoyalBuilder.Settings.ExecMonth + "/" + RoyalBuilder.Settings.ExecDay + "/" + RoyalBuilder.Settings.ExecYear,
                 CurrentBuild = RoyalBuilder.Settings.DataYearMonth,
-                Progress = RoyalBuilder.Progress
+                Progress = RoyalBuilder.Progress,
+                CompiledBuilds = buildBundle[2]
             };
-
-            if (RoyalBuilder.Progress == 0 || RoyalBuilder.Progress == 100)
-            {
-                List<List<BuildInfo>> buildBundle = GetCompiledBuilds(royalMail: true);
-                RoyalMail.CompiledBuilds = buildBundle[1];
-            }
 
             serializedObject = JsonSerializer.Serialize(new { RoyalMail });
         }

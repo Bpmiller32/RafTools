@@ -16,19 +16,9 @@ import { useStore } from "../store";
 const props = defineProps(["dirType"]);
 const store = useStore();
 
-// Store refs (local convienence to writing store.crawlers[props.dirType]...)
-const autoCrawlStatus = ref(null);
-const autoCrawlEnabled = ref(null);
-const autoCrawlDate = ref(null);
-
 // Template refs
 const refCrawlButtonIcon = ref(null);
 const refEditPanelIcon = ref(null);
-
-const refTest = ref(null);
-watch(autoCrawlStatus, () => {
-  anime({ targets: refTest, duration: 5000, opacity: [0, 0.99999] });
-});
 
 // States
 const crawlButtonState = ref({
@@ -45,23 +35,23 @@ const crawlButtonState = ref({
       autoplay: false,
     });
 
-    if (autoCrawlStatus.value == "Ready") {
-      crawlButtonState.value.label = "Force Crawl";
+    if (store.crawlers[props.dirType.DirectoryStatus] == "Ready") {
+      crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonFill";
       anime.remove(el);
       crawlButtonState.value.isActive = true;
-    } else if (autoCrawlStatus.value == "In Progress") {
-      crawlButtonState.value.label = "Crawling ....";
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "In Progress") {
+      crawlButtonState.value.label = "Downloading ....";
       crawlButtonState.value.animation = "ButtonDrain";
       animation.play();
       crawlButtonState.value.isActive = false;
-    } else if (autoCrawlStatus.value == "Error") {
-      crawlButtonState.value.label = "Force Crawl";
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Error") {
+      crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
       crawlButtonState.value.isActive = false;
-    } else if (autoCrawlStatus.value == "Disabled") {
-      crawlButtonState.value.label = "Force Crawl";
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Disabled") {
+      crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
       crawlButtonState.value.isActive = false;
@@ -118,13 +108,13 @@ const statusState = ref({
   ],
   animation: null,
   SetState: () => {
-    if (autoCrawlStatus.value == "Ready") {
+    if (store.crawlers[props.dirType.DirectoryStatus] == "Ready") {
       statusState.value.currentIcon = statusState.value.icons[0];
-    } else if (autoCrawlStatus.value == "In Progress") {
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "In Progress") {
       statusState.value.currentIcon = statusState.value.icons[1];
-    } else if (autoCrawlStatus.value == "Error") {
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Error") {
       statusState.value.currentIcon = statusState.value.icons[2];
-    } else if (autoCrawlStatus.value == "Disabled") {
+    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Disabled") {
       statusState.value.currentIcon = statusState.value.icons[3];
     }
 
@@ -154,10 +144,6 @@ const logoState = ref({
 
 // OnMounted
 onMounted(() => {
-  autoCrawlStatus.value = store.crawlers[props.dirType].DirectoryStatus;
-  autoCrawlEnabled.value = store.crawlers[props.dirType].AutoEnabled;
-  autoCrawlDate.value = store.crawlers[props.dirType].AutoDate;
-
   logoState.value.SetIcon();
   statusState.value.SetState();
   crawlButtonState.value.SetState();
@@ -168,10 +154,6 @@ onMounted(() => {
 watch(
   () => store.crawlers[props.dirType],
   () => {
-    autoCrawlStatus.value = store.crawlers[props.dirType].DirectoryStatus;
-    autoCrawlEnabled.value = store.crawlers[props.dirType].AutoEnabled;
-    autoCrawlDate.value = store.crawlers[props.dirType].AutoDate;
-
     statusState.value.SetState();
     crawlButtonState.value.SetState();
   },
@@ -205,7 +187,7 @@ function CheckboxClicked() {
     return;
   }
 
-  if (autoCrawlEnabled.value == true) {
+  if (store.crawlers[props.dirType].AutoEnabled == true) {
     store.SendMessage(props.dirType, "AutoEnabled", "false");
   } else {
     store.SendMessage(props.dirType, "AutoEnabled", "true");
@@ -225,17 +207,21 @@ function CheckboxClicked() {
           </p>
           <AnimationHandler :animation="statusState.animation">
             <div
-              :key="autoCrawlStatus"
+              :key="store.crawlers[props.dirType].DirectoryStatus"
               :class="{
-                'text-green-800 bg-green-100': autoCrawlStatus == 'Ready',
+                'text-green-800 bg-green-100':
+                  store.crawlers[props.dirType].DirectoryStatus == 'Ready',
                 'text-yellow-800 bg-yellow-100':
-                  autoCrawlStatus == 'In Progress',
-                'text-red-800 bg-red-100': autoCrawlStatus == 'Error',
-                'text-gray-800 bg-gray-100': autoCrawlStatus == 'Disabled',
+                  store.crawlers[props.dirType].DirectoryStatus ==
+                  'In Progress',
+                'text-red-800 bg-red-100':
+                  store.crawlers[props.dirType].DirectoryStatus == 'Error',
+                'text-gray-800 bg-gray-100':
+                  store.crawlers[props.dirType].DirectoryStatus == 'Disabled',
                 'ml-3 px-2 py-0.5 text-xs font-medium rounded-full': true,
               }"
             >
-              {{ autoCrawlStatus }}
+              {{ store.crawlers[props.dirType].DirectoryStatus }}
             </div>
           </AnimationHandler>
           <AnimationHandler :animation="statusState.animation">
@@ -258,8 +244,6 @@ function CheckboxClicked() {
           <p>AutoCrawl:</p>
           <input
             type="checkbox"
-            v-model="autoCrawlEnabled"
-            @click="CheckboxClicked()"
             :disabled="!crawlButtonState.isActive"
             :class="{
               'text-indigo-600 cursor-pointer':
@@ -273,7 +257,9 @@ function CheckboxClicked() {
         <div class="text-gray-500 text-sm">
           <span>Next AutoCrawl: </span>
           <AnimationHandler :animation="statusState.animation">
-            <span :key="autoCrawlDate" class="mr-16">{{ autoCrawlDate }}</span>
+            <span :key="store.crawlers[props.dirType].AutoDate" class="mr-16">{{
+              store.crawlers[props.dirType].AutoDate
+            }}</span>
           </AnimationHandler>
         </div>
       </div>
