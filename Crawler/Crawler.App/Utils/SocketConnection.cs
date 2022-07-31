@@ -51,7 +51,12 @@ public class SocketConnection : WebSocketBehavior
 
     protected override void OnClose(CloseEventArgs e)
     {
-        logger.LogInformation("Connection closed: {0}, Total clients: {1}", ipAddress, Sessions.Count);
+        logger.LogInformation("Connection closed (clean): {0}, Total clients: {1}", ipAddress, Sessions.Count);
+    }
+
+    protected override void OnError(ErrorEventArgs e)
+    {
+        logger.LogInformation("Connection closed (error): {0}, Total clients: {1}", ipAddress, Sessions.Count);
     }
 
     protected override async void OnMessage(MessageEventArgs e)

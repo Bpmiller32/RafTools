@@ -161,7 +161,10 @@ const selectMenuState = ref({
     }
 
     // Set and format the selected value to Builder's CurrentBuild
-    if (store.builders[props.dirType].DirectoryStatus != "Ready") {
+    if (
+      store.builders[props.dirType].DirectoryStatus != "Ready" &&
+      store.builders[props.dirType].CurrentBuild != null
+    ) {
       selectMenuState.value.currentSelection = {
         name: store.builders[props.dirType].CurrentBuild,
         displayName:
@@ -210,6 +213,9 @@ function RunButtonClicked() {
   if (runButtonState.value.isActive == false) {
     return;
   }
+  if (selectMenuState.value.currentSelection == null) {
+    return;
+  }
 
   store.SendMessageBuilder(
     props.dirType,
@@ -236,7 +242,7 @@ function CheckboxClicked() {
   >
     <div class="p-6">
       <img
-        class="w-20 h-20 ml-[38%] border rounded-full"
+        class="w-20 h-20 ml-[33%] border rounded-full"
         :src="logoState.currentIcon"
       />
       <div class="flex justify-center mt-2 items-center shrink-0">
@@ -288,7 +294,7 @@ function CheckboxClicked() {
             <ListboxButton
               v-if="selectMenuState.currentSelection !== null"
               :class="{
-                'relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500': true,
+                'relative w-full max-w-[85%] bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500': true,
                 'cursor-not-allowed': !runButtonState.isActive,
               }"
               :disabled="!runButtonState.isActive"
@@ -320,7 +326,7 @@ function CheckboxClicked() {
             </ListboxButton>
             <ListboxButton
               v-else
-              class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+              class="relative w-full max-w-[85%] bg-white border border-gray-300 rounded-md shadow-sm px-2 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
               disabled="true"
               >No directories available</ListboxButton
             >
@@ -389,11 +395,9 @@ function CheckboxClicked() {
       </div>
       <div class="text-gray-500 text-sm">
         <span>Next AutoBuild: </span>
-        <AnimationHandler :animation="statusIconState.animation">
-          <span :key="store.builders[props.dirType].AutoDate" class="mr-16"
-            >12:00pm</span
-          >
-        </AnimationHandler>
+        <span :key="store.builders[props.dirType].AutoDate">12:00pm</span>
+        <span v-if="store.builders[props.dirType].AutoDate"> today</span>
+        <span v-else> tomorrow</span>
       </div>
     </div>
     <div class="flex justify-center">

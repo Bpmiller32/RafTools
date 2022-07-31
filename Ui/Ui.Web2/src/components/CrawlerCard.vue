@@ -35,22 +35,22 @@ const crawlButtonState = ref({
       autoplay: false,
     });
 
-    if (store.crawlers[props.dirType.DirectoryStatus] == "Ready") {
+    if (store.crawlers[props.dirType].DirectoryStatus == "Ready") {
       crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonFill";
       anime.remove(el);
       crawlButtonState.value.isActive = true;
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "In Progress") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "In Progress") {
       crawlButtonState.value.label = "Downloading ....";
       crawlButtonState.value.animation = "ButtonDrain";
       animation.play();
       crawlButtonState.value.isActive = false;
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Error") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "Error") {
       crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
       crawlButtonState.value.isActive = false;
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Disabled") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "Disabled") {
       crawlButtonState.value.label = "Download";
       crawlButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
@@ -108,13 +108,13 @@ const statusState = ref({
   ],
   animation: null,
   SetState: () => {
-    if (store.crawlers[props.dirType.DirectoryStatus] == "Ready") {
+    if (store.crawlers[props.dirType].DirectoryStatus == "Ready") {
       statusState.value.currentIcon = statusState.value.icons[0];
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "In Progress") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "In Progress") {
       statusState.value.currentIcon = statusState.value.icons[1];
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Error") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "Error") {
       statusState.value.currentIcon = statusState.value.icons[2];
-    } else if (store.crawlers[props.dirType.DirectoryStatus] == "Disabled") {
+    } else if (store.crawlers[props.dirType].DirectoryStatus == "Disabled") {
       statusState.value.currentIcon = statusState.value.icons[3];
     }
 
@@ -244,6 +244,8 @@ function CheckboxClicked() {
           <p>AutoCrawl:</p>
           <input
             type="checkbox"
+            v-model="store.crawlers[props.dirType].AutoEnabled"
+            @click="CheckboxClicked()"
             :disabled="!crawlButtonState.isActive"
             :class="{
               'text-indigo-600 cursor-pointer':

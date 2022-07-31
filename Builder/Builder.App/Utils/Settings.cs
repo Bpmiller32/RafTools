@@ -31,12 +31,12 @@ public class Settings
 
         if (waitToday.TotalSeconds <= 0)
         {
-            logger.LogInformation("Waiting for pass, starting sleep until : " + today);
-            return waitToday;
+            logger.LogInformation("Waiting for pass, starting sleep until : " + tomorrow);
+            return waitTomorrow;
         }
 
-        logger.LogInformation("Waiting for pass, starting sleep until: " + tomorrow);
-        return waitTomorrow;
+        logger.LogInformation("Waiting for pass, starting sleep until: " + today);
+        return waitToday;
     }
 
     public void Validate(IConfiguration config, string DataYearMonth)

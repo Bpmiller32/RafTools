@@ -101,7 +101,8 @@ watch(
       loadedData.value.SmartMatchCrawler &&
       loadedData.value.ParascriptCrawler &&
       loadedData.value.RoyalMailCrawler &&
-      loadedData.value.ParascriptBuilder
+      loadedData.value.ParascriptBuilder &&
+      loadedData.value.RoyalMailBuilder
     ) {
       backendConnected.value = "connected";
     }

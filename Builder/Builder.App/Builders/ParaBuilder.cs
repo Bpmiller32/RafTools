@@ -28,16 +28,14 @@ public class ParaBuilder
     {
         connection.SendMessage(DirectoryType.Parascript);
 
-        // if (Settings.BuilderEnabled == false)
-        // {
-        //     logger.LogInformation("Builder disabled");
-        //     Status = ComponentStatus.Disabled;
-        //     connection.SendMessage(DirectoryType.Parascript);
-        //     return;
-        // }
         if (Settings.AutoBuildEnabled == false)
         {
             logger.LogDebug("AutoBuild disabled");
+            return;
+        }
+        if (Status != ComponentStatus.Ready)
+        {
+            logger.LogDebug("Build already in progress");
             return;
         }
 
@@ -49,8 +47,7 @@ public class ParaBuilder
                 TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                 await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
 
-                // await this.ExecuteAsync(stoppingToken);
-                List<ParaBundle> bundles = context.ParaBundles.Where(x => !x.IsBuildComplete).ToList();
+                List<ParaBundle> bundles = context.ParaBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList();
                 foreach (ParaBundle bundle in bundles)
                 {
                     await this.ExecuteAsync(bundle.DataYearMonth, stoppingToken);

@@ -31,6 +31,42 @@ public class RoyalBuilder
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
         connection.SendMessage(DirectoryType.RoyalMail);
+
+        if (Settings.AutoBuildEnabled == false)
+        {
+            logger.LogDebug("AutoBuild disabled");
+            return;
+        }
+        if (Status != ComponentStatus.Ready)
+        {
+            logger.LogInformation("Build already in progress");
+            return;
+        }
+
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Builder - Auto mode");
+                TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
+                // TODO: uncomment after testing
+                await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
+
+                List<RoyalBundle> bundles = context.RoyalBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList();
+                foreach (RoyalBundle bundle in bundles)
+                {
+                    await this.ExecuteAsync(bundle.DataYearMonth, stoppingToken);
+                }
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug(e.Message);
+        }
+        catch (System.Exception e)
+        {
+            logger.LogError(e.Message);
+        }
     }
 
     public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
@@ -302,7 +338,7 @@ public class RoyalBuilder
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
-        // tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
+        tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
 
@@ -314,7 +350,7 @@ public class RoyalBuilder
         Dictionary<string, Task> tasks = new Dictionary<string, Task>();
 
         tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));
-        // tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
+        tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
 
         await Task.WhenAll(tasks.Values);
 
