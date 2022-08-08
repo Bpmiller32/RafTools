@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<SmiSettings product="IsleOfMan" name="IsleOfMan" version="1.0" xmlns="http://www.raf.com/Smi">
+  <DirectoryDataFile>IsleOfMan.smi</DirectoryDataFile>
+  <PatternsFile>IsleOfMan_Patterns.exml</PatternsFile>
+  <CharacterMatchTable>IsleOfMan_CharMatchTable.txt</CharacterMatchTable>
+  <WordMatchTable>IsleOfMan_WordMatchTable.txt</WordMatchTable>
+  <IgnorableWordsTable>IsleOfMan_IgnorableWordsTable.txt</IgnorableWordsTable>
+</SmiSettings>

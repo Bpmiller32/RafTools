@@ -1,0 +1,17 @@
+** Added for a difficult to read font used with some old TNT images.  J/Q commonly used in postcode.
+J -> 3
+J -> I
+J -> 1
+Q -> O
+Q -> 0
+
+** U+00a3
+£ -> 
+** U+00a5
+¥ -> 
+** U+00a9
+© -> 
+** U+00c5
+Å -> A
+** U+00cc
+Ì -> I

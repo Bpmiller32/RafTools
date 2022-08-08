@@ -1,0 +1,30 @@
+
+*******************************************************************************
+
+08/08/22 00:46:21.882 05298 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/08/22 00:46:21.882 05298 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/08/22 00:46:22.209 05298 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\aliasfle.c01
+08/08/22 00:46:22.209 05298 [I] SM-i             File identifier: ALIASFLE
+08/08/22 00:46:22.209 05298 [I] SM-i             Edition: Y22M05
+08/08/22 00:46:25.277 05298 [I] SM-i             Read 1757875 alias records
+08/08/22 00:46:25.283 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c01
+08/08/22 00:46:25.283 05298 [I] SM-i             File identifier: CSTANDRD
+08/08/22 00:46:25.283 05298 [I] SM-i             Edition: Y22M05
+08/08/22 00:47:28.398 05298 [I] SM-i             Read 2401375 address records
+08/08/22 00:47:28.404 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c02
+08/08/22 00:48:41.757 05298 [I] SM-i             Read 2398894 address records
+08/08/22 00:48:41.765 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c03
+08/08/22 00:49:43.799 05298 [I] SM-i             Read 2399000 address records
+08/08/22 00:49:43.806 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c04
+
+*******************************************************************************
+
+08/08/22 14:03:33.342 02684 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/08/22 14:03:33.342 02684 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/08/22 14:03:33.665 02684 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\aliasfle.c01
+08/08/22 14:03:33.665 02684 [I] SM-i             File identifier: ALIASFLE
+08/08/22 14:03:33.665 02684 [I] SM-i             Edition: Y22M05
+08/08/22 14:03:36.847 02684 [I] SM-i             Read 1757875 alias records
+08/08/22 14:03:36.859 02684 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c01
+08/08/22 14:03:36.860 02684 [I] SM-i             File identifier: CSTANDRD
+08/08/22 14:03:36.860 02684 [I] SM-i             Edition: Y22M05
