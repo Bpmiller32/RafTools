@@ -128,14 +128,14 @@ public class PafBuilder
 
         if (deployToAp)
         {
-            DeployRunner();
+            await DeployRunner();
         }
     }
 
     // Helpers
     private void CompileRunner()
     {
-        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "BFPO.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt" };
+        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "BFPO.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
             File.Copy(Path.Combine(Settings.SmiFilesPath, file), Path.Combine(Settings.WorkingPath, file), true);
@@ -143,7 +143,7 @@ public class PafBuilder
 
         // Start DirectoryDataCompiler tool, listen for output
         string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Settings.SmiFilesPath, "DirectoryDataCompiler.exe"));
-        string directoryDataCompilerArgs = "--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan.xml")) + " --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan_Patterns.exml")) + " --password M0ntyPyth0n --licensed";
+        string directoryDataCompilerArgs = "--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan.xml")) + " --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan_Patterns.exml"));
 
         Process directoryDataCompiler = Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);
 
@@ -179,7 +179,7 @@ public class PafBuilder
     {
         Directory.CreateDirectory(Settings.OutputPath);
 
-        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt" };
+        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
             File.Copy(Path.Combine(Settings.WorkingPath, file), Path.Combine(Settings.OutputPath, file), true);
@@ -188,22 +188,43 @@ public class PafBuilder
         ReportProgress(99, false);
     }
 
-    private void DeployRunner()
+    private async Task DeployRunner()
     {
         ReportStatus("Installing directory to Argosy Post");
 
-        ServiceController sc = new("RAFArgosyMaster");
+        ServiceController rafMaster = new("RAFArgosyMaster");
 
-        // Check that service is stopped, if not stop it
-        if (!sc.Status.Equals(ServiceControllerStatus.Stopped))
+        // Check that service is stopped, if not attempt to stop it
+        if (!rafMaster.Status.Equals(ServiceControllerStatus.Stopped))
         {
-            sc.Stop();
+            rafMaster.Stop(true);
+        }
+
+        // With timeout wait until service actually stops. ServiceController annoyingly returns control immediately, also doesn't allow SC.Stop() on a stopped/stopping service without throwing Exception
+        int timeOut = 0;
+        while (true)
+        {
+            rafMaster.Refresh();
+
+            if (timeOut > 20)
+            {
+                throw new Exception("Unable to stop RAF services");
+            }
+
+            if (!rafMaster.Status.Equals(ServiceControllerStatus.Stopped))
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+                timeOut++;
+                continue;
+            }
+
+            break;
         }
 
         // Copy files from output folder to AP sync folder
         Utils.CopyFiles(Settings.OutputPath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
 
         // Start back up the service
-        sc.Start();
+        rafMaster.Start();
     }
 }
