@@ -183,6 +183,20 @@ const selectMenuState = ref({
     }
   },
 });
+const autoDateState = ref({
+  day: null,
+  SetState: () => {
+    const now = new Date();
+    const noon = new Date();
+    noon.setHours(12, 0, 0, 0);
+
+    if (now.getHours() < noon.getHours) {
+      autoDateState.value.day = "today";
+    } else {
+      autoDateState.value.day = "tomorrow";
+    }
+  },
+});
 
 // OnMounted
 onMounted(() => {
@@ -190,6 +204,7 @@ onMounted(() => {
   statusIconState.value.SetState();
   runButtonState.value.SetState();
   selectMenuState.value.SetState();
+  autoDateState.value.SetState();
 });
 
 // Watchers
@@ -284,7 +299,6 @@ function CheckboxClicked() {
           ></component>
         </AnimationHandler>
       </div>
-      <!-- UNDER CONSTRUCTION -->
       <div class="ml-5 mt-2 max-w-[18rem]">
         <Listbox as="div" v-model="selectMenuState.currentSelection">
           <ListboxLabel class="mt-2 text-sm font-medium text-gray-900">
@@ -377,7 +391,6 @@ function CheckboxClicked() {
           </div>
         </Listbox>
       </div>
-      <!-- UNDER CONSTRUCTION -->
       <div class="flex items-center mt-2 text-gray-500 text-sm">
         <p>AutoBuild:</p>
         <input
@@ -395,9 +408,8 @@ function CheckboxClicked() {
       </div>
       <div class="text-gray-500 text-sm">
         <span>Next AutoBuild: </span>
-        <span :key="store.builders[props.dirType].AutoDate">12:00pm</span>
-        <span v-if="store.builders[props.dirType].AutoDate"> today</span>
-        <span v-else> tomorrow</span>
+        <span :key="store.builders[props.dirType].AutoDate">12:00pm </span>
+        <span> {{ autoDateState.day }} </span>
       </div>
     </div>
     <div class="flex justify-center">

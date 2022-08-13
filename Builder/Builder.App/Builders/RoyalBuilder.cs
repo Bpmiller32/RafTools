@@ -250,11 +250,11 @@ public class RoyalBuilder
         defintionFile.Save(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.xml"));
 
         // Edit Uk dongle list with updated date
-        using (StreamWriter sw = new StreamWriter(Path.Combine(Settings.WorkingPath, @"Smi", @"DongleTemp.txt")))
+        using (StreamWriter sw = new StreamWriter(Path.Combine(Settings.WorkingPath, @"Smi", @"DongleTemp.txt"), true, System.Text.Encoding.Unicode))
         {
             sw.WriteLine(@"Date=" + DataYear + DataMonth + @"19");
 
-            using (StreamReader sr = new StreamReader(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.txt")))
+            using (StreamReader sr = new StreamReader(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.txt"), System.Text.Encoding.Unicode))
             {
                 string line;
                 while ((line = sr.ReadLine()) != null)

@@ -19,6 +19,7 @@ const store = useStore();
 // Template refs
 const refCrawlButtonIcon = ref(null);
 const refEditPanelIcon = ref(null);
+const refEditPanelLabel = ref(null);
 
 // States
 const crawlButtonState = ref({
@@ -84,17 +85,90 @@ const editPanelState = ref({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    const el = refEditPanelLabel.value;
+
     if (newDate >= today) {
       store.SendMessage(
         props.dirType,
         "AutoDate",
         dateString[1] + "/" + dateString[2] + "/" + dateString[0]
       );
-      editPanelState.value.animation = "Flash";
       editPanelState.value.label = "Date updated";
+
+      anime({
+        targets: el,
+        keyframes: [
+          {
+            opacity: 1,
+            color: "rgb(34, 197, 94)",
+            duration: 0,
+            easing: "easeInOutQuad",
+          },
+          {
+            opacity: 0,
+            duration: 250,
+            easing: "easeInOutQuad",
+          },
+          {
+            opacity: 1,
+            duration: 250,
+            easing: "easeInOutQuad",
+          },
+          {
+            opacity: 0,
+            duration: 250,
+            easing: "easeInOutQuad",
+          },
+          {
+            opacity: 0.99999,
+            duration: 250,
+            easing: "easeInOutQuad",
+          },
+        ],
+      });
     } else {
-      editPanelState.value.animation = "HeadShake";
       editPanelState.value.label = "Invalid date";
+
+      anime({
+        targets: el,
+        keyframes: [
+          {
+            translateX: 0,
+            color: "rgb(239, 68, 68)",
+            duration: 0,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -6,
+            rotateY: -9,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 5,
+            rotateY: 7,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -3,
+            rotateY: -5,
+            duration: 130,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 2,
+            rotateY: 3,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 0,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+        ],
+      });
     }
   },
 });
@@ -311,14 +385,12 @@ function CheckboxClicked() {
                   placeholder="MM/DD/YYYY"
                 />
               </div>
-              <AnimationHandler :animation="editPanelState.animation">
-                <p
-                  :key="editPanelState.editDate"
-                  class="mx-1 text-gray-500 mt-2 mb-4 t)ext-sm"
-                >
-                  {{ editPanelState.label }}
-                </p>
-              </AnimationHandler>
+              <p
+                ref="refEditPanelLabel"
+                class="mx-1 text-gray-500 mt-2 mb-4 t)ext-sm"
+              >
+                {{ editPanelState.label }}
+              </p>
             </DisclosurePanel>
           </AnimationHandler>
         </div>
