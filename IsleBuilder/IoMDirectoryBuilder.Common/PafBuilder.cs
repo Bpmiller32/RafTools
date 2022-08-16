@@ -1,18 +1,24 @@
 using System.Diagnostics;
-using System.Security.Principal;
 using System.ServiceProcess;
 using System.Text.RegularExpressions;
 
-namespace IoMDirectoryBuilder.App;
+namespace IoMDirectoryBuilder.Common;
 
 public class PafBuilder
 {
     public Settings Settings { get; set; }
+
+    public CancellationToken StoppingToken { get; set; }
     public Action<string> ReportStatus { get; set; }
     public Action<int, bool> ReportProgress { get; set; }
 
     public void Cleanup(bool clearOutput)
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         ReportStatus("Cleaning up from previous builds");
 
         // Kill process that may be running in the background from previous runs
@@ -64,17 +70,23 @@ public class PafBuilder
 
     public void ConvertPafData()
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         ReportStatus("Converting PAF data");
 
         // Move address data files to working folder "Db"
-        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "PAF COMPRESSED STD"), Settings.WorkingPath);
-        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "ALIAS"), Settings.WorkingPath);
+        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "PAF COMPRESSED STD"), Settings.WorkingPath, StoppingToken);
+        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "ALIAS"), Settings.WorkingPath, StoppingToken);
 
         // Start ConvertPafData tool, listen for output
         string convertPafDataFileName = Utils.WrapQuotes(Path.Combine(Settings.SmiFilesPath, "ConvertPafData.exe"));
         string convertPafDataArgs = "--pafPath " + Utils.WrapQuotes(Settings.WorkingPath) + " --lastPafFileNum 15";
 
         Process convertPafData = Utils.RunProc(convertPafDataFileName, convertPafDataArgs);
+        StoppingToken.Register(() => convertPafData.Close());
 
         using StreamReader sr = convertPafData.StandardOutput;
         string line;
@@ -101,28 +113,34 @@ public class PafBuilder
 
     public async Task Compile()
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         ReportStatus("Compiling converted data into SMi");
 
         Dictionary<string, Task> tasks = new()
-        {
-            { "IoM", Task.Run(() => CompileRunner()) },
-            // { "3.0", Task.Run(() => CompileRunner("3.0")) },
-            // { "1.9", Task.Run(() => CompileRunner("1.9")) }
-        };
+    {
+        { "IoM", Task.Run(() => CompileRunner(), StoppingToken) },
+    };
 
         await Task.WhenAll(tasks.Values);
     }
 
     public async Task Output(bool deployToAp)
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         ReportStatus("Moving files to output directory");
 
         Dictionary<string, Task> tasks = new()
-        {
-            { "IoM", Task.Run(() => OutputRunner()) },
-            // { "3.0", Task.Run(() => OutputRunner("3.0")) }
-            // { "1.9", Task.Run(() => OutputRunner("1.9")) }
-        };
+    {
+        { "IoM", Task.Run(() => OutputRunner(), StoppingToken) },
+    };
 
         await Task.WhenAll(tasks.Values);
 
@@ -135,9 +153,19 @@ public class PafBuilder
     // Helpers
     private void CompileRunner()
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "BFPO.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
+            if (StoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             File.Copy(Path.Combine(Settings.SmiFilesPath, file), Path.Combine(Settings.WorkingPath, file), true);
         }
 
@@ -146,6 +174,7 @@ public class PafBuilder
         string directoryDataCompilerArgs = "--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan.xml")) + " --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "IsleOfMan_Patterns.exml"));
 
         Process directoryDataCompiler = Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);
+        StoppingToken.Register(() => directoryDataCompiler.Close());
 
         using StreamReader sr = directoryDataCompiler.StandardOutput;
         string line;
@@ -177,11 +206,21 @@ public class PafBuilder
 
     private void OutputRunner()
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         Directory.CreateDirectory(Settings.OutputPath);
 
         List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
+            if (StoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             File.Copy(Path.Combine(Settings.WorkingPath, file), Path.Combine(Settings.OutputPath, file), true);
         }
 
@@ -190,6 +229,11 @@ public class PafBuilder
 
     private async Task DeployRunner()
     {
+        if (StoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         ReportStatus("Installing directory to Argosy Post");
 
         ServiceController rafMaster = new("RAFArgosyMaster");
@@ -213,7 +257,7 @@ public class PafBuilder
 
             if (!rafMaster.Status.Equals(ServiceControllerStatus.Stopped))
             {
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(1), StoppingToken);
                 timeOut++;
                 continue;
             }
@@ -222,7 +266,7 @@ public class PafBuilder
         }
 
         // Copy files from output folder to AP sync folder
-        Utils.CopyFiles(Settings.OutputPath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
+        Utils.CopyFiles(Settings.OutputPath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i", StoppingToken);
 
         // Start back up the service
         rafMaster.Start();

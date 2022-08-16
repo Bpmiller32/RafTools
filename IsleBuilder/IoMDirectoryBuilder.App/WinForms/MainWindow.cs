@@ -1,3 +1,5 @@
+using IoMDirectoryBuilder.Common;
+
 namespace IoMDirectoryBuilder.App;
 
 public partial class MainWindow : Form
@@ -117,7 +119,7 @@ public partial class MainWindow : Form
         }
         catch (Exception error)
         {
-            StatusText.Text = "Error - " + error.Message;
+            StatusText.Text = "Error: " + error.Message;
 
             BuildDirectoryButton.Enabled = true;
             if (isElevated)
@@ -150,7 +152,7 @@ public partial class MainWindow : Form
         }
         catch (Exception error)
         {
-            StatusText.Text = "Error - Check log for details";
+            StatusText.Text = "Error: See prompt for details";
             MessageBox.Show(error.Message, "Error", MessageBoxButtons.OK);
         }
     }

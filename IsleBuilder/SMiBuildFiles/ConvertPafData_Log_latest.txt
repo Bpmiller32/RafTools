@@ -1,0 +1,242 @@
+
+*******************************************************************************
+
+08/08/22 00:46:21.882 05298 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/08/22 00:46:21.882 05298 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/08/22 00:46:22.209 05298 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\aliasfle.c01
+08/08/22 00:46:22.209 05298 [I] SM-i             File identifier: ALIASFLE
+08/08/22 00:46:22.209 05298 [I] SM-i             Edition: Y22M05
+08/08/22 00:46:25.277 05298 [I] SM-i             Read 1757875 alias records
+08/08/22 00:46:25.283 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c01
+08/08/22 00:46:25.283 05298 [I] SM-i             File identifier: CSTANDRD
+08/08/22 00:46:25.283 05298 [I] SM-i             Edition: Y22M05
+08/08/22 00:47:28.398 05298 [I] SM-i             Read 2401375 address records
+08/08/22 00:47:28.404 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c02
+08/08/22 00:48:41.757 05298 [I] SM-i             Read 2398894 address records
+08/08/22 00:48:41.765 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c03
+08/08/22 00:49:43.799 05298 [I] SM-i             Read 2399000 address records
+08/08/22 00:49:43.806 05298 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c04
+
+*******************************************************************************
+
+08/08/22 14:03:33.342 02684 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/08/22 14:03:33.342 02684 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/08/22 14:03:33.665 02684 [I] SM-i             Reading alias records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\aliasfle.c01
+08/08/22 14:03:33.665 02684 [I] SM-i             File identifier: ALIASFLE
+08/08/22 14:03:33.665 02684 [I] SM-i             Edition: Y22M05
+08/08/22 14:03:36.847 02684 [I] SM-i             Read 1757875 alias records
+08/08/22 14:03:36.859 02684 [I] SM-i             Reading address records from C:\Users\billy\Desktop\SMiBuildFiles\Temp\fpcompst.c01
+08/08/22 14:03:36.860 02684 [I] SM-i             File identifier: CSTANDRD
+08/08/22 14:03:36.860 02684 [I] SM-i             Edition: Y22M05
+
+*******************************************************************************
+
+08/15/22 15:00:49.903 017b8 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/15/22 15:00:49.904 017b8 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/15/22 15:00:49.921 017b8 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/15/22 15:00:49.921 017b8 [I] SM-i             File identifier: ALIASFLE
+08/15/22 15:00:49.921 017b8 [I] SM-i             Edition: Y22M04
+08/15/22 15:00:52.908 017b8 [I] SM-i             Read 1757166 alias records
+08/15/22 15:00:52.917 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/15/22 15:00:52.917 017b8 [I] SM-i             File identifier: CSTANDRD
+08/15/22 15:00:52.917 017b8 [I] SM-i             Edition: Y22M04
+08/15/22 15:01:48.188 017b8 [I] SM-i             Read 2401253 address records
+08/15/22 15:01:48.195 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+08/15/22 15:02:47.956 017b8 [I] SM-i             Read 2398932 address records
+08/15/22 15:02:47.963 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c03
+08/15/22 15:03:48.092 017b8 [I] SM-i             Read 2398944 address records
+08/15/22 15:03:48.100 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c04
+08/15/22 15:04:48.364 017b8 [I] SM-i             Read 2398997 address records
+08/15/22 15:04:48.372 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c05
+08/15/22 15:05:49.184 017b8 [I] SM-i             Read 2399004 address records
+08/15/22 15:05:49.191 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c06
+08/15/22 15:06:57.049 017b8 [I] SM-i             Read 2399007 address records
+08/15/22 15:06:57.057 017b8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c07
+
+*******************************************************************************
+
+08/15/22 15:24:11.983 03f68 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/15/22 15:24:11.983 03f68 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/15/22 15:24:11.989 03f68 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/15/22 15:24:11.990 03f68 [I] SM-i             File identifier: ALIASFLE
+08/15/22 15:24:11.990 03f68 [I] SM-i             Edition: Y22M04
+08/15/22 15:24:15.007 03f68 [I] SM-i             Read 1757166 alias records
+08/15/22 15:24:15.017 03f68 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/15/22 15:24:15.017 03f68 [I] SM-i             File identifier: CSTANDRD
+08/15/22 15:24:15.017 03f68 [I] SM-i             Edition: Y22M04
+
+*******************************************************************************
+
+08/15/22 15:27:01.526 02fe8 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/15/22 15:27:01.526 02fe8 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/15/22 15:27:01.530 02fe8 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/15/22 15:27:01.530 02fe8 [I] SM-i             File identifier: ALIASFLE
+08/15/22 15:27:01.530 02fe8 [I] SM-i             Edition: Y22M04
+08/15/22 15:27:04.679 02fe8 [I] SM-i             Read 1757166 alias records
+08/15/22 15:27:04.686 02fe8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/15/22 15:27:04.686 02fe8 [I] SM-i             File identifier: CSTANDRD
+08/15/22 15:27:04.686 02fe8 [I] SM-i             Edition: Y22M04
+08/15/22 15:28:03.407 02fe8 [I] SM-i             Read 2401253 address records
+08/15/22 15:28:03.417 02fe8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+08/15/22 15:29:01.348 02fe8 [I] SM-i             Read 2398932 address records
+08/15/22 15:29:01.357 02fe8 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c03
+
+*******************************************************************************
+
+08/15/22 15:30:35.552 02a54 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/15/22 15:30:35.552 02a54 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/15/22 15:30:35.556 02a54 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/15/22 15:30:35.556 02a54 [I] SM-i             File identifier: ALIASFLE
+08/15/22 15:30:35.556 02a54 [I] SM-i             Edition: Y22M04
+08/15/22 15:30:38.415 02a54 [I] SM-i             Read 1757166 alias records
+08/15/22 15:30:38.453 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/15/22 15:30:38.454 02a54 [I] SM-i             File identifier: CSTANDRD
+08/15/22 15:30:38.454 02a54 [I] SM-i             Edition: Y22M04
+08/15/22 15:31:32.970 02a54 [I] SM-i             Read 2401253 address records
+08/15/22 15:31:32.977 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+08/15/22 15:32:34.822 02a54 [I] SM-i             Read 2398932 address records
+08/15/22 15:32:34.831 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c03
+08/15/22 15:33:40.814 02a54 [I] SM-i             Read 2398944 address records
+08/15/22 15:33:40.821 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c04
+08/15/22 15:34:40.934 02a54 [I] SM-i             Read 2398997 address records
+08/15/22 15:34:40.942 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c05
+08/15/22 15:35:42.989 02a54 [I] SM-i             Read 2399004 address records
+08/15/22 15:35:42.996 02a54 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c06
+
+*******************************************************************************
+
+08/15/22 15:38:08.747 04390 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/15/22 15:38:08.747 04390 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/15/22 15:38:08.751 04390 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/15/22 15:38:08.751 04390 [I] SM-i             File identifier: ALIASFLE
+08/15/22 15:38:08.751 04390 [I] SM-i             Edition: Y22M04
+08/15/22 15:38:11.554 04390 [I] SM-i             Read 1757166 alias records
+08/15/22 15:38:11.560 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/15/22 15:38:11.561 04390 [I] SM-i             File identifier: CSTANDRD
+08/15/22 15:38:11.561 04390 [I] SM-i             Edition: Y22M04
+08/15/22 15:39:00.462 04390 [I] SM-i             Read 2401253 address records
+08/15/22 15:39:00.469 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+08/15/22 15:39:50.162 04390 [I] SM-i             Read 2398932 address records
+08/15/22 15:39:50.168 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c03
+08/15/22 15:40:40.486 04390 [I] SM-i             Read 2398944 address records
+08/15/22 15:40:40.492 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c04
+08/15/22 15:41:30.881 04390 [I] SM-i             Read 2398997 address records
+08/15/22 15:41:30.887 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c05
+08/15/22 15:42:26.784 04390 [I] SM-i             Read 2399004 address records
+08/15/22 15:42:26.791 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c06
+08/15/22 15:43:25.384 04390 [I] SM-i             Read 2399007 address records
+08/15/22 15:43:25.405 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c07
+08/15/22 15:44:19.353 04390 [I] SM-i             Read 2398982 address records
+08/15/22 15:44:19.360 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c08
+08/15/22 15:45:13.000 04390 [I] SM-i             Read 2398954 address records
+08/15/22 15:45:13.007 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c09
+08/15/22 15:46:06.738 04390 [I] SM-i             Read 2398895 address records
+08/15/22 15:46:06.746 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c10
+08/15/22 15:47:00.434 04390 [I] SM-i             Read 2398874 address records
+08/15/22 15:47:00.441 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c11
+08/15/22 15:47:54.456 04390 [I] SM-i             Read 2398988 address records
+08/15/22 15:47:54.462 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c12
+08/15/22 15:48:47.932 04390 [I] SM-i             Read 2398916 address records
+08/15/22 15:48:47.938 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c13
+08/15/22 15:49:40.999 04390 [I] SM-i             Read 2398839 address records
+08/15/22 15:49:41.006 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c14
+08/15/22 15:50:33.843 04390 [I] SM-i             Read 2398970 address records
+08/15/22 15:50:33.849 04390 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c15
+08/15/22 15:51:04.042 04390 [I] SM-i             Read 1361324 address records
+08/15/22 15:51:04.042 04390 [I] SM-i             Concatenating files 1-15 to C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\UK.txt
+08/15/22 15:51:10.595 04390 [I] SM-i             Address data file created
+08/15/22 15:51:10.595 04390 [I] SM-i             Version string for directory definition file: "PAF Y22M04"
+
+*******************************************************************************
+
+08/16/22 00:21:07.673 02f48 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/16/22 00:21:07.673 02f48 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/16/22 00:21:07.678 02f48 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/16/22 00:21:07.678 02f48 [I] SM-i             File identifier: ALIASFLE
+08/16/22 00:21:07.678 02f48 [I] SM-i             Edition: Y22M04
+08/16/22 00:21:10.840 02f48 [I] SM-i             Read 1757166 alias records
+08/16/22 00:21:10.849 02f48 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/16/22 00:21:10.849 02f48 [I] SM-i             File identifier: CSTANDRD
+08/16/22 00:21:10.849 02f48 [I] SM-i             Edition: Y22M04
+08/16/22 00:22:03.925 02f48 [I] SM-i             Read 2401253 address records
+08/16/22 00:22:03.931 02f48 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+
+*******************************************************************************
+
+08/16/22 00:29:06.755 00828 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/16/22 00:29:06.755 00828 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/16/22 00:29:07.078 00828 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/16/22 00:29:07.079 00828 [I] SM-i             File identifier: ALIASFLE
+08/16/22 00:29:07.079 00828 [I] SM-i             Edition: Y22M04
+08/16/22 00:29:10.260 00828 [I] SM-i             Read 1757166 alias records
+08/16/22 00:29:10.267 00828 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/16/22 00:29:10.267 00828 [I] SM-i             File identifier: CSTANDRD
+08/16/22 00:29:10.267 00828 [I] SM-i             Edition: Y22M04
+
+*******************************************************************************
+
+08/16/22 09:17:07.175 00688 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/16/22 09:17:07.175 00688 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/16/22 09:17:07.293 00688 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/16/22 09:17:07.294 00688 [I] SM-i             File identifier: ALIASFLE
+08/16/22 09:17:07.294 00688 [I] SM-i             Edition: Y22M04
+08/16/22 09:17:11.768 00688 [I] SM-i             Read 1757166 alias records
+08/16/22 09:17:11.778 00688 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/16/22 09:17:11.778 00688 [I] SM-i             File identifier: CSTANDRD
+08/16/22 09:17:11.778 00688 [I] SM-i             Edition: Y22M04
+
+*******************************************************************************
+
+08/16/22 09:23:11.553 019ac [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/16/22 09:23:11.554 019ac [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/16/22 09:23:11.565 019ac [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/16/22 09:23:11.565 019ac [I] SM-i             File identifier: ALIASFLE
+08/16/22 09:23:11.565 019ac [I] SM-i             Edition: Y22M04
+08/16/22 09:23:16.438 019ac [I] SM-i             Read 1757166 alias records
+08/16/22 09:23:16.454 019ac [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/16/22 09:23:16.454 019ac [I] SM-i             File identifier: CSTANDRD
+08/16/22 09:23:16.454 019ac [I] SM-i             Edition: Y22M04
+
+*******************************************************************************
+
+08/16/22 10:21:58.681 01458 [A] SM-i             Conversion Utility for Royal Mail PAF Data - Version 3.4.382.0
+08/16/22 10:21:58.681 01458 [A] SM-i             Copyright (c) 2009 RAF Technology, Inc.  All Rights Reserved
+08/16/22 10:21:58.686 01458 [I] SM-i             Reading alias records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\aliasfle.c01
+08/16/22 10:21:58.686 01458 [I] SM-i             File identifier: ALIASFLE
+08/16/22 10:21:58.686 01458 [I] SM-i             Edition: Y22M04
+08/16/22 10:22:02.196 01458 [I] SM-i             Read 1757166 alias records
+08/16/22 10:22:02.212 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c01
+08/16/22 10:22:02.212 01458 [I] SM-i             File identifier: CSTANDRD
+08/16/22 10:22:02.212 01458 [I] SM-i             Edition: Y22M04
+08/16/22 10:23:35.140 01458 [I] SM-i             Read 2401253 address records
+08/16/22 10:23:35.165 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c02
+08/16/22 10:25:27.072 01458 [I] SM-i             Read 2398932 address records
+08/16/22 10:25:27.081 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c03
+08/16/22 10:26:44.009 01458 [I] SM-i             Read 2398944 address records
+08/16/22 10:26:44.026 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c04
+08/16/22 10:28:08.544 01458 [I] SM-i             Read 2398997 address records
+08/16/22 10:28:08.556 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c05
+08/16/22 10:29:33.651 01458 [I] SM-i             Read 2399004 address records
+08/16/22 10:29:33.661 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c06
+08/16/22 10:30:53.504 01458 [I] SM-i             Read 2399007 address records
+08/16/22 10:30:53.515 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c07
+08/16/22 10:32:14.589 01458 [I] SM-i             Read 2398982 address records
+08/16/22 10:32:14.598 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c08
+08/16/22 10:33:35.388 01458 [I] SM-i             Read 2398954 address records
+08/16/22 10:33:35.401 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c09
+08/16/22 10:35:10.052 01458 [I] SM-i             Read 2398895 address records
+08/16/22 10:35:10.054 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c10
+08/16/22 10:36:17.836 01458 [I] SM-i             Read 2398874 address records
+08/16/22 10:36:17.837 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c11
+08/16/22 10:37:20.959 01458 [I] SM-i             Read 2398988 address records
+08/16/22 10:37:20.959 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c12
+08/16/22 10:38:22.649 01458 [I] SM-i             Read 2398916 address records
+08/16/22 10:38:22.650 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c13
+08/16/22 10:39:29.810 01458 [I] SM-i             Read 2398839 address records
+08/16/22 10:39:29.811 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c14
+08/16/22 10:40:31.931 01458 [I] SM-i             Read 2398970 address records
+08/16/22 10:40:31.932 01458 [I] SM-i             Reading address records from C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\fpcompst.c15
+08/16/22 10:41:14.086 01458 [I] SM-i             Read 1361324 address records
+08/16/22 10:41:14.087 01458 [I] SM-i             Concatenating files 1-15 to C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\IsleBuilder.Gui\SMiBuildFiles\Temp\UK.txt
+08/16/22 10:41:19.565 01458 [I] SM-i             Address data file created
+08/16/22 10:41:19.565 01458 [I] SM-i             Version string for directory definition file: "PAF Y22M04"

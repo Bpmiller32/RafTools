@@ -1,23 +1,60 @@
-namespace IoMDirectoryBuilder.App;
+using System.Security.Principal;
+
+#pragma warning disable CA1416 // ignore that admin check is Windows only 
+
+namespace IoMDirectoryBuilder.Common;
 
 public class Settings
 {
     public string PafFilesPath { get; set; }
     public string SmiFilesPath { get; set; }
+    public string DeployToAp { get; set; }
 
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
 
+    public void CheckArgs()
+    {
+        if (string.IsNullOrEmpty(DeployToAp))
+        {
+            DeployToAp = "false";
+            return;
+        }
+        if (DeployToAp == "true")
+        {
+            WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
+            bool isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            if (!isElevated && DeployToAp == "true")
+            {
+                throw new Exception("Application does not have administrator privledges, cannot deploy to AP");
+            }
+
+            return;
+        }
+        if (DeployToAp == "false")
+        {
+            DeployToAp = "false";
+            return;
+        }
+
+        throw new ArgumentException("Invalid parameter for --DeployToAp");
+    }
+
     public void CheckPaths()
     {
-        // Check if input is empty
+        // Check if both inputs are empty, if so show Usage()
+        if (string.IsNullOrEmpty(PafFilesPath) && string.IsNullOrEmpty(SmiFilesPath))
+        {
+            throw new ArgumentNullException();
+        }
+        // Check if individual input is empty
         if (string.IsNullOrEmpty(PafFilesPath))
         {
-            throw new Exception("Path to PAF files not valid");
+            throw new ArgumentException("Invalid parameter for --PafFilesPath");
         }
         if (string.IsNullOrEmpty(SmiFilesPath))
         {
-            throw new Exception("Path to SMi files not valid");
+            throw new ArgumentException("Invalid parameter for --SmiFilesPath");
         }
         // Check if input in wrapped in path quotes
         if (PafFilesPath.StartsWith('"') && PafFilesPath.EndsWith('"'))
@@ -50,32 +87,32 @@ public class Settings
     {
         // Files to check for by extracted folder
         List<string> aliasFiles = new()
-        {
-            "aliasfle.c01"
-        };
+    {
+        "aliasfle.c01"
+    };
         List<string> csvBfpoFiles = new()
-        {
-            "CSV BFPO.csv"
-        };
+    {
+        "CSV BFPO.csv"
+    };
         List<string> pafCompressedStdFiles = new()
-        {
-            "fpcompst.c01",
-            "fpcompst.c02",
-            "fpcompst.c03",
-            "fpcompst.c04",
-            "fpcompst.c05",
-            "fpcompst.c06",
-            "fpcompst.c07",
-            "fpcompst.c08",
-            "fpcompst.c09",
-            "fpcompst.c10",
-            "fpcompst.c11",
-            "fpcompst.c12",
-            "fpcompst.c13",
-            "fpcompst.c14",
-            "fpcompst.c15",
-            "wfcompst.c15"
-        };
+    {
+        "fpcompst.c01",
+        "fpcompst.c02",
+        "fpcompst.c03",
+        "fpcompst.c04",
+        "fpcompst.c05",
+        "fpcompst.c06",
+        "fpcompst.c07",
+        "fpcompst.c08",
+        "fpcompst.c09",
+        "fpcompst.c10",
+        "fpcompst.c11",
+        "fpcompst.c12",
+        "fpcompst.c13",
+        "fpcompst.c14",
+        "fpcompst.c15",
+        "wfcompst.c15"
+    };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";
@@ -112,24 +149,24 @@ public class Settings
     {
         // Files to check for
         List<string> smiFiles = new()
-        {
-            "BFPO.txt",
-            "Country.txt",
-            "Country_Alias.txt",
-            "County.txt",
-            "IsleOfMan.xml",
-            "IsleOfMan_CharMatchTable.txt",
-            "IsleOfMan_IgnorableWordsTable.txt",
-            "IsleOfMan_Patterns.exml",
-            "IsleOfMan_Settings.xml",
-            "IsleOfMan_WordMatchTable.txt",
-            "OrganizationName.txt",
-            "PoBoxName.txt",
-            "PostTown.txt",
-            "StreetDescriptor.txt",
-            "StreetName.txt",
-            "SubBuildingDesignator.txt"
-        };
+    {
+        "BFPO.txt",
+        "Country.txt",
+        "Country_Alias.txt",
+        "County.txt",
+        "IsleOfMan.xml",
+        "IsleOfMan_CharMatchTable.txt",
+        "IsleOfMan_IgnorableWordsTable.txt",
+        "IsleOfMan_Patterns.exml",
+        "IsleOfMan_Settings.xml",
+        "IsleOfMan_WordMatchTable.txt",
+        "OrganizationName.txt",
+        "PoBoxName.txt",
+        "PostTown.txt",
+        "StreetDescriptor.txt",
+        "StreetName.txt",
+        "SubBuildingDesignator.txt"
+    };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";
@@ -152,15 +189,15 @@ public class Settings
     {
         // Files to check for
         List<string> toolFiles = new()
-        {
-            "Dafs.dll",
-            "DirectoryDataCompiler.exe",
-            "ConvertPafData.exe",
-            "SMI.dll",
-            "Smi.xsd",
-            "UkPostProcessor.dll",
-            "xerces-c_3_2.dll"
-        };
+    {
+        "Dafs.dll",
+        "DirectoryDataCompiler.exe",
+        "ConvertPafData.exe",
+        "SMI.dll",
+        "Smi.xsd",
+        "UkPostProcessor.dll",
+        "xerces-c_3_2.dll"
+    };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";

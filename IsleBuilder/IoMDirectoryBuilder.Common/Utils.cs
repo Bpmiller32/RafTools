@@ -1,44 +1,49 @@
 using System.Diagnostics;
 using System.Text;
 
-namespace IsleBuilder.App;
+namespace IoMDirectoryBuilder.Common;
 
-public class Utils
+public static class Utils
 {
+    public static bool CancelRequested { get; set; }
+
     public static string WrapQuotes(string input)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.Append("\"").Append(input).Append("\"");
+        StringBuilder sb = new();
+        sb.Append('"').Append(input).Append('"');
         return sb.ToString();
     }
 
-    public static void CopyFiles(string sourceDirectory, string destDirectory)
+    public static void CopyFiles(string sourceDirectory, string destDirectory, CancellationToken stoppingToken)
     {
-        DirectoryInfo source = new DirectoryInfo(sourceDirectory);
-        DirectoryInfo dest = new DirectoryInfo(destDirectory);
+        DirectoryInfo source = new(sourceDirectory);
+        DirectoryInfo dest = new(destDirectory);
 
-        CopyFilesHelper(source, dest);
+        CopyFilesHelper(source, dest, stoppingToken);
     }
 
-    public static void CopyFilesHelper(DirectoryInfo source, DirectoryInfo dest)
+    public static void CopyFilesHelper(DirectoryInfo source, DirectoryInfo dest, CancellationToken stoppingToken)
     {
         Directory.CreateDirectory(dest.FullName);
 
         foreach (FileInfo file in source.GetFiles())
         {
-            file.CopyTo(Path.Combine(dest.FullName, file.Name), true);
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                file.CopyTo(Path.Combine(dest.FullName, file.Name), true);
+            }
         }
 
         foreach (DirectoryInfo subDir in source.GetDirectories())
         {
             DirectoryInfo nextSubDir = dest.CreateSubdirectory(subDir.Name);
-            CopyFilesHelper(subDir, nextSubDir);
+            CopyFilesHelper(subDir, nextSubDir, stoppingToken);
         }
     }
 
     public static Process RunProc(string fileName, string args)
     {
-        ProcessStartInfo startInfo = new ProcessStartInfo()
+        ProcessStartInfo startInfo = new()
         {
             FileName = fileName,
             Arguments = args,
@@ -48,7 +53,7 @@ public class Utils
             RedirectStandardError = true
         };
 
-        Process proc = new Process()
+        Process proc = new()
         {
             StartInfo = startInfo
         };
@@ -58,7 +63,7 @@ public class Utils
         return proc;
     }
 
-    public static void KillProcs(object sender, EventArgs e)
+    public static void KillRmProcs()
     {
         foreach (Process process in Process.GetProcessesByName("ConvertPafData"))
         {
@@ -68,5 +73,10 @@ public class Utils
         {
             process.Kill(true);
         }
+    }
+
+    public static void KillAllProcs(object sender, EventArgs e)
+    {
+        KillRmProcs();
     }
 }
