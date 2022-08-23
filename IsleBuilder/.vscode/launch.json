@@ -18,7 +18,6 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/IoMDirectoryBuilder.Console/bin/Debug/net6.0-windows/IoMDirectoryBuilder.Console.dll",
-            "args": ["", "C:\\Users\\billy\\Documents\\GitHub\\RafTools\\IsleBuilder\\IsleBuilder.Gui\\SMiBuildFiles"],
         },
     ]
 }

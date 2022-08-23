@@ -13,6 +13,8 @@ public class Settings
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
 
+    public Dictionary<string, string> PafLocations { get; set; } = new();
+
     public void CheckArgs()
     {
         if (string.IsNullOrEmpty(DeployToAp))
@@ -119,23 +121,56 @@ public class Settings
 
         foreach (string file in aliasFiles)
         {
-            if (!File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
+            if (File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
             {
-                missingFiles += file + ", ";
+                PafLocations.Add(file, Path.Combine(PafFilesPath, "ALIAS", file));
+            }
+            else
+            {
+                if (File.Exists(Path.Combine(PafFilesPath, file)))
+                {
+                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
+                }
+                else
+                {
+                    missingFiles += file + ", ";
+                }
             }
         }
         foreach (string file in csvBfpoFiles)
         {
-            if (!File.Exists(Path.Combine(PafFilesPath, "CSV BFPO", file)))
+            if (File.Exists(Path.Combine(PafFilesPath, "CSV BFPO", file)))
             {
-                missingFiles += file + ", ";
+                PafLocations.Add(file, Path.Combine(PafFilesPath, "CSV BFPO", file));
+            }
+            else
+            {
+                if (File.Exists(Path.Combine(PafFilesPath, file)))
+                {
+                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
+                }
+                else
+                {
+                    missingFiles += file + ", ";
+                }
             }
         }
         foreach (string file in pafCompressedStdFiles)
         {
-            if (!File.Exists(Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file)))
+            if (File.Exists(Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file)))
             {
-                missingFiles += file + ", ";
+                PafLocations.Add(file, Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file));
+            }
+            else
+            {
+                if (File.Exists(Path.Combine(PafFilesPath, file)))
+                {
+                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
+                }
+                else
+                {
+                    missingFiles += file + ", ";
+                }
             }
         }
 

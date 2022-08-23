@@ -78,8 +78,17 @@ public class PafBuilder
         ReportStatus("Converting PAF data");
 
         // Move address data files to working folder "Db"
-        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "PAF COMPRESSED STD"), Settings.WorkingPath, StoppingToken);
-        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "ALIAS"), Settings.WorkingPath, StoppingToken);
+        Directory.CreateDirectory(Settings.WorkingPath);
+
+        foreach (KeyValuePair<string, string> file in Settings.PafLocations)
+        {
+            if (StoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            File.Copy(file.Value, Path.Combine(Settings.WorkingPath, file.Key), true);
+        }
 
         // Start ConvertPafData tool, listen for output
         string convertPafDataFileName = Utils.WrapQuotes(Path.Combine(Settings.SmiFilesPath, "ConvertPafData.exe"));
