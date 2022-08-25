@@ -57,6 +57,38 @@ export const useStore = defineStore("main", () => {
       Progress: null,
     },
   });
+  const testers = ref({
+    SmartMatch: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+    SmartMatchZip4: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+    Parascript: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+    RoyalMail3: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+    RoyalMailWin7: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+    RoyalMailXP: {
+      DirectoryStatus: null,
+      CurrentBuild: null,
+      Progress: null,
+    },
+  });
 
   function SendMessage(Directory, Property, Value) {
     connectionCrawler.value.send(
@@ -74,6 +106,7 @@ export const useStore = defineStore("main", () => {
     connectionBuilder,
     crawlers,
     builders,
+    testers,
     SendMessage,
     SendMessageBuilder,
   };

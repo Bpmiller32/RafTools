@@ -36,14 +36,14 @@ const disclosureState = ref({
             <router-link
               to="/Crawler"
               class="border-indigo-600 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2"
-              >Crawler</router-link
+              >Download</router-link
             >
           </AnimationHandler>
           <router-link
             v-else
             to="/Crawler"
             class="transition-border-color duration-500 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300"
-            >Crawler</router-link
+            >Download</router-link
           >
 
           <AnimationHandler
@@ -54,14 +54,14 @@ const disclosureState = ref({
             <router-link
               to="/Builder"
               class="border-indigo-600 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2"
-              >Builder</router-link
+              >Build</router-link
             >
           </AnimationHandler>
           <router-link
             v-else
             to="/Builder"
             class="transition-border-color duration-500 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300"
-            >Builder</router-link
+            >Build</router-link
           >
 
           <AnimationHandler
@@ -72,14 +72,32 @@ const disclosureState = ref({
             <router-link
               to="/Tester"
               class="border-indigo-600 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2"
-              >Tester</router-link
+              >Test</router-link
             >
           </AnimationHandler>
           <router-link
             v-else
             to="/Tester"
             class="transition-border-color duration-500 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300"
-            >Tester</router-link
+            >Test</router-link
+          >
+
+          <AnimationHandler
+            v-if="route.name == 'Publish'"
+            animation="NavFadeIn"
+            appear
+          >
+            <router-link
+              to="/Publish"
+              class="border-indigo-600 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2"
+              >Publish</router-link
+            >
+          </AnimationHandler>
+          <router-link
+            v-else
+            to="/Publish"
+            class="transition-border-color duration-500 flex items-center text-gray-900 text-sm font-medium px-1 pt-1 border-b-2 border-transparent hover:border-gray-300"
+            >Publish</router-link
           >
         </div>
       </div>
@@ -104,7 +122,7 @@ const disclosureState = ref({
                 route.name != 'Home',
               'block border-l-4 border-gray-300 p-3 text-base font-medium': true,
             }"
-            >Crawler
+            >Download
           </router-link>
           <router-link
             to="/Builder"
@@ -114,7 +132,7 @@ const disclosureState = ref({
                 route.name != 'Builder',
               'block border-l-4 border-gray-300 p-3 text-base font-medium': true,
             }"
-            >Builder
+            >Build
           </router-link>
           <router-link
             to="/Tester"
@@ -124,7 +142,17 @@ const disclosureState = ref({
                 route.name != 'Tester',
               'block border-l-4 border-gray-300 p-3 text-base font-medium': true,
             }"
-            >Tester
+            >Test
+          </router-link>
+          <router-link
+            to="/Publish"
+            :class="{
+              'border-indigo-600 bg-indigo-50': route.name == 'Publish',
+              'transition-background-color duration-500 hover:bg-gray-100':
+                route.name != 'Publish',
+              'block border-l-4 border-gray-300 p-3 text-base font-medium': true,
+            }"
+            >Publish
           </router-link>
         </div>
       </DisclosurePanel>

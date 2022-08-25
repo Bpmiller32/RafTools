@@ -126,7 +126,7 @@ animations.SlideDownEnter = (el, done) => {
   let height = "7rem";
 
   if (props.args == "nav") {
-    height = "9.65rem";
+    height = "12.95rem";
   }
   if (props.args == "progressBar") {
     height = "4rem";

@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import CrawlerPage from "../components/CrawlerPage.vue";
 import BuilderPage from "../components/BuilderPage.vue";
-
-import PlaceHolder from "../components/PlaceHolder.vue";
+import TesterPage from "../components/TesterPage.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,7 +22,7 @@ const router = createRouter({
     {
       path: "/Tester",
       name: "Tester",
-      component: PlaceHolder,
+      component: TesterPage,
       meta: { fromRoute: null, toRoute: null },
     },
   ],
