@@ -1,14 +1,10 @@
-using System.Security.Principal;
-
-#pragma warning disable CA1416 // ignore that admin check is Windows only 
-
 namespace IoMDirectoryBuilder.Common;
 
 public class Settings
 {
     public string PafFilesPath { get; set; }
     public string SmiFilesPath { get; set; }
-    public string DeployToAp { get; set; }
+    public string DeployToAp { get; set; } = "FALSE";
 
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
@@ -17,29 +13,47 @@ public class Settings
 
     public void CheckArgs()
     {
-        if (string.IsNullOrEmpty(DeployToAp))
+        string[] args = Environment.GetCommandLineArgs();
+        string allArgs = "";
+        for (int i = 1; i < args.Length; i++)
         {
-            DeployToAp = "false";
-            return;
-        }
-        if (DeployToAp == "true")
-        {
-            WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
-            bool isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
-            if (!isElevated && DeployToAp == "true")
-            {
-                throw new Exception("Application does not have administrator privledges, cannot deploy to AP");
-            }
-
-            return;
-        }
-        if (DeployToAp == "false")
-        {
-            DeployToAp = "false";
-            return;
+            allArgs += " " + args[i];
         }
 
-        throw new ArgumentException("Invalid parameter for --DeployToAp");
+        // Convert toUpper to eliminate case differences, remove quotes
+        allArgs = allArgs.ToUpper();
+        allArgs = allArgs.Replace("\"", string.Empty);
+
+        // Find beginning and ends of args
+        int arg1Start = allArgs.IndexOf("--PAFFILESPATH") + 14;
+        int arg2Start = allArgs.IndexOf("--SMIFILESPATH") + 14;
+        int arg3Start = allArgs.IndexOf("--DEPLOYTOAP") + 12;
+
+        int arg1End = allArgs.IndexOf("--SMIFILESPATH");
+        int arg2End = allArgs.Length;
+        int arg3End = 11;
+
+        // Find if arg3 exists, set length of arg2 and arg3 depending
+        bool arg3Exists = arg3Start != 11;
+        if (arg3Exists)
+        {
+            arg2End = allArgs.IndexOf("--DEPLOYTOAP");
+            arg3End = allArgs.Length;
+            DeployToAp = "ERROR";
+        }
+
+        // Create and set separated and sanitized args
+        string arg1 = allArgs[arg1Start..arg1End].Trim();
+        string arg2 = allArgs[arg2Start..arg2End].Trim();
+        string arg3 = allArgs[arg3Start..arg3End].Trim();
+
+        PafFilesPath = arg1;
+        SmiFilesPath = arg2;
+
+        if (arg3 == "TRUE" || arg3 == "FALSE")
+        {
+            DeployToAp = arg3;
+        }
     }
 
     public void CheckPaths()
@@ -58,7 +72,11 @@ public class Settings
         {
             throw new ArgumentException("Invalid parameter for --SmiFilesPath");
         }
-        // Check if input in wrapped in path quotes
+        if (DeployToAp == "ERROR")
+        {
+            throw new ArgumentException("Invalid parameter for --DeployToAp");
+        }
+        // Check if input in wrapped in path quotes (for WinForms verison)
         if (PafFilesPath.StartsWith('"') && PafFilesPath.EndsWith('"'))
         {
             PafFilesPath = PafFilesPath.Replace("\"", string.Empty);
@@ -70,11 +88,11 @@ public class Settings
         // Check that path exists on disk
         if (!Directory.Exists(PafFilesPath))
         {
-            throw new Exception("Path to PAF files does not exist");
+            throw new ArgumentException("Invalid parameter for --PafFilesPath");
         }
         if (!Directory.Exists(SmiFilesPath))
         {
-            throw new Exception("Path to SMi files does not exist");
+            throw new ArgumentException("Invalid parameter for --SmiFilesPath");
         }
 
         // Create working and output paths after passing previous checks

@@ -5,16 +5,14 @@ namespace IoMDirectoryBuilder.Console;
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> logger;
-    private readonly IConfiguration config;
     private readonly IHostApplicationLifetime lifetime;
 
     private readonly Settings settings;
     private readonly PafBuilder pafBuilder;
 
-    public Worker(ILogger<Worker> logger, IConfiguration config, IHostApplicationLifetime lifetime)
+    public Worker(ILogger<Worker> logger, IHostApplicationLifetime lifetime)
     {
         this.logger = logger;
-        this.config = config;
         this.lifetime = lifetime;
 
         this.settings = new();
@@ -28,10 +26,6 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        settings.PafFilesPath = config.GetValue<string>("PafFilesPath");
-        settings.SmiFilesPath = config.GetValue<string>("SmiFilesPath");
-        settings.DeployToAp = config.GetValue<string>("DeployToAp");
-
         pafBuilder.StoppingToken = stoppingToken;
         pafBuilder.Settings = settings;
 
