@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "logging": {"moduleLoad": false},
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/ConvertNz.App/bin/Debug/net6.0/ConvertNz.App.dll",
+            "args": ["C:\\Users\\billy\\Desktop\\ConvertNz\\addressDb.csv", "C:\\Users\\billy\\Desktop\\addressDbConverted.csv"],
+        },
+    ]
+}
