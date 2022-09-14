@@ -54,7 +54,7 @@ public class SocketConnection : WebSocketBehavior
         logger.LogInformation("Connection closed (clean): {0}, Total clients: {1}", ipAddress, Sessions.Count);
     }
 
-    protected override void OnError(ErrorEventArgs e)
+    protected override void OnError(WebSocketSharp.ErrorEventArgs e)
     {
         logger.LogInformation("Connection closed (error): {0}, Total clients: {1}", ipAddress, Sessions.Count);
     }

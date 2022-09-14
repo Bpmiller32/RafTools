@@ -146,22 +146,22 @@ const runButtonState = ref({
     });
 
     if (store.builders[props.dirType].DirectoryStatus == "Ready") {
-      runButtonState.value.label = "Test Disk";
+      runButtonState.value.label = "Test Disc";
       runButtonState.value.animation = "ButtonFill";
       anime.remove(el);
       runButtonState.value.isActive = true;
     } else if (store.builders[props.dirType].DirectoryStatus == "In Progress") {
-      runButtonState.value.label = "Building ....";
+      runButtonState.value.label = "Testing ....";
       runButtonState.value.animation = "ButtonDrain";
       animation.play();
       runButtonState.value.isActive = false;
     } else if (store.builders[props.dirType].DirectoryStatus == "Error") {
-      runButtonState.value.label = "Test Disk";
+      runButtonState.value.label = "Test Disc";
       runButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
       runButtonState.value.isActive = false;
     } else if (store.builders[props.dirType].DirectoryStatus == "Disabled") {
-      runButtonState.value.label = "Test Disk";
+      runButtonState.value.label = "Test Disc";
       runButtonState.value.animation = "ButtonDrain";
       anime.remove(el);
       runButtonState.value.isActive = false;
@@ -279,6 +279,7 @@ function RunButtonClicked() {
         >
           ✔️
         </div>
+
         <div
           class="flex items-center justify-center min-w-[2rem] max-w-[2rem] min-h-[2rem] max-h-[2rem] px-0.5 py-0.5 text-xs font-medium rounded-full bg-yellow-100"
         >

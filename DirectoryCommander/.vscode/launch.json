@@ -1,0 +1,72 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Crawler",
+            "type": "coreclr",
+            "request": "launch",
+
+            "logging": {"moduleLoad": false},
+            "preLaunchTask": "build Crawler",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Crawler/bin/Debug/net6.0/Crawler.App.dll",
+            "args": [],
+        },
+        {
+            "name": "Builder",
+            "type": "coreclr",
+            "request": "launch",
+
+            "logging": {"moduleLoad": false},
+            "preLaunchTask": "build Builder",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Builder/bin/Debug/net6.0-windows/Builder.App.dll",
+            "args": [],
+        },
+        {
+            "name": "Tester",
+            "type": "coreclr",
+            "request": "launch",
+
+            "logging": {"moduleLoad": false},
+            "preLaunchTask": "build Tester",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tester/bin/Debug/net6.0/Tester.App.dll",
+            "args": [],
+        },
+        {
+            "name": "Common",
+            "type": "coreclr",
+            "request": "launch",
+
+            "logging": {"moduleLoad": false},
+            "preLaunchTask": "build Common",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Common/bin/Debug/net6.0/Common.Data.dll",
+            "args": [],
+        },
+        {
+            "name": "UI",
+            "type": "node-terminal",
+            "request": "launch",
+
+            "preLaunchTask": "build UI",
+            "cwd": "${workspaceFolder}/Ui",
+            "command": "npm run dev",
+        },
+    ],
+    "compounds": [
+      {
+        "name": "Launch all services",
+        "configurations": ["Crawler", "Builder", "Tester", "Common"],
+        "preLaunchTask": "build Services",
+        "stopAll": true
+      },
+      {
+        "name": "Launch all services + UI",
+        "configurations": ["Crawler", "Builder", "Tester", "Common", "UI"],
+        "preLaunchTask": "build All",
+        "stopAll": true
+      },
+    ]
+}

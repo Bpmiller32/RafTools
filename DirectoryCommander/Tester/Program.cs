@@ -32,7 +32,7 @@ try
     // // Attach method to application closing event handler to kill all spawned subprocess. Placed after singleton check in case another instance is open
     // AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
 
-    // // Check for admin, error if admin isn't present
+    // Check for admin, error if admin isn't present
     bool isElevated;
     WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
     isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
@@ -44,7 +44,11 @@ try
     IHost host = Host.CreateDefaultBuilder(args)
         .UseWindowsService()
         .UseSerilog()
-        .ConfigureServices(services => services.AddHostedService<Worker>())
+        .ConfigureServices(services =>
+        {
+            services.AddHostedService<SocketServer>();
+            services.AddTransient<SocketConnection>();
+        })
         .Build();
 
     await host.RunAsync();

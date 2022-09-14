@@ -240,7 +240,7 @@ public class RoyalBuilder
         // Process dongleCheckout = Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(Settings.WorkingPath, @"Smi") + " --force");
         // dongleCheckout.WaitForExit();
 
-        Utils.CopyFiles(@"C:\Users\billy\Documents\GitHub\RafTools\Builder\Builder.App\bin\Debug\net6.0-windows\BuildUtils\DirectoryCreationFiles", Path.Combine(Settings.WorkingPath, @"Smi"));
+        Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "DirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, @"Smi"));
 
         // Edit SMi definition xml file with updated date 
         XmlDocument defintionFile = new XmlDocument();

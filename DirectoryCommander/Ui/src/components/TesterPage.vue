@@ -7,5 +7,6 @@ import TesterCard from "./TesterCard.vue";
     <div class="m-6">
       <TesterCard dirType="Parascript"></TesterCard>
     </div>
+    <div>Hello testing</div>
   </div>
 </template>

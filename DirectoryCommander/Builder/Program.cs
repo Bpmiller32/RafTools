@@ -14,7 +14,7 @@ try
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
             .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"))
-            .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), @".\Log\BuilderLog.txt")
+            // .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), @".\Log\BuilderLog.txt")
             .CreateLogger();
 
         // Set exe directory to current directory, not needed for this but important when doing Windows services
@@ -44,10 +44,24 @@ try
             throw new Exception("Application does not have administrator privledges");
         }
 
+        // Create custom configuration outside of Generic Host to access value during Generic Host creation
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .AddCommandLine(args)
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+        string databaseLocation = configuration.GetValue<string>("settings:DatabaseLocation");
+
         IHost host = Host.CreateDefaultBuilder(args)
             .UseWindowsService()
             .UseSerilog()
-            .ConfigureServices((context, services) =>
+            .ConfigureAppConfiguration(builder =>
+            {
+                builder.Sources.Clear();
+                builder.AddConfiguration(configuration);
+            })
+            .ConfigureServices(services =>
             {
                 services.AddHostedService<SocketServer>();
                 services.AddTransient<SocketConnection>();
@@ -55,10 +69,7 @@ try
                 services.AddSingleton<ParaBuilder>();
                 services.AddSingleton<RoyalBuilder>();
 
-                services.AddDbContext<DatabaseContext>(opt =>
-                {
-                    opt.UseSqlite(@"Filename=C:\Users\billy\Documents\GitHub\RafTools\Crawler\Crawler.App\bin\Debug\net6.0\DirectoryCollection.db");
-                }, ServiceLifetime.Transient);
+                services.AddDbContext<DatabaseContext>(opt => opt.UseSqlite(String.Format("Filename={0}", databaseLocation)), ServiceLifetime.Transient);
             })
             .Build();
 

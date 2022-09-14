@@ -308,7 +308,7 @@ function CheckboxClicked() {
             <ListboxButton
               v-if="selectMenuState.currentSelection !== null"
               :class="{
-                'relative w-full max-w-[85%] bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500': true,
+                'relative w-full max-w-[90%] bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500': true,
                 'cursor-not-allowed': !runButtonState.isActive,
               }"
               :disabled="!runButtonState.isActive"
