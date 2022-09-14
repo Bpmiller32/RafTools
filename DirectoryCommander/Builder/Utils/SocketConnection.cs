@@ -13,7 +13,6 @@ public class SocketConnection : WebSocketBehavior
     public static RoyalBuilder RoyalBuilder { get; set; }
 
     private readonly ILogger<SocketConnection> logger;
-    private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
     private CancellationTokenSource smTokenSource = new CancellationTokenSource();
@@ -21,10 +20,9 @@ public class SocketConnection : WebSocketBehavior
     private CancellationTokenSource rmTokenSource = new CancellationTokenSource();
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, IConfiguration config, DatabaseContext context)
+    public SocketConnection(ILogger<SocketConnection> logger, DatabaseContext context)
     {
         this.logger = logger;
-        this.config = config;
         this.context = context;
     }
 

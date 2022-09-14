@@ -1,4 +1,3 @@
-using Tester;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
@@ -48,6 +47,8 @@ try
         {
             services.AddHostedService<SocketServer>();
             services.AddTransient<SocketConnection>();
+
+            services.AddSingleton<ParaTester>();
         })
         .Build();
 

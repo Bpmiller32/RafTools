@@ -4,25 +4,24 @@ public class SocketServer : BackgroundService
 {
     private readonly ILogger<SocketServer> logger;
     private readonly IServiceScopeFactory factory;
+    private readonly ParaTester paraTester;
 
-    public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory)
+    public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory, ParaTester paraTester)
     {
         this.logger = logger;
         this.factory = factory;
+        this.paraTester = paraTester;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        WebSocketServer server = new WebSocketServer(10023);
+        WebSocketServer server = new(10023);
         server.Log.Output = (logdata, _) => logger.LogError(logdata.Message);
 
         SocketConnection.SocketServer = server.WebSocketServices;
+        SocketConnection.ParaTester = paraTester;
 
-        server.AddWebSocketService<SocketConnection>("/", () =>
-        {
-            SocketConnection connection = factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>();
-            return connection;
-        });
+        server.AddWebSocketService("/", () => factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
 
         try
         {
