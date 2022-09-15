@@ -9,7 +9,7 @@
             "logging": {"moduleLoad": false},
             "preLaunchTask": "build Crawler",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Crawler/bin/Debug/net6.0/Crawler.App.dll",
+            "program": "${workspaceFolder}/Crawler.App/bin/Debug/net6.0/Crawler.App.dll",
             "args": [],
         },
         {
@@ -20,7 +20,7 @@
             "logging": {"moduleLoad": false},
             "preLaunchTask": "build Builder",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Builder/bin/Debug/net6.0-windows/Builder.App.dll",
+            "program": "${workspaceFolder}/Builder.App/bin/Debug/net6.0-windows/Builder.App.dll",
             "args": [],
         },
         {
@@ -31,7 +31,7 @@
             "logging": {"moduleLoad": false},
             "preLaunchTask": "build Tester",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tester/bin/Debug/net6.0/Tester.App.dll",
+            "program": "${workspaceFolder}/Tester.App/bin/Debug/net6.0/Tester.App.dll",
             "args": [],
         },
         {
@@ -42,7 +42,7 @@
             "logging": {"moduleLoad": false},
             "preLaunchTask": "build Common",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Common/bin/Debug/net6.0/Common.Data.dll",
+            "program": "${workspaceFolder}/Common.Data/bin/Debug/net6.0/Common.Data.dll",
             "args": [],
         },
         {
@@ -59,13 +59,11 @@
       {
         "name": "Launch all services",
         "configurations": ["Crawler", "Builder", "Tester", "Common"],
-        "preLaunchTask": "build Services",
         "stopAll": true
       },
       {
         "name": "Launch all services + UI",
         "configurations": ["Crawler", "Builder", "Tester", "Common", "UI"],
-        "preLaunchTask": "build All",
         "stopAll": true
       },
     ]
