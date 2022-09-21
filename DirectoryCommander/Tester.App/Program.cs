@@ -2,6 +2,7 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
 using System.Security.Principal;
+using Tester;
 
 #pragma warning disable CA1416 // ignore that admin check is Windows only 
 string applicationName = "Tester";
@@ -28,9 +29,6 @@ try
         throw new Exception("Only one instance of the application allowed");
     }
 
-    // // Attach method to application closing event handler to kill all spawned subprocess. Placed after singleton check in case another instance is open
-    // AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
-
     // Check for admin, error if admin isn't present
     bool isElevated;
     WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
@@ -48,7 +46,9 @@ try
             services.AddHostedService<SocketServer>();
             services.AddTransient<SocketConnection>();
 
+            services.AddSingleton<SmartTester>();
             services.AddSingleton<ParaTester>();
+            services.AddSingleton<RoyalTester>();
         })
         .Build();
 

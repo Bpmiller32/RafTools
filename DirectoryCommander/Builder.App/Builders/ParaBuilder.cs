@@ -28,7 +28,7 @@ public class ParaBuilder
     {
         connection.SendMessage(DirectoryType.Parascript);
 
-        if (Settings.AutoBuildEnabled == false)
+        if (!Settings.AutoBuildEnabled)
         {
             logger.LogDebug("AutoBuild disabled");
             return;
@@ -109,7 +109,7 @@ public class ParaBuilder
         }
         else
         {
-            Progress = Progress + changeAmount;
+            Progress += changeAmount;
         }
 
         connection.SendMessage(DirectoryType.Parascript);

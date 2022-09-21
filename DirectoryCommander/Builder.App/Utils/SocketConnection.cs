@@ -81,7 +81,7 @@ public class SocketConnection : WebSocketBehavior
 
     public void SendMessage(DirectoryType directoryType)
     {
-        Dictionary<ComponentStatus, string> statusMap = new Dictionary<ComponentStatus, string>() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
+        Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
         string serializedObject = "";
 
         if (directoryType == DirectoryType.Parascript)

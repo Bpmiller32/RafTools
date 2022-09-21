@@ -31,7 +31,7 @@
             "logging": {"moduleLoad": false},
             "preLaunchTask": "build Tester",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tester.App/bin/Debug/net6.0/Tester.App.dll",
+            "program": "${workspaceFolder}/Tester.App/bin/Debug/net6.0-windows/Tester.App.dll",
             "args": [],
         },
         {

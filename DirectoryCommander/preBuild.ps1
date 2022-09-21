@@ -16,6 +16,7 @@ if ($Project -eq "Crawler") {
 if ($Project -eq "Builder") {
     Set-Location .\Builder.App
     dotnet build
+    Copy-Item -Path ".\BuildUtils" -Destination ".\bin\Debug\net6.0-windows\BuildUtils" -Recurse -Force
     Set-Location -Path $BaseDirectory
 }
 if ($Project -eq "Tester") {

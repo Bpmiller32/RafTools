@@ -1,38 +1,47 @@
 using WebSocketSharp.Server;
 
-public class SocketServer : BackgroundService
+namespace Tester
 {
-    private readonly ILogger<SocketServer> logger;
-    private readonly IServiceScopeFactory factory;
-    private readonly ParaTester paraTester;
-
-    public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory, ParaTester paraTester)
+    public class SocketServer : BackgroundService
     {
-        this.logger = logger;
-        this.factory = factory;
-        this.paraTester = paraTester;
-    }
+        private readonly ILogger<SocketServer> logger;
+        private readonly IServiceScopeFactory factory;
+        private readonly SmartTester smartTester;
+        private readonly ParaTester paraTester;
+        private readonly RoyalTester royalTester;
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        WebSocketServer server = new(10023);
-        server.Log.Output = (logdata, _) => logger.LogError(logdata.Message);
-
-        SocketConnection.SocketServer = server.WebSocketServices;
-        SocketConnection.ParaTester = paraTester;
-
-        server.AddWebSocketService("/", () => factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
-
-        try
+        public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory, SmartTester smartTester, ParaTester paraTester, RoyalTester royalTester)
         {
-            server.Start();
-            logger.LogInformation("Listening for client connections");
-        }
-        catch (System.Exception e)
-        {
-            logger.LogError(e.Message);
+            this.logger = logger;
+            this.factory = factory;
+            this.smartTester = smartTester;
+            this.paraTester = paraTester;
+            this.royalTester = royalTester;
         }
 
-        return Task.CompletedTask;
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            WebSocketServer server = new(10023);
+            server.Log.Output = (logdata, _) => logger.LogError("{Message}", logdata.Message);
+
+            SocketConnection.SocketServer = server.WebSocketServices;
+            SocketConnection.SmartTester = smartTester;
+            SocketConnection.ParaTester = paraTester;
+            SocketConnection.RoyalTester = royalTester;
+
+            server.AddWebSocketService("/", () => factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
+
+            try
+            {
+                server.Start();
+                logger.LogInformation("Listening for client connections");
+            }
+            catch (System.Exception e)
+            {
+                logger.LogError("{Message}", e.Message);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

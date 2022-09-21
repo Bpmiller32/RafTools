@@ -1,7 +1,11 @@
 using System.Collections;
 using System.Diagnostics;
-using System.ServiceProcess;
 using System.Text;
+using System.ServiceProcess;
+
+#pragma warning disable CA1416 // ignore that ServiceController calls are Windows only 
+
+namespace Common.Data;
 
 public static class Utils
 {
