@@ -3,7 +3,7 @@ import { StatusOfflineIcon } from "@heroicons/vue/outline";
 </script>
 
 <template>
-  <main class="py-16 select-none">
+  <div class="py-16 select-none">
     <div class="flex justify-center">
       <img class="h-12" src="../assets/MatwLogoSmall.png" />
     </div>
@@ -24,5 +24,5 @@ import { StatusOfflineIcon } from "@heroicons/vue/outline";
         <p class="text-base text-gray-500">Check the logs for more details.</p>
       </div>
     </div>
-  </main>
+  </div>
 </template>

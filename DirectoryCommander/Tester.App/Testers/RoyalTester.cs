@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.IO.Compression;
 using System.Text.RegularExpressions;
 using Common.Data;
 
@@ -13,13 +12,11 @@ namespace Tester
 
         private readonly ILogger<RoyalTester> logger;
         private readonly IConfiguration config;
-        private readonly SocketConnection connection;
 
-        public RoyalTester(ILogger<RoyalTester> logger, IConfiguration config, SocketConnection connection)
+        public RoyalTester(ILogger<RoyalTester> logger, IConfiguration config)
         {
             this.logger = logger;
             this.config = config;
-            this.connection = connection;
         }
 
         public async Task ExecuteAsync()
@@ -32,22 +29,20 @@ namespace Tester
 
                 Settings.Validate(config);
 
-                // CheckDisc();
-                // await InstallDirectory();
-                // await CheckLicense();
-                // AddLicense();
-                // await InjectImages();
-
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                CheckDisc();
+                await InstallDirectory();
+                await CheckLicense();
+                AddLicense();
+                await InjectImages();
 
                 logger.LogInformation("Test Complete");
                 Status = ComponentStatus.Ready;
-                SocketConnection.SendMessage(DirectoryType.RoyalMail);
+                SocketConnection.SendMessage();
             }
             catch (Exception e)
             {
                 Status = ComponentStatus.Error;
-                SocketConnection.SendMessage(DirectoryType.RoyalMail);
+                SocketConnection.SendMessage();
                 logger.LogError("{Message}", e.Message);
             }
         }
@@ -63,11 +58,13 @@ namespace Tester
                 Progress += changeAmount;
             }
 
-            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            SocketConnection.SendMessage();
         }
 
         private void CheckDisc()
         {
+            ChangeProgress(1);
+
             const string rmSettingsFile = "UK_RM_CM_Settings.xml";
             List<string> rmFiles = new()
             {
@@ -96,22 +93,22 @@ namespace Tester
             {
                 throw new Exception("Missing files (may have disc in wrong drive): " + missingFiles);
             }
-
-            ChangeProgress(20);
         }
 
         private async Task InstallDirectory()
         {
+            ChangeProgress(1);
+
             // Stop RAFMaster
             await Utils.StopService("RAFArgosyMaster");
 
             Utils.CopyFiles(Settings.DiscDrivePath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
-
-            ChangeProgress(20);
         }
 
         private async Task CheckLicense()
         {
+            ChangeProgress(1);
+
             // Very annoying constructor instead of DateTime.Now because DateTime.Compare doesn't work as one would expect later....
             DateTime checkTime = new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second, 0);
 
@@ -165,8 +162,6 @@ namespace Tester
             {
                 throw new Exception("Directory did not pass LCS test");
             }
-
-            ChangeProgress(20);
         }
 
         private void AddLicense()
@@ -232,12 +227,12 @@ namespace Tester
             {
                 File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "UK_RM_CM.lcs"));
             }
-
-            ChangeProgress(20);
         }
 
         private async Task InjectImages()
         {
+            ChangeProgress(1);
+
             await Utils.StartService("RAFArgosyMaster");
 
             // Set config with ControlPort, wait for Recmodule to initialize after setting
@@ -269,7 +264,7 @@ namespace Tester
                 throw new Exception("Directory did not pass injection test");
             }
 
-            ChangeProgress(20);
+            ChangeProgress(10);
         }
     }
 }

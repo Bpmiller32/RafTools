@@ -23,7 +23,7 @@ namespace Tester
             DongleId = config.GetValue<string>("settings:DongleId");
 
             // Verify for each directory
-            foreach (string dir in new List<string>() { "SmartMatch", "Parascript", "RoyalMail" })
+            foreach (string dir in new List<string>() { "SmartMatch", "Parascript", "RoyalMail", "Zip4" })
             {
                 if (dir == Name)
                 {

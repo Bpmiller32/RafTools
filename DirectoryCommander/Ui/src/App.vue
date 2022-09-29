@@ -1,36 +1,32 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import { useStore } from "./store";
 import NavBar from "./components/NavBar.vue";
-import ErrorPage from "./components/ErrorPage.vue";
 import AnimationHandler from "./components/AnimationHandler.vue";
-import LoadingPage from "./components/LoadingPage.vue";
 
 const store = useStore();
-const backendConnected = ref("loading");
-const loadedData = ref({
-  SmartMatchCrawler: false,
-  ParascriptCrawler: false,
-  RoyalMailCrawler: false,
-
-  SmartMatchBuilder: false,
-  ParascriptBuilder: false,
-  RoyalMailBuilder: false,
-});
 
 const routes = ref(
   new Map([
     ["Home Home", "FadeIn"],
     ["Home Builder", "FromLeftToRight"],
     ["Home Tester", "FromLeftToRight"],
+    ["Home Publish", "FromLeftToRight"],
 
-    ["Builder Builder", "FadeIn"],
     ["Builder Home", "FromRightToLeft"],
+    ["Builder Builder", "FadeIn"],
     ["Builder Tester", "FromLeftToRight"],
+    ["Builder Publish", "FromLeftToRight"],
 
-    ["Tester Tester", "FadeIn"],
     ["Tester Home", "FromRightToLeft"],
     ["Tester Builder", "FromRightToLeft"],
+    ["Tester Tester", "FadeIn"],
+    ["Tester Publish", "FromLeftToRight"],
+
+    ["Publish Home", "FromRightToLeft"],
+    ["Publish Builder", "FromRightToLeft"],
+    ["Publish Tester", "FromRightToLeft"],
+    ["Publish Publish", "FadeIn"],
   ])
 );
 
@@ -54,73 +50,58 @@ onMounted(() => {
 
   // OnMessage recieving data from backend services
   store.connectionCrawler.onmessage = (event) => {
-    console.log("CrawlerData: ", JSON.parse(event.data), Date());
     const response = JSON.parse(event.data);
 
     if (response.SmartMatch != null) {
       store.crawlers.SmartMatch = response.SmartMatch;
-      loadedData.value.SmartMatchCrawler = true;
+      store.crawlers.SmartMatch.DataRecieved = true;
     }
     if (response.Parascript != null) {
       store.crawlers.Parascript = response.Parascript;
-      loadedData.value.ParascriptCrawler = true;
+      store.crawlers.Parascript.DataRecieved = true;
     }
     if (response.RoyalMail != null) {
       store.crawlers.RoyalMail = response.RoyalMail;
-      loadedData.value.RoyalMailCrawler = true;
+      store.crawlers.RoyalMail.DataRecieved = true;
     }
   };
   store.connectionBuilder.onmessage = (event) => {
-    console.log("BuilderData: ", JSON.parse(event.data), Date());
     const response = JSON.parse(event.data);
 
     if (response.SmartMatch != null) {
       store.builders.SmartMatch = response.SmartMatch;
-      loadedData.value.SmartMatchBuilder = true;
     }
     if (response.Parascript != null) {
       store.builders.Parascript = response.Parascript;
-      loadedData.value.ParascriptBuilder = true;
     }
     if (response.RoyalMail != null) {
       store.builders.RoyalMail = response.RoyalMail;
-      loadedData.value.RoyalMailBuilder = true;
+    }
+  };
+  store.connectionTester.onmessage = (event) => {
+    const response = JSON.parse(event.data);
+
+    if (response.SmartMatch != null) {
+      store.testers.SmartMatch = response.SmartMatch;
+      store.testers.SmartMatch.DataRecieved = true;
+    }
+    if (response.Parascript != null) {
+      store.testers.Parascript = response.Parascript;
+      store.testers.Parascript.DataRecieved = true;
+    }
+    if (response.RoyalMail != null) {
+      store.testers.RoyalMail = response.RoyalMail;
+      store.testers.RoyalMail.DataRecieved = true;
+    }
+    if (response.Zip4 != null) {
+      store.testers.Zip4 = response.Zip4;
+      store.testers.Zip4.DataRecieved = true;
     }
   };
 });
-
-// Watchers
-watch(
-  () => loadedData.value,
-  () => {
-    if (
-      loadedData.value.SmartMatchCrawler &&
-      loadedData.value.ParascriptCrawler &&
-      loadedData.value.RoyalMailCrawler &&
-      loadedData.value.ParascriptBuilder &&
-      loadedData.value.RoyalMailBuilder
-    ) {
-      backendConnected.value = "connected";
-    }
-  },
-  { deep: true }
-);
-
-// Events
-function isPageAvailable(route) {
-  console.log("test");
-  console.log(route.meta.toRoute);
-
-  if (route.meta.toRoute == "Tester") {
-    return true;
-  }
-
-  return true;
-}
 </script>
 
 <template>
-  <!-- <div v-if="backendConnected == 'connected'"> -->
   <NavBar class="fixed top-0 left-0 right-0 z-50" />
   <router-view
     class="absolute top-16 left-0 right-0"
@@ -130,14 +111,7 @@ function isPageAvailable(route) {
       :animation="routes.get(`${route.meta.fromRoute} ${route.meta.toRoute}`)"
       transitionMode="default"
     >
-      <component v-if="isPageAvailable(route)" :is="Component" />
+      <component :is="Component" />
     </AnimationHandler>
   </router-view>
-  <!-- </div> -->
-  <!-- <div v-else-if="backendConnected == 'loading'">
-    <LoadingPage />
-  </div>
-  <div v-else>
-    <ErrorPage />
-  </div> -->
 </template>

@@ -120,7 +120,6 @@ public class SocketConnection : WebSocketBehavior
         SocketServer.Broadcast(serializedObject);
     }
 
-
     private List<List<BuildInfo>> GetCompiledBuilds(bool smartMatch = false, bool parascript = false, bool royalMail = false)
     {
         List<BuildInfo> smBuilds = new List<BuildInfo>();

@@ -1,30 +1,45 @@
 using System.Text.Json;
 using Common.Data;
-using WebSocketSharp;
-using WebSocketSharp.Server;
+using WebSocketSharp.NetCore;
+using WebSocketSharp.NetCore.Server;
 
 namespace Tester
 {
     public class SocketConnection : WebSocketBehavior
     {
-        public static WebSocketServiceManager SocketServer { get; set; }
-        public static SmartTester SmartTester { get; set; }
-        public static ParaTester ParaTester { get; set; }
-        public static RoyalTester RoyalTester { get; set; }
-
         private readonly ILogger<SocketConnection> logger;
+
+        private static WebSocketSessionManager server;
+        private static SmartTester smartTester;
+        private static ParaTester paraTester;
+        private static RoyalTester royalTester;
+        private static ZipTester zipTester;
 
         private System.Net.IPAddress ipAddress;
 
-        public SocketConnection(ILogger<SocketConnection> logger)
+        public SocketConnection(ILogger<SocketConnection> logger, SmartTester smartTester, ParaTester paraTester, RoyalTester royalTester, ZipTester zipTester)
         {
             this.logger = logger;
+
+            SocketConnection.smartTester = smartTester;
+            SocketConnection.paraTester = paraTester;
+            SocketConnection.royalTester = royalTester;
+            SocketConnection.zipTester = zipTester;
+        }
+
+        public static void Test()
+        {
+            System.Console.WriteLine("hey sup");
         }
 
         protected override void OnOpen()
         {
+            server = Sessions;
+
             ipAddress = Context.UserEndPoint.Address;
             logger.LogInformation("Connected to client: {ipAddress}, Total clients: {Count}", ipAddress, Sessions.Count);
+
+            SendMessage();
         }
 
         protected override void OnClose(CloseEventArgs e)
@@ -38,91 +53,103 @@ namespace Tester
 
             if (message.Directory == "SmartMatch")
             {
-                SmartTester.Status = ComponentStatus.Disabled;
-                RoyalTester.Status = ComponentStatus.Disabled;
+                paraTester.Status = ComponentStatus.Disabled;
+                royalTester.Status = ComponentStatus.Disabled;
+                zipTester.Status = ComponentStatus.Disabled;
 
                 if (message.Property == "Force")
                 {
-                    await Task.Run(() => ParaTester.ExecuteAsync());
+                    await Task.Run(() => smartTester.ExecuteAsync());
                 }
             }
             if (message.Directory == "Parascript")
             {
-                SmartTester.Status = ComponentStatus.Disabled;
-                RoyalTester.Status = ComponentStatus.Disabled;
+                smartTester.Status = ComponentStatus.Disabled;
+                royalTester.Status = ComponentStatus.Disabled;
+                zipTester.Status = ComponentStatus.Disabled;
 
                 if (message.Property == "Force")
                 {
-                    await Task.Run(() => ParaTester.ExecuteAsync());
+                    await Task.Run(() => paraTester.ExecuteAsync());
                 }
             }
             if (message.Directory == "RoyalMail")
             {
-                SmartTester.Status = ComponentStatus.Disabled;
-                RoyalTester.Status = ComponentStatus.Disabled;
+                smartTester.Status = ComponentStatus.Disabled;
+                paraTester.Status = ComponentStatus.Disabled;
+                zipTester.Status = ComponentStatus.Disabled;
 
                 if (message.Property == "Force")
                 {
-                    await Task.Run(() => ParaTester.ExecuteAsync());
+                    await Task.Run(() => royalTester.ExecuteAsync());
+                }
+            }
+            if (message.Directory == "Zip4")
+            {
+                smartTester.Status = ComponentStatus.Disabled;
+                paraTester.Status = ComponentStatus.Disabled;
+                royalTester.Status = ComponentStatus.Disabled;
+
+                if (message.Property == "Force")
+                {
+                    await Task.Run(() => zipTester.Execute());
                 }
             }
         }
 
-        public static void SendMessage(DirectoryType directoryType)
+        public static void SendMessage()
         {
             Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
-            string serializedObject = "";
 
-            if (directoryType == DirectoryType.SmartMatch)
+            if (smartTester.Progress > 5 && smartTester.Status == ComponentStatus.Ready)
             {
-                SocketResponse SmartMatch = new()
-                {
-                    DirectoryStatus = statusMap[SmartTester.Status],
-                    Progress = SmartTester.Progress,
-                };
-
-                serializedObject = JsonSerializer.Serialize(new { SmartMatch });
-
-                if (SmartTester.Progress > 99 && SmartTester.Status == ComponentStatus.Ready)
-                {
-                    ParaTester.Status = ComponentStatus.Ready;
-                    RoyalTester.Status = ComponentStatus.Ready;
-                }
+                paraTester.Status = ComponentStatus.Ready;
+                royalTester.Status = ComponentStatus.Ready;
+                zipTester.Status = ComponentStatus.Ready;
             }
-            if (directoryType == DirectoryType.Parascript)
+            if (paraTester.Progress > 5 && paraTester.Status == ComponentStatus.Ready)
             {
-                SocketResponse Parascript = new()
-                {
-                    DirectoryStatus = statusMap[ParaTester.Status],
-                    Progress = ParaTester.Progress,
-                };
-
-                serializedObject = JsonSerializer.Serialize(new { Parascript });
-
-                if (ParaTester.Progress > 99 && ParaTester.Status == ComponentStatus.Ready)
-                {
-                    SmartTester.Status = ComponentStatus.Ready;
-                    RoyalTester.Status = ComponentStatus.Ready;
-                }
+                smartTester.Status = ComponentStatus.Ready;
+                royalTester.Status = ComponentStatus.Ready;
+                zipTester.Status = ComponentStatus.Ready;
             }
-            if (directoryType == DirectoryType.RoyalMail)
+            if (royalTester.Progress > 5 && royalTester.Status == ComponentStatus.Ready)
             {
-                SocketResponse RoyalMail = new()
-                {
-                    DirectoryStatus = statusMap[RoyalTester.Status],
-                    Progress = RoyalTester.Progress,
-                };
-
-                serializedObject = JsonSerializer.Serialize(new { RoyalMail });
-
-                if (RoyalTester.Progress > 99 && RoyalTester.Status == ComponentStatus.Ready)
-                {
-                    SmartTester.Status = ComponentStatus.Ready;
-                    ParaTester.Status = ComponentStatus.Ready;
-                }
+                smartTester.Status = ComponentStatus.Ready;
+                paraTester.Status = ComponentStatus.Ready;
+                zipTester.Status = ComponentStatus.Ready;
+            }
+            if (zipTester.Progress > 5 && zipTester.Status == ComponentStatus.Ready)
+            {
+                smartTester.Status = ComponentStatus.Ready;
+                paraTester.Status = ComponentStatus.Ready;
+                royalTester.Status = ComponentStatus.Ready;
             }
 
-            SocketServer.Broadcast(serializedObject);
+            SocketResponse SmartMatch = new()
+            {
+                DirectoryStatus = statusMap[smartTester.Status],
+                Progress = smartTester.Progress,
+            };
+            SocketResponse Parascript = new()
+            {
+                DirectoryStatus = statusMap[paraTester.Status],
+                Progress = paraTester.Progress,
+            };
+            SocketResponse RoyalMail = new()
+            {
+                DirectoryStatus = statusMap[royalTester.Status],
+                Progress = royalTester.Progress,
+            };
+            SocketResponse Zip4 = new()
+            {
+                DirectoryStatus = statusMap[zipTester.Status],
+                Progress = zipTester.Progress,
+            };
+
+            string serializedObject = JsonSerializer.Serialize(new { SmartMatch, Parascript, RoyalMail, Zip4 });
+            // SocketServer.Broadcast(serializedObject);
+            server.Broadcast(serializedObject);
         }
     }
 }

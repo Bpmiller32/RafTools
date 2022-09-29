@@ -4,5 +4,6 @@ public enum DirectoryType
 {
     SmartMatch,
     Parascript,
-    RoyalMail
+    RoyalMail,
+    Zip4
 }

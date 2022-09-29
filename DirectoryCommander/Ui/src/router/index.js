@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import CrawlerPage from "../components/CrawlerPage.vue";
 import BuilderPage from "../components/BuilderPage.vue";
 import TesterPage from "../components/TesterPage.vue";
+import LoadingPage from "../components/LoadingPage.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -23,6 +24,12 @@ const router = createRouter({
       path: "/Tester",
       name: "Tester",
       component: TesterPage,
+      meta: { fromRoute: null, toRoute: null },
+    },
+    {
+      path: "/Publish",
+      name: "Publish",
+      component: LoadingPage,
       meta: { fromRoute: null, toRoute: null },
     },
   ],

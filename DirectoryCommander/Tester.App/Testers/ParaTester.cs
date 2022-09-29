@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Text.RegularExpressions;
 using Common.Data;
 
 namespace Tester
@@ -13,13 +12,11 @@ namespace Tester
 
         private readonly ILogger<ParaTester> logger;
         private readonly IConfiguration config;
-        private readonly SocketConnection connection;
 
-        public ParaTester(ILogger<ParaTester> logger, IConfiguration config, SocketConnection connection)
+        public ParaTester(ILogger<ParaTester> logger, IConfiguration config)
         {
             this.logger = logger;
             this.config = config;
-            this.connection = connection;
         }
 
         public async Task ExecuteAsync()
@@ -28,23 +25,22 @@ namespace Tester
             {
                 logger.LogInformation("Starting Tester");
                 Status = ComponentStatus.InProgress;
+                ChangeProgress(0, reset: true);
 
                 Settings.Validate(config);
 
-                // CheckDisc();
-                // await InstallDirectory();
-                // await InjectImages();
-
-                await Task.Delay(TimeSpan.FromSeconds(10));
+                CheckDisc();
+                await InstallDirectory();
+                await InjectImages();
 
                 logger.LogInformation("Test Complete");
                 Status = ComponentStatus.Ready;
-                SocketConnection.SendMessage(DirectoryType.Parascript);
+                SocketConnection.SendMessage();
             }
             catch (Exception e)
             {
                 Status = ComponentStatus.Error;
-                SocketConnection.SendMessage(DirectoryType.Parascript);
+                SocketConnection.SendMessage();
                 logger.LogError("{Message}", e.Message);
             }
         }
@@ -60,11 +56,13 @@ namespace Tester
                 Progress += changeAmount;
             }
 
-            SocketConnection.SendMessage(DirectoryType.Parascript);
+            SocketConnection.SendMessage();
         }
 
         private void CheckDisc()
         {
+            ChangeProgress(1);
+
             const string dpvFile = "DPV.zip";
             const string suiteFile = "SUITE.zip";
             const string zip4File = "Zip4.zip";
@@ -130,12 +128,12 @@ namespace Tester
             {
                 throw new Exception("Missing files (may have disc in wrong drive): " + missingFiles);
             }
-
-            ChangeProgress(33);
         }
 
         private async Task InstallDirectory()
         {
+            ChangeProgress(1);
+
             // Stop RAFMaster
             await Utils.StopService("RAFArgosyMaster");
 
@@ -279,12 +277,12 @@ namespace Tester
             {
                 Directory.Delete(tempFolder, true);
             }
-
-            ChangeProgress(33);
         }
 
         private async Task InjectImages()
         {
+            ChangeProgress(1);
+
             await Utils.StartService("RAFArgosyMaster");
 
             // Set config with ControlPort, wait for Recmodule to initialize after setting
@@ -316,7 +314,7 @@ namespace Tester
                 throw new Exception("Directory did not pass injection test");
             }
 
-            ChangeProgress(33);
+            ChangeProgress(10);
         }
     }
 }

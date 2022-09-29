@@ -3,6 +3,7 @@ using Serilog.Events;
 using Serilog.Templates;
 using System.Security.Principal;
 using Tester;
+using Common.Data;
 
 #pragma warning disable CA1416 // ignore that admin check is Windows only 
 string applicationName = "Tester";
@@ -43,12 +44,25 @@ try
         .UseSerilog()
         .ConfigureServices(services =>
         {
-            services.AddHostedService<SocketServer>();
-            services.AddTransient<SocketConnection>();
+            services.AddScoped<SocketConnection>();
 
             services.AddSingleton<SmartTester>();
             services.AddSingleton<ParaTester>();
             services.AddSingleton<RoyalTester>();
+            services.AddSingleton<ZipTester>();
+
+            services.AddHostedService(ServiceProvider =>
+            {
+                SocketServer SocketServer = new(ServiceProvider.GetService<ILogger<SocketServer>>(), ServiceProvider.GetService<IServiceScopeFactory>())
+                {
+                    Server = new(10023)
+                };
+
+                // Action<SocketConnection> SetupService = SocketConnection.Test;
+                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
+
+                return SocketServer;
+            });
         })
         .Build();
 
