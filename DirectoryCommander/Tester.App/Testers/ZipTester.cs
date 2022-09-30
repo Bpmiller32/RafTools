@@ -1,85 +1,84 @@
 using Common.Data;
 
-namespace Tester
+namespace Tester;
+
+public class ZipTester
 {
-    public class ZipTester
+    public Settings Settings { get; set; } = new Settings { Name = "Zip4" };
+    public ComponentStatus Status { get; set; }
+    public int Progress { get; set; }
+
+    private readonly ILogger<ZipTester> logger;
+    private readonly IConfiguration config;
+
+    public ZipTester(ILogger<ZipTester> logger, IConfiguration config)
     {
-        public Settings Settings { get; set; } = new Settings { Name = "Zip4" };
-        public ComponentStatus Status { get; set; }
-        public int Progress { get; set; }
+        this.logger = logger;
+        this.config = config;
+    }
 
-        private readonly ILogger<ZipTester> logger;
-        private readonly IConfiguration config;
-
-        public ZipTester(ILogger<ZipTester> logger, IConfiguration config)
+    public void Execute()
+    {
+        try
         {
-            this.logger = logger;
-            this.config = config;
-        }
+            logger.LogInformation("Starting Tester");
+            Status = ComponentStatus.InProgress;
+            ChangeProgress(0, reset: true);
 
-        public void Execute()
-        {
-            try
-            {
-                logger.LogInformation("Starting Tester");
-                Status = ComponentStatus.InProgress;
-                ChangeProgress(0, reset: true);
+            Settings.Validate(config);
 
-                Settings.Validate(config);
+            CheckDisc();
 
-                CheckDisc();
-
-                logger.LogInformation("Test Complete");
-                Status = ComponentStatus.Ready;
-                SocketConnection.SendMessage();
-            }
-            catch (Exception e)
-            {
-                Status = ComponentStatus.Error;
-                SocketConnection.SendMessage();
-                logger.LogError("{Message}", e.Message);
-            }
-        }
-
-        public void ChangeProgress(int changeAmount, bool reset = false)
-        {
-            if (reset)
-            {
-                Progress = 0;
-            }
-            else
-            {
-                Progress += changeAmount;
-            }
-
+            logger.LogInformation("Test Complete");
+            Status = ComponentStatus.Ready;
             SocketConnection.SendMessage();
         }
-
-        private void CheckDisc()
+        catch (Exception e)
         {
-            ChangeProgress(1);
-
-            List<string> smFiles = new()
-            {
-                "Zip4.zip"
-            };
-
-            string missingFiles = "";
-
-            foreach (string file in smFiles)
-            {
-                if (!File.Exists(Path.Combine(Settings.DiscDrivePath, file)))
-                {
-                    missingFiles += file + ", ";
-                }
-            }
-
-            if (!string.IsNullOrEmpty(missingFiles))
-            {
-                throw new Exception("Missing files (may have disc in wrong drive): " + missingFiles);
-            }
-
-            ChangeProgress(10);
+            Status = ComponentStatus.Error;
+            SocketConnection.SendMessage();
+            logger.LogError("{Message}", e.Message);
         }
+    }
+
+    public void ChangeProgress(int changeAmount, bool reset = false)
+    {
+        if (reset)
+        {
+            Progress = 0;
+        }
+        else
+        {
+            Progress += changeAmount;
+        }
+
+        SocketConnection.SendMessage();
+    }
+
+    private void CheckDisc()
+    {
+        ChangeProgress(1);
+
+        List<string> smFiles = new()
+        {
+            "Zip4.zip"
+        };
+
+        string missingFiles = "";
+
+        foreach (string file in smFiles)
+        {
+            if (!File.Exists(Path.Combine(Settings.DiscDrivePath, file)))
+            {
+                missingFiles += file + ", ";
+            }
+        }
+
+        if (!string.IsNullOrEmpty(missingFiles))
+        {
+            throw new Exception("Missing files (may have disc in wrong drive): " + missingFiles);
+        }
+
+        ChangeProgress(10);
     }
 }

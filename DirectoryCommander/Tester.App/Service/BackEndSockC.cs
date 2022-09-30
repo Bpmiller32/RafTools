@@ -3,73 +3,72 @@ using System.Net;
 using System.Net.Sockets;
 using Common.Data;
 
-namespace Tester
+namespace Tester;
+
+public class BackEndSockC
 {
-    public class BackEndSockC
+    public int ImageCount { get; set; }
+    public int FinalCount { get; set; }
+
+    private readonly Socket client;
+
+    public BackEndSockC(string ipAddress)
     {
-        public int ImageCount { get; set; }
-        public int FinalCount { get; set; }
+        IPEndPoint endPoint = new(IPAddress.Parse(ipAddress), 3011);
+        client = new(SocketType.Stream, ProtocolType.Tcp);
 
-        private readonly Socket client;
+        client.Connect(endPoint);
+    }
 
-        public BackEndSockC(string ipAddress)
+    public async Task ExecuteAsync(CancellationTokenSource stoppingTokenSource)
+    {
+        CancellationToken stoppingToken = stoppingTokenSource.Token;
+
+        try
         {
-            IPEndPoint endPoint = new(IPAddress.Parse(ipAddress), 3011);
-            client = new(SocketType.Stream, ProtocolType.Tcp);
-
-            client.Connect(endPoint);
-        }
-
-        public async Task ExecuteAsync(CancellationTokenSource stoppingTokenSource)
-        {
-            CancellationToken stoppingToken = stoppingTokenSource.Token;
-
-            try
+            while (true)
             {
-                while (true)
+                // Pull first 4 bytes to determine message length
+                byte[] lengthBytes = new byte[4];
+                await client.ReceiveAsync(lengthBytes, SocketFlags.None, stoppingToken);
+                int messageLength = Utils.ConvertIntBytes(lengthBytes);
+
+                // Define new buffer based on message size
+                byte[] messageBytes = new byte[messageLength];
+                await client.ReceiveAsync(messageBytes, SocketFlags.None, stoppingToken);
+                int messageType = Utils.ConvertIntBytes(messageBytes[5..9]);
+
+                if (messageType == 4001)
                 {
-                    // Pull first 4 bytes to determine message length
-                    byte[] lengthBytes = new byte[4];
-                    await client.ReceiveAsync(lengthBytes, SocketFlags.None, stoppingToken);
-                    int messageLength = Utils.ConvertIntBytes(lengthBytes);
-
-                    // Define new buffer based on message size
-                    byte[] messageBytes = new byte[messageLength];
-                    await client.ReceiveAsync(messageBytes, SocketFlags.None, stoppingToken);
-                    int messageType = Utils.ConvertIntBytes(messageBytes[5..9]);
-
-                    if (messageType == 4001)
+                    ImageCount++;
+                    if (GetFinal(messageBytes))
                     {
-                        ImageCount++;
-                        if (GetFinal(messageBytes))
-                        {
-                            FinalCount++;
-                        }
+                        FinalCount++;
                     }
                 }
             }
-            catch
-            {
-                client.Close();
-            }
         }
-
-        private static bool GetFinal(byte[] messageBytes)
+        catch
         {
-            int startIndex = 9;
-            while (startIndex < messageBytes.Length)
-            {
-                DataSection dataSection = new(messageBytes, startIndex);
-                startIndex += 8 + dataSection.SectionSize;
-
-                if (dataSection.SectionNumber == 12)
-                {
-                    BitArray bits = Utils.ConvertBitBytes(dataSection.SectionData);
-                    return bits[5];
-                }
-            }
-
-            return false;
+            client.Close();
         }
+    }
+
+    private static bool GetFinal(byte[] messageBytes)
+    {
+        int startIndex = 9;
+        while (startIndex < messageBytes.Length)
+        {
+            DataSection dataSection = new(messageBytes, startIndex);
+            startIndex += 8 + dataSection.SectionSize;
+
+            if (dataSection.SectionNumber == 12)
+            {
+                BitArray bits = Utils.ConvertBitBytes(dataSection.SectionData);
+                return bits[5];
+            }
+        }
+
+        return false;
     }
 }

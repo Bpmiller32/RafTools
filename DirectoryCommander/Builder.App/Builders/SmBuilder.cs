@@ -39,7 +39,6 @@
 //         progress(2);
 //         Thread.Sleep(10000);
 
-
 //         Utils.KillSmProcs();
 
 //         // Ensure working and output directories are created and clear them if they already exist

@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using System.Xml;
 using Common.Data;
 
+namespace Builder;
+
 public class RoyalBuilder
 {
     public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
@@ -14,25 +16,23 @@ public class RoyalBuilder
 
     private readonly ILogger<RoyalBuilder> logger;
     private readonly IConfiguration config;
-    private readonly SocketConnection connection;
     private readonly DatabaseContext context;
 
     private string DataMonth;
     private string DataYear;
 
-    public RoyalBuilder(ILogger<RoyalBuilder> logger, IConfiguration config, SocketConnection connection, DatabaseContext context)
+    public RoyalBuilder(ILogger<RoyalBuilder> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
         this.config = config;
-        this.connection = connection;
         this.context = context;
     }
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        connection.SendMessage(DirectoryType.RoyalMail);
+        SocketConnection.SendMessage(DirectoryType.RoyalMail);
 
-        if (Settings.AutoBuildEnabled == false)
+        if (!Settings.AutoBuildEnabled)
         {
             logger.LogDebug("AutoBuild disabled");
             return;
@@ -48,28 +48,27 @@ public class RoyalBuilder
             while (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogInformation("Starting Builder - Auto mode");
+
                 TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
-                // TODO: uncomment after testing
                 await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
 
-                List<RoyalBundle> bundles = context.RoyalBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList();
-                foreach (RoyalBundle bundle in bundles)
+                foreach (RoyalBundle bundle in context.RoyalBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
                 {
-                    await this.ExecuteAsync(bundle.DataYearMonth, stoppingToken);
+                    await ExecuteAsync(bundle.DataYearMonth);
                 }
             }
         }
         catch (TaskCanceledException e)
         {
-            logger.LogDebug(e.Message);
+            logger.LogDebug("{Message}", e.Message);
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
-            logger.LogError(e.Message);
+            logger.LogError("{Message}", e.Message);
         }
     }
 
-    public async Task ExecuteAsync(string DataYearMonth, CancellationToken stoppingToken)
+    public async Task ExecuteAsync(string DataYearMonth)
     {
         try
         {
@@ -77,7 +76,7 @@ public class RoyalBuilder
             Status = ComponentStatus.InProgress;
             ChangeProgress(0, reset: true);
 
-            DataYear = DataYearMonth.Substring(0, 4);
+            DataYear = DataYearMonth[..4];
             DataMonth = DataYearMonth.Substring(4, 2);
             Settings.Validate(config, DataYearMonth);
 
@@ -90,21 +89,21 @@ public class RoyalBuilder
             Cleanup(fullClean: false);
             CheckBuildComplete();
 
-            logger.LogInformation("Build Complete: {0}", DataYearMonth);
+            logger.LogInformation("Build Complete: {DataYearMonth}", DataYearMonth);
             Status = ComponentStatus.Ready;
-            connection.SendMessage(DirectoryType.RoyalMail);
+            SocketConnection.SendMessage(DirectoryType.RoyalMail);
         }
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            connection.SendMessage(DirectoryType.RoyalMail);
-            logger.LogDebug(e.Message);
+            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            logger.LogDebug("{Message}", e.Message);
         }
-        catch (System.Exception e)
+        catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            connection.SendMessage(DirectoryType.RoyalMail);
-            logger.LogError(e.Message);
+            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            logger.LogError("{Message}", e.Message);
         }
     }
 
@@ -116,13 +115,11 @@ public class RoyalBuilder
         }
         else
         {
-            Progress = Progress + changeAmount;
+            Progress += changeAmount;
         }
 
-        connection.SendMessage(DirectoryType.RoyalMail);
+        SocketConnection.SendMessage(DirectoryType.RoyalMail);
     }
-
-
 
     private async Task Extract()
     {
@@ -135,9 +132,9 @@ public class RoyalBuilder
 
         ChangeProgress(1);
 
-        using (UIA2Automation automation = new UIA2Automation())
+        using (UIA2Automation automation = new())
         {
-            Application app = FlaUI.Core.Application.Launch(Path.Combine(Settings.AddressDataPath, @"SetupRM.exe"));
+            Application app = FlaUI.Core.Application.Launch(Path.Combine(Settings.AddressDataPath, "SetupRM.exe"));
             // Annoyingly have to do this because SetupRM is not created correctly, "splash screen" effect causes FlaUI to grab the window before the body is populated with elements
             await Task.Delay(TimeSpan.FromSeconds(3));
             Window[] windows = app.GetAllTopLevelWindows(automation);
@@ -196,8 +193,8 @@ public class RoyalBuilder
         Directory.CreateDirectory(Settings.WorkingPath);
         Directory.CreateDirectory(Settings.OutputPath);
 
-        DirectoryInfo wp = new DirectoryInfo(Settings.WorkingPath);
-        DirectoryInfo op = new DirectoryInfo(Settings.OutputPath);
+        DirectoryInfo wp = new(Settings.WorkingPath);
+        DirectoryInfo op = new(Settings.OutputPath);
 
         if (!fullClean)
         {
@@ -207,7 +204,7 @@ public class RoyalBuilder
             }
             foreach (DirectoryInfo dir in wp.GetDirectories())
             {
-                dir.Attributes = dir.Attributes & ~FileAttributes.ReadOnly;
+                dir.Attributes &= ~FileAttributes.ReadOnly;
                 dir.Delete(true);
             }
 
@@ -232,7 +229,7 @@ public class RoyalBuilder
 
     private void UpdateSmiFiles()
     {
-        Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, @"Smi"));
+        Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, "Smi"));
 
         // Process smiCheckout = Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/tags/TechServices/Tag24-UK_RM_CM-3.0/Directory_Creation_Files --username billym " + Path.Combine(Settings.WorkingPath, @"Smi") + " --force");
         // smiCheckout.WaitForExit();
@@ -240,46 +237,44 @@ public class RoyalBuilder
         // Process dongleCheckout = Utils.RunProc(@"C:\Program Files\TortoiseSVN\bin\svn.exe", @"export https://scm.raf.com/repos/trunk/TechServices/SMI/Directories/UK/DongleList --username billym " + Path.Combine(Settings.WorkingPath, @"Smi") + " --force");
         // dongleCheckout.WaitForExit();
 
-        Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "DirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, @"Smi"));
+        Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "DirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, "Smi"));
 
         // Edit SMi definition xml file with updated date 
-        XmlDocument defintionFile = new XmlDocument();
-        defintionFile.Load(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.xml"));
+        XmlDocument defintionFile = new();
+        defintionFile.Load(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.xml"));
         XmlNode root = defintionFile.DocumentElement;
-        root.Attributes[1].Value = @"Y" + DataYear + @"M" + DataMonth;
-        defintionFile.Save(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.xml"));
+        root.Attributes[1].Value = "Y" + DataYear + "M" + DataMonth;
+        defintionFile.Save(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.xml"));
 
         // Edit Uk dongle list with updated date
-        using (StreamWriter sw = new StreamWriter(Path.Combine(Settings.WorkingPath, @"Smi", @"DongleTemp.txt"), true, System.Text.Encoding.Unicode))
+        using (StreamWriter sw = new(Path.Combine(Settings.WorkingPath, "Smi", "DongleTemp.txt"), true, System.Text.Encoding.Unicode))
         {
-            sw.WriteLine(@"Date=" + DataYear + DataMonth + @"19");
+            sw.WriteLine("Date=" + DataYear + DataMonth + "19");
 
-            using (StreamReader sr = new StreamReader(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.txt"), System.Text.Encoding.Unicode))
+            using StreamReader sr = new(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"), System.Text.Encoding.Unicode);
+            string line;
+            while ((line = sr.ReadLine()) != null)
             {
-                string line;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    sw.WriteLine(line);
-                }
+                sw.WriteLine(line);
             }
         }
 
-        File.Delete(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.txt"));
-        File.Delete(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.lcs"));
-        File.Delete(Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM_Patterns.exml"));
+        File.Delete(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
+        File.Delete(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.lcs"));
+        File.Delete(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.exml"));
 
-        File.Move(Path.Combine(Settings.WorkingPath, @"Smi", @"DongleTemp.txt"), Path.Combine(Settings.WorkingPath, @"Smi", @"UK_RM_CM.txt"));
+        File.Move(Path.Combine(Settings.WorkingPath, "Smi", "DongleTemp.txt"), Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
 
         // Encrypt new Uk dongle list, but first wrap the combined paths in quotes to get around spaced directories
         string encryptRepFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptREP.exe"));
-        string encryptRepArgs = @"-x lcs " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
+        string encryptRepArgs = "-x lcs " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
 
         Process encryptRep = Utils.RunProc(encryptRepFileName, encryptRepArgs);
         encryptRep.WaitForExit();
 
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
         string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptPatterns.exe"));
-        string encryptPatternsArgs = @"--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + @" --clickCharge";
+        string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + " --clickCharge";
 
         Process encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
         encryptPatterns.WaitForExit();
@@ -301,28 +296,28 @@ public class RoyalBuilder
 
         // Start ConvertPafData tool, listen for output
         string convertPafDataFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "ConvertPafData.exe"));
-        string convertPafDataArgs = @"--pafPath " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Db")) + @" --lastPafFileNum 15";
+        string convertPafDataArgs = "--pafPath " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Db")) + " --lastPafFileNum 15";
 
         Process convertPafData = Utils.RunProc(convertPafDataFileName, convertPafDataArgs);
         using (StreamReader sr = convertPafData.StandardOutput)
         {
             string line;
-            Regex match = new Regex(@"fpcompst.c\d\d");
-            Regex error = new Regex(@"\[E\]");
+            Regex match = new(@"fpcompst.c\d\d");
+            Regex error = new(@"\[E\]");
             while ((line = sr.ReadLine()) != null)
             {
                 Match errorFound = error.Match(line);
 
-                if (errorFound.Success == true)
+                if (errorFound.Success)
                 {
                     throw new Exception("Error detected in ConvertPafData");
                 }
 
                 Match matchFound = match.Match(line);
 
-                if (matchFound.Success == true)
+                if (matchFound.Success)
                 {
-                    logger.LogDebug("ConvertPafData processing file: " + matchFound.Value);
+                    logger.LogDebug("ConvertPafData processing file: {Value}", matchFound.Value);
                 }
             }
         }
@@ -335,10 +330,11 @@ public class RoyalBuilder
 
     private async Task Compile()
     {
-        Dictionary<string, Task> tasks = new Dictionary<string, Task>();
-
-        tasks.Add("3.0", Task.Run(() => CompileRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => CompileRunner("1.9")));
+        Dictionary<string, Task> tasks = new()
+        {
+            { "3.0", Task.Run(() => CompileRunner("3.0")) },
+            { "1.9", Task.Run(() => CompileRunner("1.9")) }
+        };
 
         await Task.WhenAll(tasks.Values);
 
@@ -347,10 +343,11 @@ public class RoyalBuilder
 
     private async Task Output()
     {
-        Dictionary<string, Task> tasks = new Dictionary<string, Task>();
-
-        tasks.Add("3.0", Task.Run(() => OutputRunner("3.0")));
-        tasks.Add("1.9", Task.Run(() => OutputRunner("1.9")));
+        Dictionary<string, Task> tasks = new()
+        {
+            { "3.0", Task.Run(() => OutputRunner("3.0")) },
+            { "1.9", Task.Run(() => OutputRunner("1.9")) }
+        };
 
         await Task.WhenAll(tasks.Values);
 
@@ -407,40 +404,38 @@ public class RoyalBuilder
     {
         Directory.CreateDirectory(Settings.WorkingPath + @"\" + version);
 
-        List<string> smiFiles = new List<string> { @"UK_RM_CM.xml", @"UK_RM_CM_Patterns.xml", @"UK_RM_CM_Patterns.exml", @"UK_RM_CM_Settings.xml", @"UK_RM_CM.lcs", @"BFPO.txt", @"UK.txt", @"Country.txt", @"County.txt", @"PostTown.txt", @"StreetDescriptor.txt", @"StreetName.txt", @"PoBoxName.txt", @"SubBuildingDesignator.txt", @"OrganizationName.txt", @"Country_Alias.txt", @"UK_IgnorableWordsTable.txt", @"UK_WordMatchTable.txt" };
-        foreach (string file in smiFiles)
+        foreach (string file in new List<string> { "UK_RM_CM.xml", "UK_RM_CM_Patterns.xml", "UK_RM_CM_Patterns.exml", "UK_RM_CM_Settings.xml", "UK_RM_CM.lcs", "BFPO.txt", "UK.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "UK_IgnorableWordsTable.txt", "UK_WordMatchTable.txt" })
         {
             File.Copy(Settings.WorkingPath + @"\Smi\" + file, Settings.WorkingPath + @"\" + version + @"\" + file, true);
         }
 
         string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", version, "DirectoryDataCompiler.exe"));
-        string directoryDataCompilerArgs = @"--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM.xml")) + @" --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml")) + @" --password M0ntyPyth0n --licensed";
+        string directoryDataCompilerArgs = "--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM.xml")) + " --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml")) + " --password M0ntyPyth0n --licensed";
 
         Process directoryDataCompiler = Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);
-        using (StreamReader sr = directoryDataCompiler.StandardOutput)
+
+        using StreamReader sr = directoryDataCompiler.StandardOutput;
+        string line;
+        int linesRead;
+        Regex match = new(@"\d\d\d\d\d");
+        Regex error = new(@"\[E\]");
+        while ((line = sr.ReadLine()) != null)
         {
-            string line;
-            int linesRead;
-            Regex match = new Regex(@"\d\d\d\d\d");
-            Regex error = new Regex(@"\[E\]");
-            while ((line = sr.ReadLine()) != null)
+            Match errorFound = error.Match(line);
+
+            if (errorFound.Success)
             {
-                Match errorFound = error.Match(line);
+                throw new Exception("Error detected in DirectoryDataCompiler " + version);
+            }
 
-                if (errorFound.Success == true)
+            Match matchFound = match.Match(line);
+
+            if (matchFound.Success)
+            {
+                linesRead = int.Parse(matchFound.Value);
+                if (linesRead % 5000 == 0)
                 {
-                    throw new Exception("Error detected in DirectoryDataCompiler " + version);
-                }
-
-                Match matchFound = match.Match(line);
-
-                if (matchFound.Success == true)
-                {
-                    linesRead = int.Parse(matchFound.Value);
-                    if (linesRead % 5000 == 0)
-                    {
-                        logger.LogDebug("DirectoryDataCompiler " + version + " addresses processed: " + matchFound.Value);
-                    }
+                    logger.LogDebug("DirectoryDataCompiler {version} addresses processed: {Value}", version, matchFound.Value);
                 }
             }
         }
@@ -450,8 +445,7 @@ public class RoyalBuilder
     {
         Directory.CreateDirectory(Path.Combine(Settings.OutputPath, version, "UK_RM_CM"));
 
-        List<string> smiFiles = new List<string> { @"UK_IgnorableWordsTable.txt", @"UK_RM_CM_Patterns.exml", @"UK_WordMatchTable.txt", @"UK_RM_CM.lcs", @"UK_RM_CM.smi" };
-        foreach (string file in smiFiles)
+        foreach (string file in new List<string> { "UK_IgnorableWordsTable.txt", "UK_RM_CM_Patterns.exml", "UK_WordMatchTable.txt", "UK_RM_CM.lcs", "UK_RM_CM.smi" })
         {
             File.Copy(Path.Combine(Settings.WorkingPath, version, file), Path.Combine(Settings.OutputPath, version, "UK_RM_CM", file), true);
         }

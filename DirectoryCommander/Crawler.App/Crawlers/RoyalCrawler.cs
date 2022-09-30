@@ -1,292 +1,263 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Common.Data;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 // TODO: switch to httpClient? There is no replacement for FtpRequest....
 #pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 
-namespace Crawler.App
+namespace Crawler;
+
+public class RoyalCrawler
 {
-    public class RoyalCrawler
+    public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
+    public ComponentStatus Status { get; set; }
+    public Action<DirectoryType> SendMessage { get; set; }
+
+    private readonly ILogger<RoyalCrawler> logger;
+    private readonly DatabaseContext context;
+
+    private readonly RoyalFile tempFile = new();
+
+    public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, DatabaseContext context)
     {
-        public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
-        public ComponentStatus Status { get; set; }
+        this.logger = logger;
+        this.context = context;
 
-        private readonly ILogger<RoyalCrawler> logger;
-        private readonly IConfiguration config;
-        private readonly SocketConnection connection;
-        private readonly DatabaseContext context;
+        Settings = Settings.Validate(Settings, config);
+    }
 
-        private RoyalFile tempFile = new RoyalFile();
+    public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+    {
+        SendMessage(DirectoryType.RoyalMail);
 
-        public RoyalCrawler(ILogger<RoyalCrawler> logger, IConfiguration config, SocketConnection connection, DatabaseContext context)
+        if (!Settings.CrawlerEnabled)
         {
-            this.logger = logger;
-            this.config = config;
-            this.connection = connection;
-            this.context = context;
-
-            Settings = Settings.Validate(Settings, config);
+            logger.LogInformation("Crawler disabled");
+            Status = ComponentStatus.Disabled;
+            SendMessage(DirectoryType.RoyalMail);
+            return;
+        }
+        if (!Settings.AutoCrawlEnabled)
+        {
+            logger.LogDebug("AutoCrawl disabled");
+            return;
         }
 
-        public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+        try
         {
-            connection.SendMessage(royalMail: true);
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Crawler - Auto mode");
+                TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
+                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
-            if (Settings.CrawlerEnabled == false)
-            {
-                logger.LogInformation("Crawler disabled");
-                Status = ComponentStatus.Disabled;
-                connection.SendMessage(royalMail: true);
-                return;
+                await ExecuteAsync(stoppingToken);
             }
-            if (Settings.AutoCrawlEnabled == false)
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug("{Message}", e.Message);
+        }
+        catch (System.Exception e)
+        {
+            logger.LogError("{Message}", e.Message);
+        }
+    }
+
+    public async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            logger.LogInformation("Starting Crawler");
+            Status = ComponentStatus.InProgress;
+            SendMessage(DirectoryType.RoyalMail);
+
+            PullFile(stoppingToken);
+            CheckFile(stoppingToken);
+            await DownloadFile(stoppingToken);
+            CheckBuildReady(stoppingToken);
+
+            Status = ComponentStatus.Ready;
+        }
+        catch (TaskCanceledException e)
+        {
+            Status = ComponentStatus.Ready;
+            SendMessage(DirectoryType.RoyalMail);
+            logger.LogDebug("{Message}", e.Message);
+        }
+        catch (Exception e)
+        {
+            Status = ComponentStatus.Error;
+            SendMessage(DirectoryType.RoyalMail);
+            logger.LogError("{Message}", e.Message);
+        }
+    }
+
+    public void PullFile(CancellationToken stoppingToken)
+    {
+        if (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        FtpWebRequest request = (FtpWebRequest)WebRequest.Create("ftp://pafdownload.afd.co.uk/SetupRM.exe");
+        request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
+        request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
+
+        DateTime lastModified;
+
+        using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+        {
+            lastModified = response.LastModified;
+        }
+
+        tempFile.FileName = "SetupRM.exe";
+        tempFile.DataMonth = lastModified.Month;
+        tempFile.DataDay = lastModified.Day;
+        tempFile.DataYear = lastModified.Year;
+
+        if (tempFile.DataMonth < 10)
+        {
+            tempFile.DataYearMonth = tempFile.DataYear.ToString() + "0" + tempFile.DataMonth.ToString();
+        }
+        else
+        {
+            tempFile.DataYearMonth = tempFile.DataYear.ToString() + tempFile.DataMonth.ToString();
+        }
+    }
+
+    public void CheckFile(CancellationToken stoppingToken)
+    {
+        // Cancellation requested or PullFile failed
+        if (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        // Check if file is unique against the db
+        bool fileInDb = context.RoyalFiles.Any(x => (tempFile.FileName == x.FileName) && (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
+
+        if (!fileInDb)
+        {
+            // Check if the folder exists on the disk
+            if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
             {
-                logger.LogDebug("AutoCrawl disabled");
-                return;
+                tempFile.OnDisk = false;
             }
 
-            try
+            // regardless of check file is unique, add to db
+            context.RoyalFiles.Add(tempFile);
+            logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
+
+            bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
+
+            if (!bundleExists)
             {
-                while (!stoppingToken.IsCancellationRequested)
+                RoyalBundle newBundle = new()
                 {
-                    logger.LogInformation("Starting Crawler - Auto mode");
-                    TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
-                    await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+                    DataMonth = tempFile.DataMonth,
+                    DataYear = tempFile.DataYear,
+                    DataYearMonth = tempFile.DataYearMonth,
+                    IsReadyForBuild = false
+                };
 
-                    await this.ExecuteAsync(stoppingToken);
-                }
-            }
-            catch (TaskCanceledException e)
-            {
-                logger.LogDebug(e.Message);
-            }
-            catch (System.Exception e)
-            {
-                logger.LogError(e.Message);
-            }
-        }
-
-        public async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            try
-            {
-                logger.LogInformation("Starting Crawler");
-                Status = ComponentStatus.InProgress;
-                connection.SendMessage(royalMail: true);
-
-                PullFile(stoppingToken);
-                CheckFile(stoppingToken);
-                await DownloadFile(stoppingToken);
-                CheckBuildReady(stoppingToken);
-
-                Status = ComponentStatus.Ready;
-                // connection.SendMessage(royalMail: true);
-            }
-            catch (TaskCanceledException e)
-            {
-                Status = ComponentStatus.Ready;
-                connection.SendMessage(royalMail: true);
-                logger.LogDebug(e.Message);
-            }
-            catch (System.Exception e)
-            {
-                Status = ComponentStatus.Error;
-                connection.SendMessage(royalMail: true);
-                logger.LogError(e.Message);
-            }
-        }
-
-        public void PullFile(CancellationToken stoppingToken)
-        {
-            if (stoppingToken.IsCancellationRequested == true)
-            {
-                return;
-            }
-
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
-            request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
-            request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
-
-            DateTime lastModified;
-
-            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-            {
-                lastModified = response.LastModified;
-            }
-
-            tempFile.FileName = "SetupRM.exe";
-            tempFile.DataMonth = lastModified.Month;
-            tempFile.DataDay = lastModified.Day;
-            tempFile.DataYear = lastModified.Year;
-
-            if (tempFile.DataMonth < 10)
-            {
-                tempFile.DataYearMonth = tempFile.DataYear.ToString() + "0" + tempFile.DataMonth.ToString();
+                newBundle.BuildFiles.Add(tempFile);
+                context.RoyalBundles.Add(newBundle);
             }
             else
             {
-                tempFile.DataYearMonth = tempFile.DataYear.ToString() + tempFile.DataMonth.ToString();
+                RoyalBundle existingBundle = context.RoyalBundles.Where(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear)).FirstOrDefault();
+
+                existingBundle.BuildFiles.Add(tempFile);
             }
+
+            context.SaveChanges();
+        }
+    }
+
+    public async Task DownloadFile(CancellationToken stoppingToken)
+    {
+        List<RoyalFile> offDisk = context.RoyalFiles.Where(x => !x.OnDisk).ToList();
+
+        // Cancellation requested, CheckFile sees that nothing is offDisk, PullFile failed
+        if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested)
+        {
+            return;
         }
 
-        public void CheckFile(CancellationToken stoppingToken)
+        logger.LogInformation("New files found for download: {Count}", offDisk.Count);
+
+        using WebClient request = new();
+        request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
+        byte[] fileData;
+
+        using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
         {
-            // Cancellation requested or PullFile failed
-            if (stoppingToken.IsCancellationRequested == true)
+            logger.LogInformation("Currently downloading: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
+            // Throws error is request is canceled, caught in catch
+            fileData = await request.DownloadDataTaskAsync("ftp://pafdownload.afd.co.uk/SetupRM.exe");
+        }
+
+        Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth));
+
+        using FileStream file = File.Create(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, "SetupRM.exe"));
+        file.Write(fileData, 0, fileData.Length);
+        file.Close();
+        fileData = null;
+        // TODO: assign TempFile.Size to fileData.Length / ? before assigning to null
+
+        tempFile.OnDisk = true;
+        tempFile.DateDownloaded = DateTime.Now;
+        context.RoyalFiles.Update(tempFile);
+        context.SaveChanges();
+    }
+
+    public void CheckBuildReady(CancellationToken stoppingToken)
+    {
+        if (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        foreach (var bundle in context.RoyalBundles.ToList())
+        {
+            // idk why but you need to do some linq query to populate bundle.buildfiles? 
+            // Something to do with one -> many relationship between the tables, investigate
+            List<RoyalFile> files = context.RoyalFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
+
+            if (bundle.BuildFiles.All(x => x.OnDisk) && bundle.BuildFiles.Count >= 1)
             {
-                return;
-            }
+                bundle.IsReadyForBuild = true;
 
-            // Check if file is unique against the db
-            bool fileInDb = context.RoyalFiles.Any(x => (tempFile.FileName == x.FileName) && (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
-
-            if (!fileInDb)
-            {
-                // Check if the folder exists on the disk
-                if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
+                DateTime timestamp = DateTime.Now;
+                string hour;
+                string minute;
+                string ampm;
+                if (timestamp.Minute < 10)
                 {
-                    tempFile.OnDisk = false;
-                }
-
-                // regardless of check file is unique, add to db
-                context.RoyalFiles.Add(tempFile);
-                logger.LogInformation("Discovered and not on disk: " + tempFile.FileName + " " + tempFile.DataMonth + "/" + tempFile.DataYear);
-
-                bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
-
-                if (!bundleExists)
-                {
-                    RoyalBundle newBundle = new RoyalBundle()
-                    {
-                        DataMonth = tempFile.DataMonth,
-                        DataYear = tempFile.DataYear,
-                        DataYearMonth = tempFile.DataYearMonth,
-                        IsReadyForBuild = false
-                    };
-
-                    newBundle.BuildFiles.Add(tempFile);
-                    context.RoyalBundles.Add(newBundle);
+                    minute = timestamp.Minute.ToString().PadLeft(2, '0');
                 }
                 else
                 {
-                    RoyalBundle existingBundle = context.RoyalBundles.Where(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear)).FirstOrDefault();
-
-                    existingBundle.BuildFiles.Add(tempFile);
+                    minute = timestamp.Minute.ToString();
                 }
-
-                context.SaveChanges();
-            }
-        }
-
-        public async Task DownloadFile(CancellationToken stoppingToken)
-        {
-            List<RoyalFile> offDisk = context.RoyalFiles.Where(x => x.OnDisk == false).ToList();
-
-            // Cancellation requested, CheckFile sees that nothing is offDisk, PullFile failed
-            if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested == true)
-            {
-                return;
-            }
-
-            logger.LogInformation("New files found for download: " + offDisk.Count);
-
-            using (WebClient request = new WebClient())
-            {
-                request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
-                byte[] fileData;
-
-                using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
+                if (timestamp.Hour > 12)
                 {
-                    logger.LogInformation("Currently downloading: " + tempFile.FileName + " " + tempFile.DataMonth + "/" + tempFile.DataYear);
-                    // Throws error is request is canceled, caught in catch
-                    fileData = await request.DownloadDataTaskAsync(@"ftp://pafdownload.afd.co.uk/SetupRM.exe");
+                    hour = (timestamp.Hour - 12).ToString();
+                    ampm = "pm";
                 }
-
-                Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth));
-
-                using (FileStream file = File.Create(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, @"SetupRM.exe")))
+                else
                 {
-                    file.Write(fileData, 0, fileData.Length);
-                    file.Close();
-                    fileData = null;
-                    // TODO: assign TempFile.Size to fileData.Length / ? before assigning to null
-
-                    tempFile.OnDisk = true;
-                    tempFile.DateDownloaded = DateTime.Now;
-                    context.RoyalFiles.Update(tempFile);
-                    context.SaveChanges();
+                    hour = timestamp.Hour.ToString();
+                    ampm = "am";
                 }
-            }
-        }
+                bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
+                bundle.DownloadTime = hour + ":" + minute + ampm;
+                bundle.FileCount = bundle.BuildFiles.Count;
 
-        public void CheckBuildReady(CancellationToken stoppingToken)
-        {
-            if (stoppingToken.IsCancellationRequested == true)
-            {
-                return;
+                logger.LogInformation("Bundle ready to build: {DataMonth}/{DataYear}", bundle.DataMonth, bundle.DataYear);
             }
 
-            List<RoyalBundle> bundles = context.RoyalBundles.ToList();
-
-            foreach (var bundle in bundles)
-            {
-                // idk why but you need to do some linq query to populate bundle.buildfiles? 
-                // Something to do with one -> many relationship between the tables, investigate
-                List<RoyalFile> files = context.RoyalFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
-
-                if (!bundle.BuildFiles.Any(x => x.OnDisk == false) && bundle.BuildFiles.Count >= 1)
-                {
-                    bundle.IsReadyForBuild = true;
-
-                    DateTime timestamp = DateTime.Now;
-                    string hour;
-                    string minute;
-                    string ampm;
-                    if (timestamp.Minute < 10)
-                    {
-                        minute = timestamp.Minute.ToString().PadLeft(2, '0');
-                    }
-                    else
-                    {
-                        minute = timestamp.Minute.ToString();
-                    }
-                    if (timestamp.Hour > 12)
-                    {
-                        hour = (timestamp.Hour - 12).ToString();
-                        ampm = "pm";
-                    }
-                    else
-                    {
-                        hour = timestamp.Hour.ToString();
-                        ampm = "am";
-                    }
-                    bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
-                    bundle.DownloadTime = hour + ":" + minute + ampm;
-                    bundle.FileCount = bundle.BuildFiles.Count;
-
-                    logger.LogInformation("Bundle ready to build: " + bundle.DataMonth + "/" + bundle.DataYear);
-                }
-
-                context.SaveChanges();
-            }
-        }
-
-        private string SetDataYearMonth(RoyalFile file)
-        {
-            if (file.DataMonth < 10)
-            {
-                return file.DataYear.ToString() + "0" + file.DataMonth.ToString();
-            }
-
-            return file.DataYear.ToString() + file.DataMonth.ToString();
+            context.SaveChanges();
         }
     }
 }

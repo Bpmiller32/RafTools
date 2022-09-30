@@ -1,14 +1,13 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
 
 export const useStore = defineStore("main", () => {
   // Websocket connections
-  const connectionCrawler = ref(null);
-  const connectionBuilder = ref(null);
-  const connectionTester = ref(null);
+  let connectionCrawler = null;
+  let connectionBuilder = null;
+  let connectionTester = null;
 
   // Service stores
-  const crawlers = ref({
+  let crawlers = {
     SmartMatch: {
       DataRecieved: false,
 
@@ -33,8 +32,8 @@ export const useStore = defineStore("main", () => {
       AutoDate: null,
       AvailableBuilds: [],
     },
-  });
-  const builders = ref({
+  };
+  let builders = {
     SmartMatch: {
       DataRecieved: false,
 
@@ -65,8 +64,8 @@ export const useStore = defineStore("main", () => {
       CurrentBuild: null,
       Progress: null,
     },
-  });
-  const testers = ref({
+  };
+  let testers = {
     SmartMatch: {
       DataRecieved: false,
 
@@ -91,20 +90,16 @@ export const useStore = defineStore("main", () => {
       DirectoryStatus: null,
       Progress: null,
     },
-  });
+  };
 
   function SendMessage(Directory, Property, Value) {
-    connectionCrawler.value.send(
-      JSON.stringify({ Directory, Property, Value })
-    );
+    this.connectionCrawler.send(JSON.stringify({ Directory, Property, Value }));
   }
   function SendMessageBuilder(Directory, Property, Value) {
-    connectionBuilder.value.send(
-      JSON.stringify({ Directory, Property, Value })
-    );
+    this.connectionBuilder.send(JSON.stringify({ Directory, Property, Value }));
   }
   function SendMessageTester(Directory, Property, Value) {
-    connectionTester.value.send(JSON.stringify({ Directory, Property, Value }));
+    this.connectionTester.send(JSON.stringify({ Directory, Property, Value }));
   }
 
   return {

@@ -53,12 +53,12 @@ try
 
             services.AddHostedService(ServiceProvider =>
             {
-                SocketServer SocketServer = new(ServiceProvider.GetService<ILogger<SocketServer>>(), ServiceProvider.GetService<IServiceScopeFactory>())
+                SocketServer SocketServer = new(ServiceProvider.GetService<ILogger<SocketServer>>())
                 {
-                    Server = new(10023)
+                    Server = new(10023),
+                    Factory = ServiceProvider.GetService<IServiceScopeFactory>()
                 };
 
-                // Action<SocketConnection> SetupService = SocketConnection.Test;
                 SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
 
                 return SocketServer;

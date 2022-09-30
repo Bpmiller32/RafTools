@@ -1,3 +1,5 @@
+namespace Builder;
+
 public class Settings
 {
     public string Name { get; set; }
@@ -24,7 +26,7 @@ public class Settings
     public void Validate(IConfiguration config, string DataYearMonth)
     {
         // Check that appsettings.json exists at all
-        if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"appsettings.json")))
+        if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json")))
         {
             throw new Exception("appsettings.json is missing, make sure there is a valid appsettings.json file in the same directory as the application");
         }
@@ -44,8 +46,7 @@ public class Settings
         }
 
         // Verify for each directory
-        List<string> directories = new List<string>() { "SmartMatch", "Parascript", "RoyalMail" };
-        foreach (string dir in directories)
+        foreach (string dir in new List<string>() { "SmartMatch", "Parascript", "RoyalMail" })
         {
             if (dir == Name)
             {
@@ -54,17 +55,16 @@ public class Settings
                 {
                     if (Name != "SmartMatch")
                     {
-                        Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Working", Name));
-                        WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), @"Working", Name);
+                        Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Working", Name));
+                        WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), "Working", Name);
                     }
                 }
                 // If OutputPath is empty in appsettings set to default
                 if (string.IsNullOrEmpty(config.GetValue<string>("settings:" + dir + ":OutputPath")))
                 {
-                    Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), @"Output", Name, DataYearMonth));
-                    OutputPath = Path.Combine(Directory.GetCurrentDirectory(), @"Output", Name, DataYearMonth);
+                    Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Output", Name, DataYearMonth));
+                    OutputPath = Path.Combine(Directory.GetCurrentDirectory(), "Output", Name, DataYearMonth);
                 }
-
 
                 // AddressDataPath checks
                 if (string.IsNullOrEmpty(config.GetValue<string>("settings:" + dir + ":AddressDataPath")))
@@ -88,7 +88,7 @@ public class Settings
                 // SmartMatch specific, look into cycle
                 if (Name == "SmartMatch")
                 {
-                    AddressDataPath = Path.Combine(AddressDataPath, @"Cycle-N");
+                    AddressDataPath = Path.Combine(AddressDataPath, "Cycle-N");
                 }
 
                 // Enabled checks
@@ -177,14 +177,14 @@ public class Settings
 
     public void CheckMissingSmFiles()
     {
-        List<string> smFiles = new List<string>
+        List<string> smFiles = new()
         {
-            @"dpvfl2.tar",
-            @"dpvsp2.tar",
-            @"laclnk2.tar",
-            @"stelnk2.tar",
-            @"zip4natl.tar",
-            @"zipmovenatl.tar"
+            "dpvfl2.tar",
+            "dpvsp2.tar",
+            "laclnk2.tar",
+            "stelnk2.tar",
+            "zip4natl.tar",
+            "zipmovenatl.tar"
         };
 
         string missingFiles = "";
@@ -199,15 +199,15 @@ public class Settings
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
+            throw new Exception("Missing address data files needed for compile: " + missingFiles);
         }
     }
 
     public void CheckMissingPsFiles()
     {
-        List<string> psFiles = new List<string>
+        List<string> psFiles = new()
         {
-            @"Files.zip"
+            "Files.zip"
         };
 
         string missingFiles = "";
@@ -222,15 +222,15 @@ public class Settings
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
+            throw new Exception("Missing address data files needed for compile: " + missingFiles);
         }
     }
 
     public void CheckMissingRmFiles()
     {
-        List<string> rmFiles = new List<string>
+        List<string> rmFiles = new()
         {
-            @"SetupRM.exe"
+            "SetupRM.exe"
         };
 
         string missingFiles = "";
@@ -245,21 +245,21 @@ public class Settings
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new Exception(@"Missing address data files needed for compile: " + missingFiles);
+            throw new Exception("Missing address data files needed for compile: " + missingFiles);
         }
     }
 
-    private void CheckMissingToolFiles()
+    private static void CheckMissingToolFiles()
     {
-        List<string> toolFiles = new List<string>
+        List<string> toolFiles = new()
         {
-            @"BrazilPostProcessor.dll",
-            @"dafs.dll",
-            @"DirectoryDataCompiler.exe",
-            @"SMI.dll",
-            @"Smi.xsd",
-            @"UkPostProcessor.dll",
-            @"xerces-c_3_1.dll"
+            "BrazilPostProcessor.dll",
+            "dafs.dll",
+            "DirectoryDataCompiler.exe",
+            "SMI.dll",
+            "Smi.xsd",
+            "UkPostProcessor.dll",
+            "xerces-c_3_1.dll"
         };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
@@ -267,7 +267,7 @@ public class Settings
 
         foreach (var file in toolFiles)
         {
-            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), @"BuildUtils", "3.0", file)))
+            if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "3.0", file)))
             {
                 missingFiles += file + ", ";
             }
@@ -275,13 +275,13 @@ public class Settings
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new Exception(@"Missing SMi Tool files needed for compile: " + missingFiles);
+            throw new Exception("Missing SMi Tool files needed for compile: " + missingFiles);
         }
     }
 
     public static TimeSpan CalculateWaitTime(ILogger logger, Settings settings)
     {
-        DateTime today = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
+        DateTime today = new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
         DateTime tomorrow = today.AddDays(1);
 
         TimeSpan waitToday = today - DateTime.Now;
@@ -289,11 +289,11 @@ public class Settings
 
         if (waitToday.TotalSeconds <= 0)
         {
-            logger.LogInformation("Waiting for pass, starting sleep until : " + tomorrow);
+            logger.LogInformation("Waiting for pass, starting sleep until: {tomorrow}", tomorrow);
             return waitTomorrow;
         }
 
-        logger.LogInformation("Waiting for pass, starting sleep until: " + today);
+        logger.LogInformation("Waiting for pass, starting sleep until: {today}", today);
         return waitToday;
     }
 }

@@ -12,10 +12,9 @@ public class SocketServer : BackgroundService
 
     private readonly ILogger<SocketServer> logger;
 
-    public SocketServer(ILogger<SocketServer> logger, IServiceScopeFactory factory)
+    public SocketServer(ILogger<SocketServer> logger)
     {
         this.logger = logger;
-        Factory = factory;
     }
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)

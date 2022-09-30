@@ -4,6 +4,28 @@ import BuilderPage from "../components/BuilderPage.vue";
 import TesterPage from "../components/TesterPage.vue";
 import LoadingPage from "../components/LoadingPage.vue";
 
+const routes = new Map([
+  ["Home Home", "FadeIn"],
+  ["Home Builder", "FromLeftToRight"],
+  ["Home Tester", "FromLeftToRight"],
+  ["Home Publish", "FromLeftToRight"],
+
+  ["Builder Home", "FromRightToLeft"],
+  ["Builder Builder", "FadeIn"],
+  ["Builder Tester", "FromLeftToRight"],
+  ["Builder Publish", "FromLeftToRight"],
+
+  ["Tester Home", "FromRightToLeft"],
+  ["Tester Builder", "FromRightToLeft"],
+  ["Tester Tester", "FadeIn"],
+  ["Tester Publish", "FromLeftToRight"],
+
+  ["Publish Home", "FromRightToLeft"],
+  ["Publish Builder", "FromRightToLeft"],
+  ["Publish Tester", "FromRightToLeft"],
+  ["Publish Publish", "FadeIn"],
+]);
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -12,36 +34,40 @@ const router = createRouter({
       alias: "/Crawler",
       name: "Home",
       component: CrawlerPage,
-      meta: { fromRoute: null, toRoute: null },
+      meta: { animation: null },
     },
     {
       path: "/Builder",
       name: "Builder",
       component: BuilderPage,
-      meta: { fromRoute: null, toRoute: null },
+      meta: { animation: null },
     },
     {
       path: "/Tester",
       name: "Tester",
       component: TesterPage,
-      meta: { fromRoute: null, toRoute: null },
+      meta: { animation: null },
     },
     {
       path: "/Publish",
       name: "Publish",
       component: LoadingPage,
-      meta: { fromRoute: null, toRoute: null },
+      meta: { animation: null },
     },
   ],
 });
 
 router.beforeEach((to, from) => {
-  to.meta.toRoute = to.name;
+  let toRoute = to.name;
+  let fromRoute;
+
   if (typeof from.name === "undefined") {
-    to.meta.fromRoute = to.name;
+    fromRoute = to.name;
   } else {
-    to.meta.fromRoute = from.name;
+    fromRoute = from.name;
   }
+
+  to.meta.animation = routes.get(`${fromRoute} ${toRoute}`);
 });
 
 export default router;

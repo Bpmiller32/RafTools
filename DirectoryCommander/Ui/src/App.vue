@@ -1,34 +1,10 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import { useStore } from "./store";
 import NavBar from "./components/NavBar.vue";
 import AnimationHandler from "./components/AnimationHandler.vue";
 
 const store = useStore();
-
-const routes = ref(
-  new Map([
-    ["Home Home", "FadeIn"],
-    ["Home Builder", "FromLeftToRight"],
-    ["Home Tester", "FromLeftToRight"],
-    ["Home Publish", "FromLeftToRight"],
-
-    ["Builder Home", "FromRightToLeft"],
-    ["Builder Builder", "FadeIn"],
-    ["Builder Tester", "FromLeftToRight"],
-    ["Builder Publish", "FromLeftToRight"],
-
-    ["Tester Home", "FromRightToLeft"],
-    ["Tester Builder", "FromRightToLeft"],
-    ["Tester Tester", "FadeIn"],
-    ["Tester Publish", "FromLeftToRight"],
-
-    ["Publish Home", "FromRightToLeft"],
-    ["Publish Builder", "FromRightToLeft"],
-    ["Publish Tester", "FromRightToLeft"],
-    ["Publish Publish", "FadeIn"],
-  ])
-);
 
 // OnMounted
 onMounted(() => {
@@ -51,6 +27,7 @@ onMounted(() => {
   // OnMessage recieving data from backend services
   store.connectionCrawler.onmessage = (event) => {
     const response = JSON.parse(event.data);
+    console.log(response);
 
     if (response.SmartMatch != null) {
       store.crawlers.SmartMatch = response.SmartMatch;
@@ -108,7 +85,7 @@ onMounted(() => {
     v-slot="{ Component, route }"
   >
     <AnimationHandler
-      :animation="routes.get(`${route.meta.fromRoute} ${route.meta.toRoute}`)"
+      :animation="route.meta.animation"
       transitionMode="default"
     >
       <component :is="Component" />
