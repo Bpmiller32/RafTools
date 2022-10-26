@@ -6,6 +6,8 @@ using Tester;
 using Common.Data;
 
 #pragma warning disable CA1416 // ignore that admin check is Windows only 
+#pragma warning disable CS0618 // ignore that WebSocketSharp has function depricated
+
 string applicationName = "Tester";
 
 try
@@ -31,9 +33,8 @@ try
     }
 
     // Check for admin, error if admin isn't present
-    bool isElevated;
     WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
-    isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+    bool isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
     if (!isElevated)
     {
         throw new Exception("Application does not have administrator privledges");

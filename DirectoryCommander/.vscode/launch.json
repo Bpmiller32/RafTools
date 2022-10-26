@@ -35,14 +35,14 @@
             "args": [],
         },
         {
-            "name": "Common",
+            "name": "Publisher",
             "type": "coreclr",
             "request": "launch",
 
             "logging": {"moduleLoad": false},
-            "preLaunchTask": "build Common",
+            "preLaunchTask": "build Publisher",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Common.Data/bin/Debug/net6.0/Common.Data.dll",
+            "program": "${workspaceFolder}/Publisher.App/bin/Debug/net6.0-windows/Publisher.App.dll",
             "args": [],
         },
         {
@@ -52,18 +52,18 @@
 
             "preLaunchTask": "build UI",
             "cwd": "${workspaceFolder}/Ui",
-            "command": "npm run dev",
+            "command": "npm run dev -- --host",
         },
     ],
     "compounds": [
       {
         "name": "Launch all services",
-        "configurations": ["Crawler", "Builder", "Tester", "Common"],
+        "configurations": ["Crawler", "Builder", "Tester", "Publisher"],
         "stopAll": true
       },
       {
         "name": "Launch all services + UI",
-        "configurations": ["Crawler", "Builder", "Tester", "Common", "UI"],
+        "configurations": ["Crawler", "Builder", "Tester", "Publisher", "UI"],
         "stopAll": true
       },
     ]

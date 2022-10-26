@@ -8,7 +8,7 @@ public class SmartmatchCrawler
 {
     public Settings Settings { get; set; } = new Settings { Name = "SmartMatch" };
     public ComponentStatus Status { get; set; }
-    public Action<DirectoryType> SendMessage { get; set; }
+    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
     private readonly ILogger<SmartmatchCrawler> logger;
     private readonly DatabaseContext context;
@@ -25,13 +25,13 @@ public class SmartmatchCrawler
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        SendMessage(DirectoryType.SmartMatch);
+        SendMessage(DirectoryType.SmartMatch, context);
 
         if (!Settings.CrawlerEnabled)
         {
             logger.LogInformation("Crawler disabled");
             Status = ComponentStatus.Disabled;
-            SendMessage(DirectoryType.SmartMatch);
+            SendMessage(DirectoryType.SmartMatch, context);
             return;
         }
         if (!Settings.AutoCrawlEnabled)
@@ -67,7 +67,7 @@ public class SmartmatchCrawler
         {
             logger.LogInformation("Starting Crawler");
             Status = ComponentStatus.InProgress;
-            SendMessage(DirectoryType.SmartMatch);
+            SendMessage(DirectoryType.SmartMatch, context);
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
@@ -79,13 +79,13 @@ public class SmartmatchCrawler
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            SendMessage(DirectoryType.SmartMatch);
+            SendMessage(DirectoryType.SmartMatch, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SendMessage(DirectoryType.SmartMatch);
+            SendMessage(DirectoryType.SmartMatch, context);
             logger.LogError("{Message}", e.Message);
         }
     }

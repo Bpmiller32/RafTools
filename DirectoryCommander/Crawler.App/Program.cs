@@ -7,6 +7,8 @@ using Common.Data;
 using Crawler;
 
 #pragma warning disable CA1416 // ignore that admin check is Windows only 
+#pragma warning disable CS0618 // ignore that WebSocketSharp has function depricated
+
 string applicationName = "Crawler";
 
 try
@@ -32,9 +34,8 @@ try
     }
 
     // Check for admin, error if admin isn't present
-    bool isElevated;
     WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
-    isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+    bool isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
     if (!isElevated)
     {
         throw new Exception("Application does not have administrator privledges");
@@ -68,7 +69,7 @@ try
 
             services.AddDbContext<DatabaseContext>(opt => opt.UseSqlite(string.Format("Filename={0}", databaseLocation)), ServiceLifetime.Transient);
 
-            services.AddHostedService(ServiceProvider =>
+            _ = services.AddHostedService(ServiceProvider =>
             {
                 DatabaseContext context = ServiceProvider.GetService<DatabaseContext>();
                 context.Database.EnsureCreated();

@@ -24,8 +24,8 @@ if ($Project -eq "Tester") {
     dotnet build
     Set-Location -Path $BaseDirectory
 }
-if ($Project -eq "Common") {
-    Set-Location .\Common.Data
+if ($Project -eq "Publisher") {
+    Set-Location .\Publisher.App
     dotnet build
     Set-Location -Path $BaseDirectory
 }

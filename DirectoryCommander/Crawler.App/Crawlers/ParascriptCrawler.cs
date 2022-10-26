@@ -8,7 +8,7 @@ public class ParascriptCrawler
 {
     public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
     public ComponentStatus Status { get; set; }
-    public Action<DirectoryType> SendMessage { get; set; }
+    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
     private readonly ILogger<ParascriptCrawler> logger;
     private readonly DatabaseContext context;
@@ -25,7 +25,7 @@ public class ParascriptCrawler
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        SendMessage(DirectoryType.Parascript);
+        SendMessage(DirectoryType.Parascript, context);
 
         if (!Settings.AutoCrawlEnabled)
         {
@@ -36,7 +36,7 @@ public class ParascriptCrawler
         {
             logger.LogInformation("Crawler disabled");
             Status = ComponentStatus.Disabled;
-            SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
             return;
         }
 
@@ -67,7 +67,7 @@ public class ParascriptCrawler
         {
             logger.LogInformation("Starting Crawler");
             Status = ComponentStatus.InProgress;
-            SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
@@ -79,13 +79,13 @@ public class ParascriptCrawler
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
             logger.LogError("{Message}", e.Message);
         }
     }

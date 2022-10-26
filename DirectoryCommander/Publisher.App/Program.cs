@@ -1,15 +1,11 @@
+using System.Security.Principal;
+using Publisher.App;
 using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
-using System.Security.Principal;
-using Microsoft.EntityFrameworkCore;
-using Common.Data;
-using Builder;
 
 #pragma warning disable CA1416 // ignore that admin check is Windows only 
-#pragma warning disable CS0618 // ignore that WebSocketSharp has function depricated
-
-string applicationName = "Builder";
+string applicationName = "Publisher.App";
 
 try
 {
@@ -58,31 +54,7 @@ try
             host.Sources.Clear();
             host.AddConfiguration(configuration);
         })
-        .ConfigureServices(services =>
-        {
-            services.AddScoped<SocketConnection>();
-
-            services.AddSingleton<ParaBuilder>();
-            services.AddSingleton<RoyalBuilder>();
-
-            services.AddDbContext<DatabaseContext>(opt => opt.UseSqlite(string.Format("Filename={0}", databaseLocation)), ServiceLifetime.Transient);
-
-            services.AddHostedService(ServiceProvider =>
-            {
-                DatabaseContext context = ServiceProvider.GetService<DatabaseContext>();
-                context.Database.EnsureCreated();
-
-                SocketServer SocketServer = new(ServiceProvider.GetService<ILogger<SocketServer>>())
-                {
-                    Server = new(10022),
-                    Factory = ServiceProvider.GetService<IServiceScopeFactory>()
-                };
-
-                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
-
-                return SocketServer;
-            });
-        })
+        .ConfigureServices(services => services.AddHostedService<Worker>())
         .Build();
 
     await host.RunAsync();

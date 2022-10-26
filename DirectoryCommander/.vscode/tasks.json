@@ -27,9 +27,9 @@
             "command": "./preBuild.ps1 Tester",
         },
         {
-            "label": "build Common",
+            "label": "build Publisher",
             "type": "shell",
-            "command": "./preBuild.ps1 Common",
+            "command": "./preBuild.ps1 Publisher",
         },
         {
             "label": "build UI",

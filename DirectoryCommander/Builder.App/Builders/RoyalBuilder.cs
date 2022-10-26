@@ -13,6 +13,7 @@ public class RoyalBuilder
     public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
     public ComponentStatus Status { get; set; }
     public int Progress { get; set; }
+    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
     private readonly ILogger<RoyalBuilder> logger;
     private readonly IConfiguration config;
@@ -30,7 +31,7 @@ public class RoyalBuilder
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        SocketConnection.SendMessage(DirectoryType.RoyalMail);
+        SendMessage(DirectoryType.RoyalMail, context);
 
         if (!Settings.AutoBuildEnabled)
         {
@@ -91,18 +92,18 @@ public class RoyalBuilder
 
             logger.LogInformation("Build Complete: {DataYearMonth}", DataYearMonth);
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
         }
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SocketConnection.SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -118,7 +119,7 @@ public class RoyalBuilder
             Progress += changeAmount;
         }
 
-        SocketConnection.SendMessage(DirectoryType.RoyalMail);
+        SendMessage(DirectoryType.RoyalMail, context);
     }
 
     private async Task Extract()

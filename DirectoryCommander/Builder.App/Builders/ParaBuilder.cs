@@ -9,6 +9,7 @@ public class ParaBuilder
     public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
     public ComponentStatus Status { get; set; }
     public int Progress { get; set; }
+    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
     private readonly ILogger<ParaBuilder> logger;
     private readonly IConfiguration config;
@@ -26,7 +27,7 @@ public class ParaBuilder
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        SocketConnection.SendMessage(DirectoryType.Parascript);
+        SendMessage(DirectoryType.Parascript, context);
 
         if (!Settings.AutoBuildEnabled)
         {
@@ -85,18 +86,18 @@ public class ParaBuilder
 
             logger.LogInformation("Build Complete: {DataYearMonth}", DataYearMonth);
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
         }
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SocketConnection.SendMessage(DirectoryType.Parascript);
+            SendMessage(DirectoryType.Parascript, context);
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -112,7 +113,7 @@ public class ParaBuilder
             Progress += changeAmount;
         }
 
-        SocketConnection.SendMessage(DirectoryType.Parascript);
+        SendMessage(DirectoryType.Parascript, context);
     }
 
     private void ExtractDownload()

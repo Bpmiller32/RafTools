@@ -10,7 +10,7 @@ public class RoyalCrawler
 {
     public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
     public ComponentStatus Status { get; set; }
-    public Action<DirectoryType> SendMessage { get; set; }
+    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
     private readonly ILogger<RoyalCrawler> logger;
     private readonly DatabaseContext context;
@@ -27,13 +27,13 @@ public class RoyalCrawler
 
     public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
     {
-        SendMessage(DirectoryType.RoyalMail);
+        SendMessage(DirectoryType.RoyalMail, context);
 
         if (!Settings.CrawlerEnabled)
         {
             logger.LogInformation("Crawler disabled");
             Status = ComponentStatus.Disabled;
-            SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
             return;
         }
         if (!Settings.AutoCrawlEnabled)
@@ -69,7 +69,7 @@ public class RoyalCrawler
         {
             logger.LogInformation("Starting Crawler");
             Status = ComponentStatus.InProgress;
-            SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
 
             PullFile(stoppingToken);
             CheckFile(stoppingToken);
@@ -81,13 +81,13 @@ public class RoyalCrawler
         catch (TaskCanceledException e)
         {
             Status = ComponentStatus.Ready;
-            SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SendMessage(DirectoryType.RoyalMail);
+            SendMessage(DirectoryType.RoyalMail, context);
             logger.LogError("{Message}", e.Message);
         }
     }

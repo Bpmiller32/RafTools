@@ -9,9 +9,10 @@ const store = useStore();
 // OnMounted
 onMounted(() => {
   // Create WebSocket connections inside of Pinia store
-  store.connectionCrawler = new WebSocket("ws://192.168.0.39:10021");
-  store.connectionBuilder = new WebSocket("ws://192.168.0.39:10022");
-  store.connectionTester = new WebSocket("ws://192.168.0.39:10023");
+
+  store.connectionCrawler = new WebSocket("ws://localhost:10021");
+  store.connectionBuilder = new WebSocket("ws://localhost:10022");
+  store.connectionTester = new WebSocket("ws://localhost:10023");
 
   // Connected to and disconnecting from backend services
   store.connectionCrawler.onopen = () => {
@@ -27,7 +28,6 @@ onMounted(() => {
   // OnMessage recieving data from backend services
   store.connectionCrawler.onmessage = (event) => {
     const response = JSON.parse(event.data);
-    console.log(response);
 
     if (response.SmartMatch != null) {
       store.crawlers.SmartMatch = response.SmartMatch;
@@ -47,12 +47,15 @@ onMounted(() => {
 
     if (response.SmartMatch != null) {
       store.builders.SmartMatch = response.SmartMatch;
+      store.builders.SmartMatch.DataRecieved = true;
     }
     if (response.Parascript != null) {
       store.builders.Parascript = response.Parascript;
+      store.builders.Parascript.DataRecieved = true;
     }
     if (response.RoyalMail != null) {
       store.builders.RoyalMail = response.RoyalMail;
+      store.builders.RoyalMail.DataRecieved = true;
     }
   };
   store.connectionTester.onmessage = (event) => {

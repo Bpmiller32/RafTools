@@ -10,8 +10,6 @@ namespace Crawler;
 public class SocketConnection : WebSocketBehavior
 {
     private readonly ILogger<SocketConnection> logger;
-    private readonly DatabaseContext context;
-
     private readonly EmailCrawler emailCrawler;
     private readonly SmartmatchCrawler smartMatchCrawler;
     private readonly ParascriptCrawler parascriptCrawler;
@@ -25,7 +23,7 @@ public class SocketConnection : WebSocketBehavior
     private WebSocketSessionManager server;
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, DatabaseContext context, EmailCrawler emailCrawler, SmartmatchCrawler smartMatchCrawler, ParascriptCrawler parascriptCrawler, RoyalCrawler royalCrawler)
+    public SocketConnection(ILogger<SocketConnection> logger, EmailCrawler emailCrawler, SmartmatchCrawler smartMatchCrawler, ParascriptCrawler parascriptCrawler, RoyalCrawler royalCrawler)
     {
         this.logger = logger;
 
@@ -39,7 +37,6 @@ public class SocketConnection : WebSocketBehavior
 
         this.royalCrawler = royalCrawler;
         royalCrawler.SendMessage = SendMessage;
-        this.context = context;
     }
 
     protected override void OnOpen()
@@ -135,66 +132,9 @@ public class SocketConnection : WebSocketBehavior
         }
     }
 
-    public void SendMessage(DirectoryType directoryType)
+    private void SendMessage(DirectoryType directoryType, DatabaseContext context)
     {
-        string data = ReportStatus(directoryType);
-        server.Broadcast(data);
-    }
-
-    private string ReportStatus(DirectoryType directoryType)
-    {
-        List<List<BuildInfo>> buildBundle = GetAvailableBuilds(directoryType);
-
-        Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
-
-        if (directoryType == DirectoryType.SmartMatch)
-        {
-            DateTime nextDate = Settings.CalculateNextDate(smartMatchCrawler.Settings);
-
-            SocketResponse SmartMatch = new()
-            {
-                DirectoryStatus = statusMap[smartMatchCrawler.Status],
-                AutoEnabled = smartMatchCrawler.Settings.AutoCrawlEnabled,
-                AvailableBuilds = buildBundle[0],
-                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
-            };
-
-            return JsonSerializer.Serialize(new { SmartMatch });
-        }
-        if (directoryType == DirectoryType.Parascript)
-        {
-            DateTime nextDate = Settings.CalculateNextDate(parascriptCrawler.Settings);
-
-            SocketResponse Parascript = new()
-            {
-                DirectoryStatus = statusMap[parascriptCrawler.Status],
-                AutoEnabled = parascriptCrawler.Settings.AutoCrawlEnabled,
-                AvailableBuilds = buildBundle[1],
-                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
-            };
-
-            return JsonSerializer.Serialize(new { Parascript });
-        }
-        if (directoryType == DirectoryType.RoyalMail)
-        {
-            DateTime nextDate = Settings.CalculateNextDate(royalCrawler.Settings);
-
-            SocketResponse RoyalMail = new()
-            {
-                DirectoryStatus = statusMap[royalCrawler.Status],
-                AutoEnabled = royalCrawler.Settings.AutoCrawlEnabled,
-                AvailableBuilds = buildBundle[2],
-                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
-            };
-
-            return JsonSerializer.Serialize(new { RoyalMail });
-        }
-
-        return "No Directory specified";
-    }
-
-    private List<List<BuildInfo>> GetAvailableBuilds(DirectoryType directoryType)
-    {
+        // Get available builds
         List<BuildInfo> smBuilds = new();
         List<BuildInfo> psBuilds = new();
         List<BuildInfo> rmBuilds = new();
@@ -244,6 +184,53 @@ public class SocketConnection : WebSocketBehavior
         buildBundle.Add(psBuilds);
         buildBundle.Add(rmBuilds);
 
-        return buildBundle;
+        // Create SocketResponses
+        Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
+        string serializedObject = "";
+
+        if (directoryType == DirectoryType.SmartMatch)
+        {
+            DateTime nextDate = Settings.CalculateNextDate(smartMatchCrawler.Settings);
+
+            SocketResponse SmartMatch = new()
+            {
+                DirectoryStatus = statusMap[smartMatchCrawler.Status],
+                AutoEnabled = smartMatchCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[0],
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
+            };
+
+            serializedObject = JsonSerializer.Serialize(new { SmartMatch });
+        }
+        if (directoryType == DirectoryType.Parascript)
+        {
+            DateTime nextDate = Settings.CalculateNextDate(parascriptCrawler.Settings);
+
+            SocketResponse Parascript = new()
+            {
+                DirectoryStatus = statusMap[parascriptCrawler.Status],
+                AutoEnabled = parascriptCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[1],
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
+            };
+
+            serializedObject = JsonSerializer.Serialize(new { Parascript });
+        }
+        if (directoryType == DirectoryType.RoyalMail)
+        {
+            DateTime nextDate = Settings.CalculateNextDate(royalCrawler.Settings);
+
+            SocketResponse RoyalMail = new()
+            {
+                DirectoryStatus = statusMap[royalCrawler.Status],
+                AutoEnabled = royalCrawler.Settings.AutoCrawlEnabled,
+                AvailableBuilds = buildBundle[2],
+                AutoDate = nextDate.Month + "/" + nextDate.Day + "/" + nextDate.Year
+            };
+
+            serializedObject = JsonSerializer.Serialize(new { RoyalMail });
+        }
+
+        server.Broadcast(serializedObject);
     }
 }

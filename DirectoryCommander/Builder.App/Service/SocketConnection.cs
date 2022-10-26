@@ -11,24 +11,24 @@ namespace Builder;
 public class SocketConnection : WebSocketBehavior
 {
     private readonly ILogger<SocketConnection> logger;
-
-    private static ParaBuilder paraBuilder;
-    private static RoyalBuilder royalBuilder;
+    private readonly ParaBuilder paraBuilder;
+    private readonly RoyalBuilder royalBuilder;
 
     private CancellationTokenSource psTokenSource = new();
     private CancellationTokenSource rmTokenSource = new();
 
-    private static WebSocketSessionManager server;
-    private static DatabaseContext context;
+    private WebSocketSessionManager server;
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, DatabaseContext context, ParaBuilder paraBuilder, RoyalBuilder royalBuilder)
+    public SocketConnection(ILogger<SocketConnection> logger, ParaBuilder paraBuilder, RoyalBuilder royalBuilder)
     {
         this.logger = logger;
-        SocketConnection.context = context;
 
-        SocketConnection.paraBuilder = paraBuilder;
-        SocketConnection.royalBuilder = royalBuilder;
+        this.paraBuilder = paraBuilder;
+        paraBuilder.SendMessage = SendMessage;
+
+        this.royalBuilder = royalBuilder;
+        royalBuilder.SendMessage = SendMessage;
     }
 
     protected override void OnOpen()
@@ -86,55 +86,15 @@ public class SocketConnection : WebSocketBehavior
         }
     }
 
-    public static void SendMessage(DirectoryType directoryType)
+    public void SendMessage(DirectoryType directoryType, DatabaseContext context)
     {
-        Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
-        string serializedObject = "";
-
-        if (directoryType == DirectoryType.Parascript)
-        {
-            List<List<BuildInfo>> buildBundle = GetCompiledBuilds(parascript: true);
-
-            SocketResponse Parascript = new()
-            {
-                DirectoryStatus = statusMap[paraBuilder.Status],
-                AutoEnabled = paraBuilder.Settings.AutoBuildEnabled,
-                AutoDate = paraBuilder.Settings.ExecMonth + "/" + paraBuilder.Settings.ExecDay + "/" + paraBuilder.Settings.ExecYear,
-                CurrentBuild = paraBuilder.Settings.DataYearMonth,
-                Progress = paraBuilder.Progress,
-                CompiledBuilds = buildBundle[1]
-            };
-
-            serializedObject = JsonSerializer.Serialize(new { Parascript });
-        }
-        if (directoryType == DirectoryType.RoyalMail)
-        {
-            List<List<BuildInfo>> buildBundle = GetCompiledBuilds(royalMail: true);
-
-            SocketResponse RoyalMail = new()
-            {
-                DirectoryStatus = statusMap[royalBuilder.Status],
-                AutoEnabled = royalBuilder.Settings.AutoBuildEnabled,
-                AutoDate = royalBuilder.Settings.ExecMonth + "/" + royalBuilder.Settings.ExecDay + "/" + royalBuilder.Settings.ExecYear,
-                CurrentBuild = royalBuilder.Settings.DataYearMonth,
-                Progress = royalBuilder.Progress,
-                CompiledBuilds = buildBundle[2]
-            };
-
-            serializedObject = JsonSerializer.Serialize(new { RoyalMail });
-        }
-
-        server.Broadcast(serializedObject);
-    }
-
-    private static List<List<BuildInfo>> GetCompiledBuilds(bool smartMatch = false, bool parascript = false, bool royalMail = false)
-    {
+        // Get available builds
         List<BuildInfo> smBuilds = new();
         List<BuildInfo> psBuilds = new();
         List<BuildInfo> rmBuilds = new();
         List<List<BuildInfo>> buildBundle = new();
 
-        if (smartMatch)
+        if (directoryType == DirectoryType.SmartMatch)
         {
             foreach (UspsBundle bundle in context.UspsBundles.Where(x => x.IsBuildComplete).OrderByDescending(x => x.DataYearMonth).ToList())
             {
@@ -146,7 +106,7 @@ public class SocketConnection : WebSocketBehavior
                 });
             }
         }
-        if (parascript)
+        if (directoryType == DirectoryType.Parascript)
         {
             foreach (ParaBundle bundle in context.ParaBundles.Where(x => x.IsBuildComplete).OrderByDescending(x => x.DataYearMonth).ToList())
             {
@@ -158,7 +118,7 @@ public class SocketConnection : WebSocketBehavior
                 });
             }
         }
-        if (royalMail)
+        if (directoryType == DirectoryType.RoyalMail)
         {
             foreach (RoyalBundle bundle in context.RoyalBundles.Where(x => x.IsBuildComplete).OrderByDescending(x => x.DataYearMonth).ToList())
             {
@@ -175,6 +135,39 @@ public class SocketConnection : WebSocketBehavior
         buildBundle.Add(psBuilds);
         buildBundle.Add(rmBuilds);
 
-        return buildBundle;
+        // Create SocketResponses
+        Dictionary<ComponentStatus, string> statusMap = new() { { ComponentStatus.Ready, "Ready" }, { ComponentStatus.InProgress, "In Progress" }, { ComponentStatus.Error, "Error" }, { ComponentStatus.Disabled, "Disabled" } };
+        string serializedObject = "";
+
+        if (directoryType == DirectoryType.Parascript)
+        {
+            SocketResponse Parascript = new()
+            {
+                DirectoryStatus = statusMap[paraBuilder.Status],
+                AutoEnabled = paraBuilder.Settings.AutoBuildEnabled,
+                AutoDate = paraBuilder.Settings.ExecMonth + "/" + paraBuilder.Settings.ExecDay + "/" + paraBuilder.Settings.ExecYear,
+                CurrentBuild = paraBuilder.Settings.DataYearMonth,
+                Progress = paraBuilder.Progress,
+                CompiledBuilds = buildBundle[1]
+            };
+
+            serializedObject = JsonSerializer.Serialize(new { Parascript });
+        }
+        if (directoryType == DirectoryType.RoyalMail)
+        {
+            SocketResponse RoyalMail = new()
+            {
+                DirectoryStatus = statusMap[royalBuilder.Status],
+                AutoEnabled = royalBuilder.Settings.AutoBuildEnabled,
+                AutoDate = royalBuilder.Settings.ExecMonth + "/" + royalBuilder.Settings.ExecDay + "/" + royalBuilder.Settings.ExecYear,
+                CurrentBuild = royalBuilder.Settings.DataYearMonth,
+                Progress = royalBuilder.Progress,
+                CompiledBuilds = buildBundle[2]
+            };
+
+            serializedObject = JsonSerializer.Serialize(new { RoyalMail });
+        }
+
+        server.Broadcast(serializedObject);
     }
 }
