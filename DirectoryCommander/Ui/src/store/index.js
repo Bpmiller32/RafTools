@@ -5,7 +5,6 @@ export const useStore = defineStore("main", () => {
   let connectionCrawler = null;
   let connectionBuilder = null;
   let connectionTester = null;
-  let test = null;
 
   // Service stores
   let crawlers = {
