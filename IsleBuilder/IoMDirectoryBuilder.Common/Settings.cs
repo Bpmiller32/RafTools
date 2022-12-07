@@ -9,8 +9,6 @@ public class Settings
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
 
-    public Dictionary<string, string> PafLocations { get; set; } = new();
-
     public void CheckArgs()
     {
         string[] args = Environment.GetCommandLineArgs();
@@ -18,6 +16,12 @@ public class Settings
         for (int i = 1; i < args.Length; i++)
         {
             allArgs += " " + args[i];
+        }
+
+        // If no arguments
+        if (string.IsNullOrEmpty(allArgs))
+        {
+            throw new ArgumentException();
         }
 
         // Convert toUpper to eliminate case differences, remove quotes
@@ -61,7 +65,7 @@ public class Settings
         // Check if both inputs are empty, if so show Usage()
         if (string.IsNullOrEmpty(PafFilesPath) && string.IsNullOrEmpty(SmiFilesPath))
         {
-            throw new ArgumentNullException();
+            throw new ArgumentException();
         }
         // Check if individual input is empty
         if (string.IsNullOrEmpty(PafFilesPath))
@@ -95,7 +99,7 @@ public class Settings
             throw new ArgumentException("Invalid parameter for --SmiFilesPath");
         }
 
-        // Create working and output paths after passing previous checks
+        // Set working and output paths after passing previous checks
         WorkingPath = Path.Combine(SmiFilesPath, "Temp");
         OutputPath = Path.Combine(SmiFilesPath, "Output");
 
@@ -107,88 +111,63 @@ public class Settings
     {
         // Files to check for by extracted folder
         List<string> aliasFiles = new()
-    {
-        "aliasfle.c01"
-    };
+        {
+            "aliasfle.c01"
+        };
         List<string> csvBfpoFiles = new()
-    {
-        "CSV BFPO.csv"
-    };
+        {
+            "CSV BFPO.csv"
+        };
         List<string> pafCompressedStdFiles = new()
-    {
-        "fpcompst.c01",
-        "fpcompst.c02",
-        "fpcompst.c03",
-        "fpcompst.c04",
-        "fpcompst.c05",
-        "fpcompst.c06",
-        "fpcompst.c07",
-        "fpcompst.c08",
-        "fpcompst.c09",
-        "fpcompst.c10",
-        "fpcompst.c11",
-        "fpcompst.c12",
-        "fpcompst.c13",
-        "fpcompst.c14",
-        "fpcompst.c15",
-        "wfcompst.c15"
-    };
+        {
+            "wfcompst.c15"
+        };
+        List<string> pafMainFiles = new()
+        {
+            "bname.c01",
+            "fpmainfl.c02",
+            "fpmainfl.c03",
+            "fpmainfl.c04",
+            "fpmainfl.c05",
+            "fpmainfl.c06",
+            "local.c01",
+            "mailsort.c01",
+            "org.c01",
+            "subbname.c01",
+            "thdesc.c01",
+            "thfare.c01",
+            "wfmainfl.c06"
+        };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";
 
         foreach (string file in aliasFiles)
         {
-            if (File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
+            if (!File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
             {
-                PafLocations.Add(file, Path.Combine(PafFilesPath, "ALIAS", file));
-            }
-            else
-            {
-                if (File.Exists(Path.Combine(PafFilesPath, file)))
-                {
-                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
-                }
-                else
-                {
-                    missingFiles += file + ", ";
-                }
+                missingFiles += file + ", ";
             }
         }
         foreach (string file in csvBfpoFiles)
         {
-            if (File.Exists(Path.Combine(PafFilesPath, "CSV BFPO", file)))
+            if (!File.Exists(Path.Combine(PafFilesPath, "CSV BFPO", file)))
             {
-                PafLocations.Add(file, Path.Combine(PafFilesPath, "CSV BFPO", file));
-            }
-            else
-            {
-                if (File.Exists(Path.Combine(PafFilesPath, file)))
-                {
-                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
-                }
-                else
-                {
-                    missingFiles += file + ", ";
-                }
+                missingFiles += file + ", ";
             }
         }
         foreach (string file in pafCompressedStdFiles)
         {
-            if (File.Exists(Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file)))
+            if (!File.Exists(Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file)))
             {
-                PafLocations.Add(file, Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file));
+                missingFiles += file + ", ";
             }
-            else
+        }
+        foreach (string file in pafMainFiles)
+        {
+            if (!File.Exists(Path.Combine(PafFilesPath, "PAF MAIN FILE", file)))
             {
-                if (File.Exists(Path.Combine(PafFilesPath, file)))
-                {
-                    PafLocations.Add(file, Path.Combine(PafFilesPath, file));
-                }
-                else
-                {
-                    missingFiles += file + ", ";
-                }
+                missingFiles += file + ", ";
             }
         }
 
@@ -202,24 +181,24 @@ public class Settings
     {
         // Files to check for
         List<string> smiFiles = new()
-    {
-        "BFPO.txt",
-        "Country.txt",
-        "Country_Alias.txt",
-        "County.txt",
-        "IsleOfMan.xml",
-        "IsleOfMan_CharMatchTable.txt",
-        "IsleOfMan_IgnorableWordsTable.txt",
-        "IsleOfMan_Patterns.exml",
-        "IsleOfMan_Settings.xml",
-        "IsleOfMan_WordMatchTable.txt",
-        "OrganizationName.txt",
-        "PoBoxName.txt",
-        "PostTown.txt",
-        "StreetDescriptor.txt",
-        "StreetName.txt",
-        "SubBuildingDesignator.txt"
-    };
+        {
+            "BFPO.txt",
+            "Country.txt",
+            "Country_Alias.txt",
+            "County.txt",
+            "IsleOfMan.xml",
+            "IsleOfMan_CharMatchTable.txt",
+            "IsleOfMan_IgnorableWordsTable.txt",
+            "IsleOfMan_Patterns.exml",
+            "IsleOfMan_Settings.xml",
+            "IsleOfMan_WordMatchTable.txt",
+            "OrganizationName.txt",
+            "PoBoxName.txt",
+            "PostTown.txt",
+            "StreetDescriptor.txt",
+            "StreetName.txt",
+            "SubBuildingDesignator.txt"
+        };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";
@@ -242,15 +221,15 @@ public class Settings
     {
         // Files to check for
         List<string> toolFiles = new()
-    {
-        "Dafs.dll",
-        "DirectoryDataCompiler.exe",
-        "ConvertPafData.exe",
-        "SMI.dll",
-        "Smi.xsd",
-        "UkPostProcessor.dll",
-        "xerces-c_3_2.dll"
-    };
+        {
+            "Dafs.dll",
+            "DirectoryDataCompiler.exe",
+            "ConvertPafData.exe",
+            "SMI.dll",
+            "Smi.xsd",
+            "UkPostProcessor.dll",
+            "xerces-c_3_2.dll"
+        };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception
         string missingFiles = "";

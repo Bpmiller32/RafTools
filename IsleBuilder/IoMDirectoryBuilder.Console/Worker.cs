@@ -15,48 +15,59 @@ public class Worker : BackgroundService
         this.logger = logger;
         this.lifetime = lifetime;
 
-        this.settings = new();
-        this.pafBuilder = new()
+        settings = new();
+        pafBuilder = new()
         {
             // Weird constructor I know, for code reuse with gui version. ReportProgress does nothing in console version
             ReportStatus = (text) => logger.LogInformation("{text}", text),
-            ReportProgress = (_, __) => { }
+            // ReportProgress = (_, __) => { }
         };
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        pafBuilder.StoppingToken = stoppingToken;
-        pafBuilder.Settings = settings;
-
-        // Perform settings separately, missing files are caught and handled separate from other potential issues
+        // Perform settings checks separately, missing files and/or args are caught and handled separate from potential issues in the main procedure
         try
         {
+            // Debug
+            // settings.PafFilesPath = @"C:\Users\billy\Desktop\Y22M09";
+            // settings.SmiFilesPath = @"C:\Users\billy\Documents\GitHub\RafTools\IsleBuilder\SMiBuildFiles";
+            // settings.WorkingPath = Path.Combine(settings.SmiFilesPath, "Temp");
+            // settings.OutputPath = Path.Combine(settings.SmiFilesPath, "Output");
+
             settings.CheckArgs();
             settings.CheckPaths();
             settings.CheckMissingPafFiles();
             settings.CheckMissingSmiFiles();
             settings.CheckMissingToolFiles();
         }
-        catch (ArgumentNullException)
+        catch (ArgumentException e)
         {
-            PrintUsage();
+            logger.LogError("{e}", e.Message);
             lifetime.StopApplication();
+
+            PrintUsage();
+
             return;
         }
         catch (Exception e)
         {
             logger.LogError("{e}", e.Message);
             lifetime.StopApplication();
+
             return;
         }
 
         // Main builder procedure
         try
         {
+            pafBuilder.StoppingToken = stoppingToken;
+            pafBuilder.Settings = settings;
+
             pafBuilder.Cleanup(clearOutput: true);
+            pafBuilder.ConvertMainFile();
             pafBuilder.ConvertPafData();
-            await pafBuilder.Compile();
+            pafBuilder.Compile();
             await pafBuilder.Output(deployToAp: bool.Parse(settings.DeployToAp));
             pafBuilder.Cleanup(clearOutput: false);
 
@@ -65,7 +76,7 @@ public class Worker : BackgroundService
                 logger.LogInformation("** Directory build complete **");
             }
         }
-        catch (InvalidOperationException) { /* To catch exception thrown by Process when cancel happens before Process.Start() */ }
+        catch (InvalidOperationException) { /* To catch and do nothing on exception thrown by Process when a cancel happens before Process.Start() */ }
         catch (Exception e)
         {
             logger.LogError("{e}", e.Message);

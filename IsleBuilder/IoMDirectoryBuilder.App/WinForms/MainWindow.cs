@@ -138,7 +138,7 @@ public partial class MainWindow : Form
             {
                 builder.Cleanup(clearOutput: true);
                 builder.ConvertPafData();
-                await builder.Compile();
+                builder.Compile();
                 await builder.Output(deployToAp: DeployCheckbox.Checked);
                 builder.Cleanup(clearOutput: false);
             });

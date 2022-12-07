@@ -9,6 +9,7 @@ IHost host;
 
 try
 {
+    // Mutex so only a single instance of application can be running
     using var mutex = new Mutex(false, applicationName);
 
     // Configure logger
@@ -28,8 +29,8 @@ try
         throw new Exception("Another instance of this application is already running");
     }
 
-    // Attach method to application closing event handler to kill all spawned subprocess. Placed after singleton check in case another instance is open
-    AppDomain.CurrentDomain.ProcessExit += Utils.KillAllProcs;
+    // Attach method to application closing event handler to kill all spawned subprocess. Placed after singleton check in case another instance is open (for when window is closed)
+    AppDomain.CurrentDomain.ProcessExit += Utils.KillRmProcs;
 
     // Create dotnet core host
     host = Host.CreateDefaultBuilder(args)
@@ -40,6 +41,7 @@ try
     // Establish an event handler to process key press events.
     Console.CancelKeyPress += CancelHandler;
 
+    // Start the application
     await host.RunAsync();
 }
 catch (Exception e)
@@ -54,12 +56,8 @@ finally
 
 void CancelHandler(object sender, ConsoleCancelEventArgs args)
 {
-    if (!Utils.CancelRequested)
-    {
-        Log.Warning("Closing application and spawned process (may take a few seconds to cleanly shutdown)....");
-        Utils.CancelRequested = true;
+    Log.Warning("Closing application and spawned process (may take a few seconds to cleanly shutdown)....");
 
-        host.StopAsync();
-        Utils.KillRmProcs();
-    }
+    host.StopAsync();
+    Utils.KillRmProcs();
 }

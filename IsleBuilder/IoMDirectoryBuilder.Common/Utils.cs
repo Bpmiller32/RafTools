@@ -5,8 +5,6 @@ namespace IoMDirectoryBuilder.Common;
 
 public static class Utils
 {
-    public static bool CancelRequested { get; set; }
-
     public static string WrapQuotes(string input)
     {
         StringBuilder sb = new();
@@ -19,6 +17,7 @@ public static class Utils
         DirectoryInfo source = new(sourceDirectory);
         DirectoryInfo dest = new(destDirectory);
 
+        // Need the helper because of recursive call
         CopyFilesHelper(source, dest, stoppingToken);
     }
 
@@ -38,6 +37,34 @@ public static class Utils
         {
             DirectoryInfo nextSubDir = dest.CreateSubdirectory(subDir.Name);
             CopyFilesHelper(subDir, nextSubDir, stoppingToken);
+        }
+    }
+
+    public static void MoveFiles(string sourceDirectory, string destDirectory, CancellationToken stoppingToken)
+    {
+        DirectoryInfo source = new(sourceDirectory);
+        DirectoryInfo dest = new(destDirectory);
+
+        // Need the helper because of recursive call
+        MoveFilesHelper(source, dest, stoppingToken);
+    }
+
+    public static void MoveFilesHelper(DirectoryInfo source, DirectoryInfo dest, CancellationToken stoppingToken)
+    {
+        Directory.CreateDirectory(dest.FullName);
+
+        foreach (FileInfo file in source.GetFiles())
+        {
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                file.MoveTo(Path.Combine(dest.FullName, file.Name), true);
+            }
+        }
+
+        foreach (DirectoryInfo subDir in source.GetDirectories())
+        {
+            DirectoryInfo nextSubDir = dest.CreateSubdirectory(subDir.Name);
+            MoveFilesHelper(subDir, nextSubDir, stoppingToken);
         }
     }
 
@@ -73,9 +100,14 @@ public static class Utils
         {
             process.Kill(true);
         }
+        foreach (Process process in Process.GetProcessesByName("ConvertMainfileToCompStdConsole"))
+        {
+            process.Kill(true);
+        }
     }
 
-    public static void KillAllProcs(object sender, EventArgs e)
+    // Overload for ProcessExit event handler
+    public static void KillRmProcs(object sender, EventArgs e)
     {
         KillRmProcs();
     }
