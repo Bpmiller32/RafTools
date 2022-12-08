@@ -1,3 +1,5 @@
+using System.Security.Principal;
+
 namespace IoMDirectoryBuilder.Common;
 
 public class Settings
@@ -11,17 +13,12 @@ public class Settings
 
     public void CheckArgs()
     {
+        // Grab arguments from command line, format. Done for compatibility across different shells
         string[] args = Environment.GetCommandLineArgs();
         string allArgs = "";
         for (int i = 1; i < args.Length; i++)
         {
             allArgs += " " + args[i];
-        }
-
-        // If no arguments
-        if (string.IsNullOrEmpty(allArgs))
-        {
-            throw new ArgumentException();
         }
 
         // Convert toUpper to eliminate case differences, remove quotes
@@ -46,6 +43,20 @@ public class Settings
             DeployToAp = "ERROR";
         }
 
+        // Required argument checks
+        if (string.IsNullOrEmpty(allArgs))
+        {
+            throw new ArgumentException("Missing required arguments");
+        }
+        if (arg1Start < 0 || arg1End < 0 || arg2Start < 0 || arg2End < 0)
+        {
+            throw new ArgumentException("Missing required argument PafFilesPath or SmiFilesPath");
+        }
+        if (arg1Start <= 1 || arg1End <= 1 || arg2Start <= 1 || arg2End <= 1)
+        {
+            throw new ArgumentException("Required arguments in incorrect order");
+        }
+
         // Create and set separated and sanitized args
         string arg1 = allArgs[arg1Start..arg1End].Trim();
         string arg2 = allArgs[arg2Start..arg2End].Trim();
@@ -54,32 +65,32 @@ public class Settings
         PafFilesPath = arg1;
         SmiFilesPath = arg2;
 
-        if (arg3 == "TRUE" || arg3 == "FALSE")
+        if (arg3 == "FALSE")
         {
             DeployToAp = arg3;
+        }
+        if (arg3 == "TRUE")
+        {
+            // Check for admin, error if admin isn't present
+            WindowsPrincipal principal = new(WindowsIdentity.GetCurrent());
+            bool isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            if (!isElevated)
+            {
+                throw new Exception("Application does not have administrator privledges, needed to deploy directory to Argosy Post");
+            }
+
+            DeployToAp = arg3;
+        }
+
+        // Optional argument check
+        if (DeployToAp == "ERROR")
+        {
+            throw new ArgumentException("Invalid parameter for --DeployToAp");
         }
     }
 
     public void CheckPaths()
     {
-        // Check if both inputs are empty, if so show Usage()
-        if (string.IsNullOrEmpty(PafFilesPath) && string.IsNullOrEmpty(SmiFilesPath))
-        {
-            throw new ArgumentException();
-        }
-        // Check if individual input is empty
-        if (string.IsNullOrEmpty(PafFilesPath))
-        {
-            throw new ArgumentException("Invalid parameter for --PafFilesPath");
-        }
-        if (string.IsNullOrEmpty(SmiFilesPath))
-        {
-            throw new ArgumentException("Invalid parameter for --SmiFilesPath");
-        }
-        if (DeployToAp == "ERROR")
-        {
-            throw new ArgumentException("Invalid parameter for --DeployToAp");
-        }
         // Check if input in wrapped in path quotes (for WinForms verison)
         if (PafFilesPath.StartsWith('"') && PafFilesPath.EndsWith('"'))
         {
@@ -114,14 +125,6 @@ public class Settings
         {
             "aliasfle.c01"
         };
-        List<string> csvBfpoFiles = new()
-        {
-            "CSV BFPO.csv"
-        };
-        List<string> pafCompressedStdFiles = new()
-        {
-            "wfcompst.c15"
-        };
         List<string> pafMainFiles = new()
         {
             "bname.c01",
@@ -145,20 +148,6 @@ public class Settings
         foreach (string file in aliasFiles)
         {
             if (!File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
-            {
-                missingFiles += file + ", ";
-            }
-        }
-        foreach (string file in csvBfpoFiles)
-        {
-            if (!File.Exists(Path.Combine(PafFilesPath, "CSV BFPO", file)))
-            {
-                missingFiles += file + ", ";
-            }
-        }
-        foreach (string file in pafCompressedStdFiles)
-        {
-            if (!File.Exists(Path.Combine(PafFilesPath, "PAF COMPRESSED STD", file)))
             {
                 missingFiles += file + ", ";
             }
@@ -228,7 +217,17 @@ public class Settings
             "SMI.dll",
             "Smi.xsd",
             "UkPostProcessor.dll",
-            "xerces-c_3_2.dll"
+            "xerces-c_3_2.dll",
+            "ConvertMainfileToCompStdConsole.exe",
+            "EntityFramework.dll",
+            "EntityFramework.SqlServer.dll",
+            "log4net.dll",
+            "MoreLinq.dll",
+            "SqliteDbManager.dll",
+            "System.Data.SQLite.dll",
+            "System.Data.SQLite.EF6.dll",
+            "System.Data.SQLite.Linq.dll",
+            "System.ValueTuple.dll"
         };
 
         // Check to see if any files in the above lists are missing, if multiple missing grab all before throwing exception

@@ -70,7 +70,7 @@ public class PafBuilder
             return;
         }
 
-        ReportStatus("Converting PAF Main File");
+        ReportStatus("-- Converting PAF Main File --");
 
         // Make sure WorkingPath exists for generated files to land
         Directory.CreateDirectory(Settings.WorkingPath);
@@ -91,8 +91,6 @@ public class PafBuilder
         Regex error = new("(error)");
         while ((line = sr.ReadLine()) != null)
         {
-            ReportStatus("Debug: " + line);
-
             Match errorFound = error.Match(line);
 
             if (errorFound.Success)
@@ -105,13 +103,6 @@ public class PafBuilder
 
             if (matchFoundRecordBuilding.Success)
             {
-                // Special output for addresses since it can take 2+ hours
-                if (matchFoundRecordBuilding.Groups[2].Value == "addresses")
-                {
-                    ReportStatus("ConvertMainFile processing records: " + matchFoundRecordBuilding.Groups[2].Value + " (this may take some time)");
-                    continue;
-                }
-
                 ReportStatus("ConvertMainFile processing records: " + matchFoundRecordBuilding.Groups[2].Value);
             }
 
@@ -129,14 +120,13 @@ public class PafBuilder
             return;
         }
 
-        ReportStatus("Converting PAF data");
+        ReportStatus("-- Converting PAF data --");
 
         // Make sure WorkingPath exists for generated files to land
         Directory.CreateDirectory(Settings.WorkingPath);
 
         // Copy/Move files needed for ConvertPafData into flat structure in WorkingPath from both Compressed and Main PAF
         Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "ALIAS"), Settings.WorkingPath, StoppingToken);
-        Utils.CopyFiles(Path.Combine(Settings.PafFilesPath, "CSV BFPO"), Settings.WorkingPath, StoppingToken);
         Utils.MoveFiles(Path.Combine(Settings.WorkingPath, "PAF COMPRESSED STD"), Settings.WorkingPath, StoppingToken);
 
         // Start ConvertPafData utility
@@ -177,7 +167,7 @@ public class PafBuilder
             return;
         }
 
-        ReportStatus("Compiling converted data into SMi");
+        ReportStatus("-- Compiling converted data into SMi --");
 
         // Copy all SMi files needed for DirectoryDataCompiler to working folder
         List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "BFPO.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
@@ -234,7 +224,7 @@ public class PafBuilder
             return;
         }
 
-        ReportStatus("Moving files to output directory");
+        ReportStatus("-- Moving files to output directory --");
 
         Directory.CreateDirectory(Settings.OutputPath);
 
