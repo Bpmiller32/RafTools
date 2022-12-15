@@ -36,7 +36,7 @@ Console.WriteLine("Hello, World!");
 
 List<Receipt> receipts = new();
 
-await RunVultr();
+// await RunVultr();
 await RunConcur();
 
 async Task RunVultr()
@@ -218,26 +218,82 @@ async Task RunConcur()
         }
         await page.Keyboard.TypeAsync("Seattle, Washington");
         await Task.Delay(500);
+        await page.ClickAsync("#cnqrBody > div.sapcnqr-popper.sapcnqr-autocomplete__popper > div > div > div > div > ul:nth-child(1) > li:nth-child(2)");
+        await Task.Delay(500);
 
-        // Click file upload dialog
-        await page.ClickAsync("#entry-receipts > div > div > ul > li > div > button");
+        try
+        {
+            // Click file remove dialog
+            await page.ClickAsync("#entry-receipts > div > div > div > div.sapcnqr-button-toolbar.receipt-viewer-buttons > div > button:nth-child(1)");
+            await Task.Delay(3000);
+            await page.FocusAsync("#cnqrBody > div.sapcnqr-modal.sapcnqr-messagebox.sapcnqr-modal__fade.sapcnqr-modal__fade--in > div > div > div.sapcnqr-modal__header.sapcnqr-messagebox__header--confirm > button");
+            await page.Keyboard.PressAsync("Tab");
+            await Task.Delay(50);
+            await page.Keyboard.PressAsync("Tab");
+            await Task.Delay(50);
+            await page.Keyboard.PressAsync("Enter");
+            await Task.Delay(5000);
+        }
+        catch (System.Exception)
+        {
+            System.Console.WriteLine("tried to remove receipt");
+        }
+        try
+        {
+            // Click file upload dialog
+            await page.ClickAsync("#entry-receipts > div > div > ul > li > div > button");
+            await Task.Delay(5000);
+        }
+        catch (System.Exception)
+        {
+            System.Console.WriteLine("tried to add receipt");
+        }
+
+        try
+        {
+            var fileChooserDialogTask = page.WaitForFileChooserAsync(); // Do not await here
+            await Task.WhenAll(fileChooserDialogTask, Task.Run(async () =>
+            {
+                await page.FocusAsync("#cnqrBody > div.sapcnqr-modal.base-receipt-modal.sapcnqr-modal__fade.sapcnqr-modal__fade--in > div > div > div.sapcnqr-modal__header > button");
+                await page.Keyboard.PressAsync("Tab");
+                await Task.Delay(50);
+                await page.Keyboard.PressAsync("Tab");
+                await Task.Delay(50);
+                await page.Keyboard.PressAsync("Enter");
+                await Task.Delay(50);
+            }));
+            var fileChooser = await fileChooserDialogTask;
+            await fileChooser.AcceptAsync(@".\12-01-2022.png");
+        }
+        catch (System.Exception)
+        {
+            System.Console.WriteLine("Failed to click upload doc button");
+        }
+
+        // Save expense
+        await Task.Delay(5000);
+        try
+        {
+            await page.WaitForSelectorAsync("#cnqr-app-content > div > div > div:nth-child(1) > div > h1");
+            await page.Keyboard.PressAsync("Tab");
+            await Task.Delay(50);
+            await page.Keyboard.PressAsync("Tab");
+            await Task.Delay(50);
+            await page.Keyboard.PressAsync("Enter");
+            await Task.Delay(5000);
+        }
+        catch (System.Exception)
+        {
+            System.Console.WriteLine("why");
+        }
+
+        await page.GoToAsync("https://us2.concursolutions.com" + tile);
         await Task.Delay(5000);
 
-        await page.ClickAsync(@"#cnqr-vf\@e9Jls\$I > ul > li.sapcnqr-grid-list-item.sapcnqr-grid-list-item--create");
-
-        var fileChooserDialogTask = page.WaitForFileChooserAsync(); // Do not await here
-        await Task.WhenAll(fileChooserDialogTask, page.ClickAsync("input[type='file']"));
-        var fileChooser = await fileChooserDialogTask;
-        await fileChooser.AcceptAsync(@".\12-01-2022.png");
-
-        // Find expense amount, match to correct Vultr receipt
-
-        await page.ClickAsync(@"#cnqr-app-content > div > div > div:nth-child(1) > div > div.sapcnqr-button-toolbar.toolbar-flex-container.sapcnqr-button-toolbar--muted > div > button");
-        await Task.Delay(5000);
-
-        await page.WaitForSelectorAsync("#cnqr-app-content > div > div:nth-child(2) > header > div > div > div > button");
-        await page.FocusAsync("#cnqr-app-content > div > div:nth-child(2) > header > div > div > div > button");
+        // Submit report
         await page.ClickAsync("#cnqr-app-content > div > div:nth-child(2) > header > div > div > div > button");
+        await Task.Delay(5000);
+        await page.ClickAsync("#cnqrBody > div.sapcnqr-modal.confirmationAgreementModal.sapcnqr-modal__fade.sapcnqr-modal__fade--in > div > div > div.sapcnqr-modal__footer > button.sapcnqr-button.sapcnqr-button--default.sapcnqr.sapcnqr-modal__button.sapcnqr-button--lg");
         await Task.Delay(5000);
     }
 
