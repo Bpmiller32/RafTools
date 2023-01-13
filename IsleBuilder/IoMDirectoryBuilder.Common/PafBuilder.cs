@@ -229,7 +229,7 @@ public class PafBuilder
         Directory.CreateDirectory(Settings.OutputPath);
 
         // Copy all SMi directory files to output folder
-        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
+        List<string> smiFiles = new() { "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
             if (StoppingToken.IsCancellationRequested)

@@ -82,7 +82,7 @@ public class Worker : BackgroundService
 
     private void PrintUsage()
     {
-        const string usage = "IoMDirectoryBuilder v1.1 - Converts PAF Main Files into an SMi directory.\n\n\nUsage: IoMDirectoryBuilder.exe --[Parameters] [Arguments]\n\nExample: IoMDirectoryBuilder.exe --PafFilesPath \"C:\\January PAF data\" --SmiFilesPath \"C:\\SMiBuildFiles\" --DeployToAp \"true\"\n\n\nRequired Parameters:\n--PafFilesPath [arg]    Directory containing PAF data files\n--SmiFilesPath [arg]    Directory containing SMi build files and tools\n\nOptional Parameters:\n--DeployToAp [arg]      Option to install the created SMi directory to Argosy Post.\n                        This parameter requires the application to have elevated privledges.\n                        Argument must be \"true\" or \"false\" in quotes. Default value is \"false\".\n";
+        const string usage = "IoMDirectoryBuilder v1.2 - Converts PAF Main Files into an SMi directory.\n\n\nUsage: IoMDirectoryBuilder.exe --[Parameters] [Arguments]\n\nExample: IoMDirectoryBuilder.exe --PafFiles \"C:\\January PAF data\" --SmiFiles \"C:\\SMiBuildFiles\" --DeployToAp \"true\"\n\n\nRequired Parameters:\n--PafFiles [arg]    Directory containing PAF data files. Note: Must be absolute path to directory\n--SmiFiles [arg]    Directory containing SMi build files and tools. Note: Must be absolute path to directory\n\nOptional Parameters:\n--DeployToAp [arg]      Option to install the created SMi directory to Argosy Post.\n                        This parameter requires the application to have elevated privledges.\n                        Argument must be \"true\" or \"false\" in quotes. Default value is \"false\".\n";
 
         System.Console.WriteLine(usage);
     }

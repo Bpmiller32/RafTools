@@ -26,11 +26,11 @@ public class Settings
         allArgs = allArgs.Replace("\"", string.Empty);
 
         // Find beginning and ends of args
-        int arg1Start = allArgs.IndexOf("--PAFFILESPATH") + 14;
-        int arg2Start = allArgs.IndexOf("--SMIFILESPATH") + 14;
+        int arg1Start = allArgs.IndexOf("--PAFFILES") + 10;
+        int arg2Start = allArgs.IndexOf("--SMIFILES") + 10;
         int arg3Start = allArgs.IndexOf("--DEPLOYTOAP") + 12;
 
-        int arg1End = allArgs.IndexOf("--SMIFILESPATH");
+        int arg1End = allArgs.IndexOf("--SMIFILES");
         int arg2End = allArgs.Length;
         int arg3End = 11;
 
@@ -50,7 +50,7 @@ public class Settings
         }
         if (arg1Start < 0 || arg1End < 0 || arg2Start < 0 || arg2End < 0)
         {
-            throw new ArgumentException("Missing required argument PafFilesPath or SmiFilesPath");
+            throw new ArgumentException("Missing required argument PafFiles or SmiFiles");
         }
         if (arg1Start <= 1 || arg1End <= 1 || arg2Start <= 1 || arg2End <= 1)
         {
@@ -103,11 +103,11 @@ public class Settings
         // Check that path exists on disk
         if (!Directory.Exists(PafFilesPath))
         {
-            throw new ArgumentException("Invalid parameter for --PafFilesPath");
+            throw new ArgumentException("Invalid parameter for --PafFiles");
         }
         if (!Directory.Exists(SmiFilesPath))
         {
-            throw new ArgumentException("Invalid parameter for --SmiFilesPath");
+            throw new ArgumentException("Invalid parameter for --SmiFiles");
         }
 
         // Set working and output paths after passing previous checks
@@ -149,20 +149,20 @@ public class Settings
         {
             if (!File.Exists(Path.Combine(PafFilesPath, "ALIAS", file)))
             {
-                missingFiles += file + ", ";
+                missingFiles += file + "\n";
             }
         }
         foreach (string file in pafMainFiles)
         {
             if (!File.Exists(Path.Combine(PafFilesPath, "PAF MAIN FILE", file)))
             {
-                missingFiles += file + ", ";
+                missingFiles += file + "\n";
             }
         }
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new FileNotFoundException("Missing PAF data files needed for compile: " + missingFiles);
+            throw new FileNotFoundException("Missing PAF data files needed for compile:\n" + missingFiles);
         }
     }
 
@@ -196,13 +196,13 @@ public class Settings
         {
             if (!File.Exists(Path.Combine(SmiFilesPath, file)))
             {
-                missingFiles += file + ", ";
+                missingFiles += file + "\n";
             }
         }
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new FileNotFoundException("Missing SMi data files needed for compile: " + missingFiles);
+            throw new FileNotFoundException("Missing SMi data files needed for compile:\n" + missingFiles);
         }
     }
 
@@ -237,13 +237,13 @@ public class Settings
         {
             if (!File.Exists(Path.Combine(SmiFilesPath, file)))
             {
-                missingFiles += file + ", ";
+                missingFiles += file + "\n";
             }
         }
 
         if (!string.IsNullOrEmpty(missingFiles))
         {
-            throw new FileNotFoundException("Missing SMi tool files needed for compile: " + missingFiles);
+            throw new FileNotFoundException("Missing SMi tool files needed for compile:\n" + missingFiles);
         }
     }
 }
