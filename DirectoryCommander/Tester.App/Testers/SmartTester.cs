@@ -38,12 +38,12 @@ public class SmartTester
 
             logger.LogInformation("Test Complete");
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage();
+            SocketController.SendMessage();
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SocketConnection.SendMessage();
+            SocketController.SendMessage();
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -59,7 +59,7 @@ public class SmartTester
             Progress += changeAmount;
         }
 
-        SocketConnection.SendMessage();
+        SocketController.SendMessage();
     }
 
     private void CheckDisc()

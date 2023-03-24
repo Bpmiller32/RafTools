@@ -3,6 +3,7 @@ namespace Common.Data;
 public class SocketMessage
 {
     public string Directory { get; set; }
-    public string Property { get; set; }
-    public string Value { get; set; }
+    public string Action { get; set; }
+    public string Data01 { get; set; }
+    public string Data02 { get; set; }
 }

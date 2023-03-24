@@ -92,14 +92,16 @@ export const useStore = defineStore("main", () => {
     },
   };
 
-  function SendMessage(Directory, Property, Value) {
-    this.connectionCrawler.send(JSON.stringify({ Directory, Property, Value }));
+  function SendMessageCrawler(Directory, Action, Data01) {
+    this.connectionCrawler.send(JSON.stringify({ Directory, Action, Data01 }));
   }
-  function SendMessageBuilder(Directory, Property, Value) {
-    this.connectionBuilder.send(JSON.stringify({ Directory, Property, Value }));
+  function SendMessageBuilder(Directory, Action, Data01, Data02) {
+    this.connectionBuilder.send(
+      JSON.stringify({ Directory, Action, Data01, Data02 })
+    );
   }
-  function SendMessageTester(Directory, Property, Value) {
-    this.connectionTester.send(JSON.stringify({ Directory, Property, Value }));
+  function SendMessageTester(Directory, Action, Data01) {
+    this.connectionTester.send(JSON.stringify({ Directory, Action, Data01 }));
   }
 
   return {
@@ -109,7 +111,7 @@ export const useStore = defineStore("main", () => {
     crawlers,
     builders,
     testers,
-    SendMessage,
+    SendMessageCrawler,
     SendMessageBuilder,
     SendMessageTester,
   };

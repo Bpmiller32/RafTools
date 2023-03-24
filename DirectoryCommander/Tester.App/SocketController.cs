@@ -5,9 +5,9 @@ using WebSocketSharp.NetCore.Server;
 
 namespace Tester;
 
-public class SocketConnection : WebSocketBehavior
+public class SocketController : WebSocketBehavior
 {
-    private readonly ILogger<SocketConnection> logger;
+    private readonly ILogger<SocketController> logger;
 
     private static SmartTester smartTester;
     private static ParaTester paraTester;
@@ -17,14 +17,14 @@ public class SocketConnection : WebSocketBehavior
     private static WebSocketSessionManager server;
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, SmartTester smartTester, ParaTester paraTester, RoyalTester royalTester, ZipTester zipTester)
+    public SocketController(ILogger<SocketController> logger, SmartTester smartTester, ParaTester paraTester, RoyalTester royalTester, ZipTester zipTester)
     {
         this.logger = logger;
 
-        SocketConnection.smartTester = smartTester;
-        SocketConnection.paraTester = paraTester;
-        SocketConnection.royalTester = royalTester;
-        SocketConnection.zipTester = zipTester;
+        SocketController.smartTester = smartTester;
+        SocketController.paraTester = paraTester;
+        SocketController.royalTester = royalTester;
+        SocketController.zipTester = zipTester;
     }
 
     protected override void OnOpen()
@@ -52,7 +52,7 @@ public class SocketConnection : WebSocketBehavior
             royalTester.Status = ComponentStatus.Disabled;
             zipTester.Status = ComponentStatus.Disabled;
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
                 await Task.Run(() => smartTester.ExecuteAsync());
             }
@@ -63,7 +63,7 @@ public class SocketConnection : WebSocketBehavior
             royalTester.Status = ComponentStatus.Disabled;
             zipTester.Status = ComponentStatus.Disabled;
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
                 await Task.Run(() => paraTester.ExecuteAsync());
             }
@@ -74,7 +74,7 @@ public class SocketConnection : WebSocketBehavior
             paraTester.Status = ComponentStatus.Disabled;
             zipTester.Status = ComponentStatus.Disabled;
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
                 await Task.Run(() => royalTester.ExecuteAsync());
             }
@@ -85,7 +85,7 @@ public class SocketConnection : WebSocketBehavior
             paraTester.Status = ComponentStatus.Disabled;
             royalTester.Status = ComponentStatus.Disabled;
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
                 await Task.Run(() => zipTester.Execute());
             }

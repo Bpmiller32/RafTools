@@ -29,6 +29,10 @@ const store = useStore();
 // Template refs
 const refStartButtonIcon = ref(null);
 
+// For pafKey input
+const pafKey = ref(null);
+const isSent = ref(false);
+
 // States
 const runButtonState = ref({
   isActive: null,
@@ -235,7 +239,8 @@ function RunButtonClicked() {
   store.SendMessageBuilder(
     props.dirType,
     "Force",
-    selectMenuState.value.currentSelection.name
+    selectMenuState.value.currentSelection.name,
+    pafKey.value
   );
 }
 function CheckboxClicked() {
@@ -390,6 +395,19 @@ function CheckboxClicked() {
             </ListboxOptions>
           </div>
         </Listbox>
+      </div>
+      <div v-if="props.dirType == 'RoyalMail'" class="my-3">
+        <p class="text-sm font-medium text-gray-900 my-1">PAF key to extract</p>
+        <input
+          v-model="pafKey"
+          :disabled="isSent == true"
+          :class="{
+            'relative w-full font-poppins text-sm appearance-none rounded-md border px-3 py-2 placeholder-zinc-200 shadow-sm focus:border-bteal-50 focus:outline-none focus:ring-bteal-50': true,
+            'border-gray-300': isSent == false,
+            'border-zinc-700/40': isSent == true,
+          }"
+          aria-label="pafKey input field"
+        />
       </div>
       <div class="flex items-center mt-2 text-gray-500 text-sm">
         <p>AutoBuild:</p>

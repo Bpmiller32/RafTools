@@ -25,7 +25,7 @@ public class RoyalCrawler
         Settings = Settings.Validate(Settings, config);
     }
 
-    public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+    public async Task ExecuteAuto(CancellationToken stoppingToken)
     {
         SendMessage(DirectoryType.RoyalMail, context);
 
@@ -50,7 +50,7 @@ public class RoyalCrawler
                 TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
-                await ExecuteAsync(stoppingToken);
+                await Execute(stoppingToken);
             }
         }
         catch (TaskCanceledException e)
@@ -63,7 +63,7 @@ public class RoyalCrawler
         }
     }
 
-    public async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task Execute(CancellationToken stoppingToken)
     {
         try
         {

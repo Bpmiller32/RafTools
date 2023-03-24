@@ -55,7 +55,7 @@ public class RoyalBuilder
 
                 foreach (RoyalBundle bundle in context.RoyalBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
                 {
-                    await ExecuteAsync(bundle.DataYearMonth);
+                    // await ExecuteAsync(bundle.DataYearMonth);
                 }
             }
         }
@@ -69,7 +69,7 @@ public class RoyalBuilder
         }
     }
 
-    public async Task ExecuteAsync(string DataYearMonth)
+    public async Task ExecuteAsync(string DataYearMonth, string RoyalKey)
     {
         try
         {
@@ -81,6 +81,7 @@ public class RoyalBuilder
             DataMonth = DataYearMonth.Substring(4, 2);
             Settings.Validate(config, DataYearMonth);
 
+            CheckKey(DataYearMonth, RoyalKey);
             await Extract();
             Cleanup(fullClean: true);
             UpdateSmiFiles();
@@ -120,6 +121,33 @@ public class RoyalBuilder
         }
 
         SendMessage(DirectoryType.RoyalMail, context);
+    }
+
+    private void CheckKey(string DataYearMonth, string royalKey)
+    {
+        Regex regex = new("(...)( / )(...)( / )(...)( / )(...)( / )(...)( / )(...)( / )(...)( / )(...)");
+        Match match = regex.Match(royalKey);
+
+        if (match == null)
+        {
+            throw new Exception("Key could not be found in email body");
+        }
+
+        PafKey filteredKey = new()
+        {
+            DataYear = int.Parse(DataYearMonth[..4]),
+            DataMonth = int.Parse(DataYearMonth.Substring(4, 2)),
+            Value = match.Groups[1].Value + match.Groups[3].Value + match.Groups[5].Value + match.Groups[7].Value + match.Groups[9].Value + match.Groups[11].Value + match.Groups[13].Value + match.Groups[15].Value,
+        };
+
+        bool keyInDb = context.PafKeys.Any(x => filteredKey.Value == x.Value);
+
+        if (!keyInDb)
+        {
+            logger.LogInformation("Unique PafKey added: {DataMonth}/{DataYear}", filteredKey.DataMonth, filteredKey.DataYear);
+            context.PafKeys.Add(filteredKey);
+            context.SaveChanges();
+        }
     }
 
     private async Task Extract()

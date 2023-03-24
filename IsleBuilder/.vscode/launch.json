@@ -18,6 +18,7 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/IoMDirectoryBuilder.Console/bin/Debug/net6.0-windows/IoMDirectoryBuilder.Console.dll",
+            "args":["--paffiles", "C:\\Users\\billy\\Desktop\\paff", "--smifiles", "C:\\Users\\billy\\Desktop\\smibuildfiles"]
         },
     ]
 }

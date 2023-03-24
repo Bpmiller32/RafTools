@@ -169,8 +169,40 @@ public class PafBuilder
 
         ReportStatus("-- Compiling converted data into SMi --");
 
+        // Change request from Joe/Bluecrest
+        List<string> smiFiles = Directory.GetFiles(Settings.SmiFilesPath).Select(file => Path.GetFileName(file)).ToList();
+        List<string> removeFiles = new()
+        {
+            "ConvertMainfileToCompStdConsole.exe",
+            "ConvertMainfileToCompStd.exe",
+            "ConvertPafData_Log_latest.txt",
+            "DataManager.dll",
+            "PafConverter.dll",
+            "SharedComponents.dll",
+            "ConvertPafData.exe",
+            "Dafs.dll",
+            "DirectoryDataCompiler.exe",
+            "EntityFramework.dll",
+            "EntityFramework.SqlServer.dll",
+            "log4net.dll",
+            "MoreLinq.dll",
+            "SMI.dll",
+            "Smi.xsd",
+            "SqliteDbManager.dll",
+            "System.Data.SQLite.dll",
+            "System.Data.SQLite.EF6.dll",
+            "System.Data.SQLite.Linq.dll",
+            "System.ValueTuple.dll",
+            "UkPostProcessor.dll",
+            "xerces-c_3_2.dll"
+        };
+
+        foreach (string file in removeFiles)
+        {
+            smiFiles.Remove(file);
+        }
+
         // Copy all SMi files needed for DirectoryDataCompiler to working folder
-        List<string> smiFiles = new() { "IsleOfMan.xml", "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "BFPO.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
         foreach (string file in smiFiles)
         {
             if (StoppingToken.IsCancellationRequested)
@@ -228,9 +260,53 @@ public class PafBuilder
 
         Directory.CreateDirectory(Settings.OutputPath);
 
+        // Change request from Joe/Bluecrest
+        List<string> workingFiles = Directory.GetFiles(Settings.WorkingPath).Select(file => Path.GetFileName(file)).ToList();
+        List<string> removeFiles = new()
+        {
+            "UK.c01.txt",
+            "UK.c02.txt",
+            "UK.c03.txt",
+            "UK.c04.txt",
+            "UK.c05.txt",
+            "UK.c06.txt",
+            "UK.c07.txt",
+            "UK.c08.txt",
+            "UK.c09.txt",
+            "UK.c10.txt",
+            "UK.c11.txt",
+            "UK.c12.txt",
+            "UK.c13.txt",
+            "UK.c14.txt",
+            "UK.c15.txt",
+            "UK.txt",
+            "README.TXT",
+            "DirectoryDataCompilerLog_latest.txt",
+            "fpcompst.c01",
+            "fpcompst.c02",
+            "fpcompst.c03",
+            "fpcompst.c04",
+            "fpcompst.c05",
+            "fpcompst.c06",
+            "fpcompst.c07",
+            "fpcompst.c08",
+            "fpcompst.c09",
+            "fpcompst.c10",
+            "fpcompst.c11",
+            "fpcompst.c12",
+            "fpcompst.c13",
+            "fpcompst.c14",
+            "fpcompst.c15",
+            "aliasfle.c01"
+        };
+
         // Copy all SMi directory files to output folder
-        List<string> smiFiles = new() { "IsleOfMan_Patterns.exml", "IsleOfMan_Settings.xml", "IsleOfMan.smi", "IsleOfMan_IgnorableWordsTable.txt", "IsleOfMan_WordMatchTable.txt", "IsleOfMan_CharMatchTable.txt" };
-        foreach (string file in smiFiles)
+        foreach (string file in removeFiles)
+        {
+            workingFiles.Remove(file);
+        }
+
+        foreach (string file in workingFiles)
         {
             if (StoppingToken.IsCancellationRequested)
             {

@@ -8,9 +8,9 @@ using WebSocketSharp.NetCore.Server;
 
 namespace Builder;
 
-public class SocketConnection : WebSocketBehavior
+public class SocketController : WebSocketBehavior
 {
-    private readonly ILogger<SocketConnection> logger;
+    private readonly ILogger<SocketController> logger;
     private readonly ParaBuilder paraBuilder;
     private readonly RoyalBuilder royalBuilder;
 
@@ -20,7 +20,7 @@ public class SocketConnection : WebSocketBehavior
     private WebSocketSessionManager server;
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, ParaBuilder paraBuilder, RoyalBuilder royalBuilder)
+    public SocketController(ILogger<SocketController> logger, ParaBuilder paraBuilder, RoyalBuilder royalBuilder)
     {
         this.logger = logger;
 
@@ -57,13 +57,13 @@ public class SocketConnection : WebSocketBehavior
             psTokenSource.Cancel();
             psTokenSource = new CancellationTokenSource();
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
-                await Task.Run(() => paraBuilder.ExecuteAsync(message.Value));
+                await Task.Run(() => paraBuilder.ExecuteAsync(message.Data01));
             }
-            if (message.Property == "AutoEnabled")
+            if (message.Action == "AutoEnabled")
             {
-                paraBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Value);
+                paraBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Data01);
             }
 
             Task.Run(() => paraBuilder.ExecuteAsyncAuto(psTokenSource.Token));
@@ -73,13 +73,13 @@ public class SocketConnection : WebSocketBehavior
             rmTokenSource.Cancel();
             rmTokenSource = new CancellationTokenSource();
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
-                await Task.Run(() => royalBuilder.ExecuteAsync(message.Value));
+                await Task.Run(() => royalBuilder.ExecuteAsync(message.Data01, message.Data02));
             }
-            if (message.Property == "AutoEnabled")
+            if (message.Action == "AutoEnabled")
             {
-                royalBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Value);
+                royalBuilder.Settings.AutoBuildEnabled = bool.Parse(message.Data01);
             }
 
             Task.Run(() => royalBuilder.ExecuteAsyncAuto(psTokenSource.Token));

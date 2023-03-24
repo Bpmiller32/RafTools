@@ -23,10 +23,12 @@ public class SmartmatchCrawler
         Settings = Settings.Validate(Settings, config);
     }
 
-    public async Task ExecuteAsyncAuto(CancellationToken stoppingToken)
+    public async Task ExecuteAuto(CancellationToken stoppingToken)
     {
+        // Return an initial status message
         SendMessage(DirectoryType.SmartMatch, context);
 
+        // Check if crawler is enabled
         if (!Settings.CrawlerEnabled)
         {
             logger.LogInformation("Crawler disabled");
@@ -34,6 +36,7 @@ public class SmartmatchCrawler
             SendMessage(DirectoryType.SmartMatch, context);
             return;
         }
+        // Check if autocrawling is enabled
         if (!Settings.AutoCrawlEnabled)
         {
             logger.LogDebug("AutoCrawl disabled");
@@ -42,13 +45,14 @@ public class SmartmatchCrawler
 
         try
         {
+            // Wait for autocrawl time, execute
             while (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogInformation("Starting Crawler - Auto mode");
                 TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
-                await ExecuteAsync(stoppingToken);
+                await Execute(stoppingToken);
             }
         }
         catch (TaskCanceledException e)
@@ -61,7 +65,7 @@ public class SmartmatchCrawler
         }
     }
 
-    public async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task Execute(CancellationToken stoppingToken)
     {
         try
         {
@@ -78,6 +82,7 @@ public class SmartmatchCrawler
         }
         catch (TaskCanceledException e)
         {
+            // Current task was canceled (likely by switching between auto/manual mode), reset to ready status
             Status = ComponentStatus.Ready;
             SendMessage(DirectoryType.SmartMatch, context);
             logger.LogDebug("{Message}", e.Message);
@@ -176,7 +181,7 @@ public class SmartmatchCrawler
                     file.Cycle = "Cycle-N";
                 }
 
-                if (file.FileName == "G00424KL.ERZ.ZIP" || file.FileName == "G00424KL.ZIP")
+                if (file.FileName.Contains(".zip", StringComparison.OrdinalIgnoreCase) || file.FileName.Contains(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -264,7 +269,7 @@ public class SmartmatchCrawler
         await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
         // Set launchoptions, create browser instance
-        LaunchOptions options = new() { Headless = true };
+        LaunchOptions options = new() { Headless = false };
 
         // Create a browser instance, page instance
         using Browser browser = await Puppeteer.LaunchAsync(options);
@@ -297,7 +302,8 @@ public class SmartmatchCrawler
                 string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle);
                 await page.Client.SendAsync("Page.setDownloadBehavior", new { behavior = "allow", downloadPath = path });
 
-                await page.EvaluateExpressionAsync("getFileForDownload(" + file.ProductKey + "," + file.FileId + ",rw_" + file.FileId + ");");
+                // await page.EvaluateExpressionAsync(string.Format("getFileForDownload({0}, {1}, document.querySelector('#rw_{1}'))", file.ProductKey, file.FileId));
+                await page.EvaluateExpressionAsync(string.Format("document.querySelector('#td_{0}').childNodes[0].click()", file.FileId));
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
                 logger.LogInformation("Currently downloading: {FileName} {DataMonth}/{DataYear} {Cycle}", file.FileName, file.DataMonth, file.DataYear, file.Cycle);

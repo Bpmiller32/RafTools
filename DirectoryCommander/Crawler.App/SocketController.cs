@@ -7,15 +7,15 @@ namespace Crawler;
 
 #pragma warning disable CS4014 // ignore that I'm not awaiting a task, by design 
 
-public class SocketConnection : WebSocketBehavior
+public class SocketController : WebSocketBehavior
 {
-    private readonly ILogger<SocketConnection> logger;
-    private readonly EmailCrawler emailCrawler;
+    private readonly ILogger<SocketController> logger;
+    // private readonly EmailCrawler emailCrawler;
     private readonly SmartmatchCrawler smartMatchCrawler;
     private readonly ParascriptCrawler parascriptCrawler;
     private readonly RoyalCrawler royalCrawler;
 
-    private readonly CancellationTokenSource emailTokenSource = new();
+    // private readonly CancellationTokenSource emailTokenSource = new();
     private CancellationTokenSource smTokenSource = new();
     private CancellationTokenSource psTokenSource = new();
     private CancellationTokenSource rmTokenSource = new();
@@ -23,11 +23,11 @@ public class SocketConnection : WebSocketBehavior
     private WebSocketSessionManager server;
     private System.Net.IPAddress ipAddress;
 
-    public SocketConnection(ILogger<SocketConnection> logger, EmailCrawler emailCrawler, SmartmatchCrawler smartMatchCrawler, ParascriptCrawler parascriptCrawler, RoyalCrawler royalCrawler)
+    public SocketController(ILogger<SocketController> logger, SmartmatchCrawler smartMatchCrawler, ParascriptCrawler parascriptCrawler, RoyalCrawler royalCrawler)
     {
         this.logger = logger;
 
-        this.emailCrawler = emailCrawler;
+        // this.emailCrawler = emailCrawler;
 
         this.smartMatchCrawler = smartMatchCrawler;
         smartMatchCrawler.SendMessage = SendMessage;
@@ -46,10 +46,10 @@ public class SocketConnection : WebSocketBehavior
         ipAddress = Context.UserEndPoint.Address;
         logger.LogInformation("Connected to client: {ipAddress}, Total clients: {Count}", ipAddress, Sessions.Count);
 
-        Task.Run(() => emailCrawler.ExecuteAsyncAuto(emailTokenSource.Token));
-        Task.Run(() => smartMatchCrawler.ExecuteAsyncAuto(smTokenSource.Token));
-        Task.Run(() => parascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
-        Task.Run(() => royalCrawler.ExecuteAsyncAuto(rmTokenSource.Token));
+        // Task.Run(() => emailCrawler.ExecuteAsyncAuto(emailTokenSource.Token));
+        Task.Run(() => smartMatchCrawler.ExecuteAuto(smTokenSource.Token));
+        Task.Run(() => parascriptCrawler.ExecuteAuto(psTokenSource.Token));
+        Task.Run(() => royalCrawler.ExecuteAuto(rmTokenSource.Token));
     }
 
     protected override void OnClose(CloseEventArgs e)
@@ -66,69 +66,69 @@ public class SocketConnection : WebSocketBehavior
             smTokenSource.Cancel();
             smTokenSource = new CancellationTokenSource();
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
-                await Task.Run(() => smartMatchCrawler.ExecuteAsync(smTokenSource.Token));
+                await Task.Run(() => smartMatchCrawler.Execute(smTokenSource.Token));
             }
-            if (message.Property == "AutoEnabled")
+            if (message.Action == "AutoEnabled")
             {
-                smartMatchCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
+                smartMatchCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Data01);
             }
-            if (message.Property == "AutoDate")
+            if (message.Action == "AutoDate")
             {
-                string[] newDay = message.Value.Split('/');
+                string[] newDay = message.Data01.Split('/');
                 smartMatchCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
                 smartMatchCrawler.Settings.ExecDay = int.Parse(newDay[1]);
                 smartMatchCrawler.Settings.ExecYear = int.Parse(newDay[2]);
             }
 
-            Task.Run(() => smartMatchCrawler.ExecuteAsyncAuto(smTokenSource.Token));
+            Task.Run(() => smartMatchCrawler.ExecuteAuto(smTokenSource.Token));
         }
         if (message.Directory == "Parascript")
         {
             psTokenSource.Cancel();
             psTokenSource = new CancellationTokenSource();
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
-                await Task.Run(() => parascriptCrawler.ExecuteAsync(psTokenSource.Token));
+                await Task.Run(() => parascriptCrawler.Execute(psTokenSource.Token));
             }
-            if (message.Property == "AutoEnabled")
+            if (message.Action == "AutoEnabled")
             {
-                parascriptCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
+                parascriptCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Data01);
             }
-            if (message.Property == "AutoDate")
+            if (message.Action == "AutoDate")
             {
-                string[] newDay = message.Value.Split('/');
+                string[] newDay = message.Data01.Split('/');
                 parascriptCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
                 parascriptCrawler.Settings.ExecDay = int.Parse(newDay[1]);
                 parascriptCrawler.Settings.ExecYear = int.Parse(newDay[2]);
             }
 
-            Task.Run(() => parascriptCrawler.ExecuteAsyncAuto(psTokenSource.Token));
+            Task.Run(() => parascriptCrawler.ExecuteAuto(psTokenSource.Token));
         }
         if (message.Directory == "RoyalMail")
         {
             rmTokenSource.Cancel();
             rmTokenSource = new CancellationTokenSource();
 
-            if (message.Property == "Force")
+            if (message.Action == "Force")
             {
-                await Task.Run(() => royalCrawler.ExecuteAsync(rmTokenSource.Token));
+                await Task.Run(() => royalCrawler.Execute(rmTokenSource.Token));
             }
-            if (message.Property == "AutoEnabled")
+            if (message.Action == "AutoEnabled")
             {
-                royalCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Value);
+                royalCrawler.Settings.AutoCrawlEnabled = bool.Parse(message.Data01);
             }
-            if (message.Property == "AutoDate")
+            if (message.Action == "AutoDate")
             {
-                string[] newDay = message.Value.Split('/');
+                string[] newDay = message.Data01.Split('/');
                 royalCrawler.Settings.ExecMonth = int.Parse(newDay[0]);
                 royalCrawler.Settings.ExecDay = int.Parse(newDay[1]);
                 royalCrawler.Settings.ExecYear = int.Parse(newDay[2]);
             }
 
-            Task.Run(() => royalCrawler.ExecuteAsyncAuto(rmTokenSource.Token));
+            Task.Run(() => royalCrawler.ExecuteAuto(rmTokenSource.Token));
         }
     }
 

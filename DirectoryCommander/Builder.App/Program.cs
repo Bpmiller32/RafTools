@@ -60,7 +60,7 @@ try
         })
         .ConfigureServices(services =>
         {
-            services.AddScoped<SocketConnection>();
+            services.AddScoped<SocketController>();
 
             services.AddSingleton<ParaBuilder>();
             services.AddSingleton<RoyalBuilder>();
@@ -78,7 +78,7 @@ try
                     Factory = ServiceProvider.GetService<IServiceScopeFactory>()
                 };
 
-                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
+                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketController>());
 
                 return SocketServer;
             });

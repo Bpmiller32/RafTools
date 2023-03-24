@@ -35,12 +35,12 @@ public class ParaTester
 
             logger.LogInformation("Test Complete");
             Status = ComponentStatus.Ready;
-            SocketConnection.SendMessage();
+            SocketController.SendMessage();
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SocketConnection.SendMessage();
+            SocketController.SendMessage();
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -56,7 +56,7 @@ public class ParaTester
             Progress += changeAmount;
         }
 
-        SocketConnection.SendMessage();
+        SocketController.SendMessage();
     }
 
     private void CheckDisc()
@@ -79,7 +79,6 @@ public class ParaTester
             "llk.hsa",
             "llk.hsl",
             "llkhdr01.dat",
-            "llkhdr02.dat",
             "llk_cln.dat",
             "llk_cln.txt",
             "llk_crd.dat",

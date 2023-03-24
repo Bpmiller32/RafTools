@@ -88,7 +88,7 @@ const editPanelState = ref({
     const el = refEditPanelLabel.value;
 
     if (newDate >= today) {
-      store.SendMessage(
+      store.SendMessageCrawler(
         props.dirType,
         "AutoDate",
         dateString[1] + "/" + dateString[2] + "/" + dateString[0]
@@ -254,7 +254,7 @@ function CrawlButtonClicked(ClosePanel) {
   }
 
   ClosePanel();
-  store.SendMessage(props.dirType, "Force", "Force");
+  store.SendMessageCrawler(props.dirType, "Force", "Force");
 }
 function CheckboxClicked() {
   if (crawlButtonState.value.isActive == false) {
@@ -262,9 +262,9 @@ function CheckboxClicked() {
   }
 
   if (store.crawlers[props.dirType].AutoEnabled == true) {
-    store.SendMessage(props.dirType, "AutoEnabled", "false");
+    store.SendMessageCrawler(props.dirType, "AutoEnabled", "false");
   } else {
-    store.SendMessage(props.dirType, "AutoEnabled", "true");
+    store.SendMessageCrawler(props.dirType, "AutoEnabled", "true");
   }
 }
 </script>

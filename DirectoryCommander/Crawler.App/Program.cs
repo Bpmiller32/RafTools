@@ -60,7 +60,7 @@ try
         })
         .ConfigureServices(services =>
         {
-            services.AddTransient<SocketConnection>();
+            services.AddTransient<SocketController>();
 
             services.AddSingleton<EmailCrawler>();
             services.AddSingleton<SmartmatchCrawler>();
@@ -80,7 +80,7 @@ try
                     Factory = ServiceProvider.GetService<IServiceScopeFactory>()
                 };
 
-                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketConnection>());
+                SocketServer.Server.AddWebSocketService("/", () => SocketServer.Factory.CreateScope().ServiceProvider.GetRequiredService<SocketController>());
 
                 return SocketServer;
             });
