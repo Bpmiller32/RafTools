@@ -6,13 +6,15 @@ namespace Crawler;
 
 public class SmartmatchCrawler
 {
+    // Props
     public Settings Settings { get; set; } = new Settings { Name = "SmartMatch" };
     public ComponentStatus Status { get; set; }
-    public Action<DirectoryType, DatabaseContext> SendMessage { get; set; }
 
+    // Constructor injected fields
     private readonly ILogger<SmartmatchCrawler> logger;
     private readonly DatabaseContext context;
 
+    // Private fields
     private readonly List<UspsFile> tempFiles = new();
 
     public SmartmatchCrawler(ILogger<SmartmatchCrawler> logger, IConfiguration config, DatabaseContext context)
@@ -25,15 +27,11 @@ public class SmartmatchCrawler
 
     public async Task ExecuteAuto(CancellationToken stoppingToken)
     {
-        // Return an initial status message
-        SendMessage(DirectoryType.SmartMatch, context);
-
         // Check if crawler is enabled
         if (!Settings.CrawlerEnabled)
         {
             logger.LogInformation("Crawler disabled");
             Status = ComponentStatus.Disabled;
-            SendMessage(DirectoryType.SmartMatch, context);
             return;
         }
         // Check if autocrawling is enabled
@@ -71,7 +69,6 @@ public class SmartmatchCrawler
         {
             logger.LogInformation("Starting Crawler");
             Status = ComponentStatus.InProgress;
-            SendMessage(DirectoryType.SmartMatch, context);
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
@@ -84,13 +81,11 @@ public class SmartmatchCrawler
         {
             // Current task was canceled (likely by switching between auto/manual mode), reset to ready status
             Status = ComponentStatus.Ready;
-            SendMessage(DirectoryType.SmartMatch, context);
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
             Status = ComponentStatus.Error;
-            SendMessage(DirectoryType.SmartMatch, context);
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -362,6 +357,7 @@ public class SmartmatchCrawler
         }
     }
 
+    // Helper methods
     private async Task WaitForDownload(UspsFile file, CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
