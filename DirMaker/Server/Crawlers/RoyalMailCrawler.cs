@@ -1,17 +1,14 @@
 using System.Net;
-using Common.Data;
+using Server.Common;
 
-// TODO: switch to httpClient? There is no replacement for FtpRequest....
-#pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0
+#pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
 
-namespace Crawler;
+namespace Server.Crawlers;
 
-public class RoyalMailCrawler
+public class RoyalMailCrawler : DirModule
 {
-    public Settings Settings { get; set; } = new Settings { Name = "RoyalMail" };
-    public ComponentStatus Status { get; set; }
-
     private readonly ILogger<RoyalMailCrawler> logger;
+    private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
     private readonly RoyalFile tempFile = new();
@@ -19,68 +16,36 @@ public class RoyalMailCrawler
     public RoyalMailCrawler(ILogger<RoyalMailCrawler> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
+        this.config = config;
         this.context = context;
 
-        Settings = Settings.Validate(Settings, config);
+        Settings.Directory = "RoyalMail";
     }
 
-    public async Task ExecuteAuto(CancellationToken stoppingToken)
-    {
-        if (!Settings.CrawlerEnabled)
-        {
-            logger.LogInformation("Crawler disabled");
-            Status = ComponentStatus.Disabled;
-            return;
-        }
-        if (!Settings.AutoCrawlEnabled)
-        {
-            logger.LogDebug("AutoCrawl disabled");
-            return;
-        }
-
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Crawler - Auto mode");
-                TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-
-                await Execute(stoppingToken);
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug("{Message}", e.Message);
-        }
-        catch (System.Exception e)
-        {
-            logger.LogError("{Message}", e.Message);
-        }
-    }
-
-    public async Task Execute(CancellationToken stoppingToken)
+    public async Task Start(CancellationToken stoppingToken)
     {
         try
         {
+            Settings.Validate(config);
             logger.LogInformation("Starting Crawler");
-            Status = ComponentStatus.InProgress;
+            Status = ModuleStatus.InProgress;
 
             PullFile(stoppingToken);
             CheckFile(stoppingToken);
             await DownloadFile(stoppingToken);
             CheckBuildReady(stoppingToken);
 
-            Status = ComponentStatus.Ready;
+            logger.LogInformation("Finished Crawling");
+            Status = ModuleStatus.Ready;
         }
         catch (TaskCanceledException e)
         {
-            Status = ComponentStatus.Ready;
+            Status = ModuleStatus.Ready;
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
-            Status = ComponentStatus.Error;
+            Status = ModuleStatus.Error;
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -129,42 +94,44 @@ public class RoyalMailCrawler
         // Check if file is unique against the db
         bool fileInDb = context.RoyalFiles.Any(x => (tempFile.FileName == x.FileName) && (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
 
-        if (!fileInDb)
+        if (fileInDb)
         {
-            // Check if the folder exists on the disk
-            if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
-            {
-                tempFile.OnDisk = false;
-            }
-
-            // regardless of check file is unique, add to db
-            context.RoyalFiles.Add(tempFile);
-            logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
-
-            bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
-
-            if (!bundleExists)
-            {
-                RoyalBundle newBundle = new()
-                {
-                    DataMonth = tempFile.DataMonth,
-                    DataYear = tempFile.DataYear,
-                    DataYearMonth = tempFile.DataYearMonth,
-                    IsReadyForBuild = false
-                };
-
-                newBundle.BuildFiles.Add(tempFile);
-                context.RoyalBundles.Add(newBundle);
-            }
-            else
-            {
-                RoyalBundle existingBundle = context.RoyalBundles.Where(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear)).FirstOrDefault();
-
-                existingBundle.BuildFiles.Add(tempFile);
-            }
-
-            context.SaveChanges();
+            return;
         }
+
+        // Regardless of file check is unique, add to db
+        context.RoyalFiles.Add(tempFile);
+
+        // Check if the folder exists on the disk
+        if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, tempFile.FileName)))
+        {
+            tempFile.OnDisk = false;
+        }
+        logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
+
+        bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
+
+        if (!bundleExists)
+        {
+            RoyalBundle newBundle = new()
+            {
+                DataMonth = tempFile.DataMonth,
+                DataYear = tempFile.DataYear,
+                DataYearMonth = tempFile.DataYearMonth,
+                IsReadyForBuild = false
+            };
+
+            newBundle.BuildFiles.Add(tempFile);
+            context.RoyalBundles.Add(newBundle);
+        }
+        else
+        {
+            RoyalBundle existingBundle = context.RoyalBundles.Where(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear)).FirstOrDefault();
+
+            existingBundle.BuildFiles.Add(tempFile);
+        }
+
+        context.SaveChanges();
     }
 
     public async Task DownloadFile(CancellationToken stoppingToken)
@@ -211,7 +178,7 @@ public class RoyalMailCrawler
             return;
         }
 
-        foreach (var bundle in context.RoyalBundles.ToList())
+        foreach (RoyalBundle bundle in context.RoyalBundles.ToList())
         {
             // idk why but you need to do some linq query to populate bundle.buildfiles? 
             // Something to do with one -> many relationship between the tables, investigate

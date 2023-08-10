@@ -8,7 +8,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Server/bin/Debug/net7.0/Server.dll",
+            "program": "${workspaceFolder}/Server/bin/Debug/net7.0-windows/Server.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Server",
             "stopAtEntry": false,

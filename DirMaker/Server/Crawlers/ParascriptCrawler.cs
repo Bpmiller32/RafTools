@@ -1,14 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using PuppeteerSharp;
-using HtmlAgilityPack;
-using Common.Data;
+using Server.Common;
 
-namespace Crawler;
+namespace Server.Crawlers;
 
-public class ParascriptCrawler
+public class ParascriptCrawler : DirModule
 {
-    public Settings Settings { get; set; } = new Settings { Name = "Parascript" };
-    public ComponentStatus Status { get; set; }
-
     private readonly ILogger<ParascriptCrawler> logger;
     private readonly DatabaseContext context;
 
@@ -19,66 +16,33 @@ public class ParascriptCrawler
         this.logger = logger;
         this.context = context;
 
-        Settings = Settings.Validate(Settings, config);
+        Settings.Directory = "Parascript";
+        Settings.Validate(config);
     }
 
-    public async Task ExecuteAuto(CancellationToken stoppingToken)
-    {
-        if (!Settings.AutoCrawlEnabled)
-        {
-            logger.LogDebug("AutoCrawl disabled");
-            return;
-        }
-        if (!Settings.CrawlerEnabled)
-        {
-            logger.LogInformation("Crawler disabled");
-            Status = ComponentStatus.Disabled;
-            return;
-        }
-
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Crawler - Auto mode");
-                TimeSpan waitTime = Settings.CalculateWaitTime(logger, Settings);
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-
-                await Execute(stoppingToken);
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug("{Message}", e.Message);
-        }
-        catch (Exception e)
-        {
-            logger.LogError("{Message}", e.Message);
-        }
-    }
-
-    public async Task Execute(CancellationToken stoppingToken)
+    public async Task Start(CancellationToken stoppingToken)
     {
         try
         {
             logger.LogInformation("Starting Crawler");
-            Status = ComponentStatus.InProgress;
+            Status = ModuleStatus.InProgress;
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
             await DownloadFiles(stoppingToken);
             CheckBuildReady(stoppingToken);
 
-            Status = ComponentStatus.Ready;
+            logger.LogInformation("Finished Crawling");
+            Status = ModuleStatus.Ready;
         }
         catch (TaskCanceledException e)
         {
-            Status = ComponentStatus.Ready;
+            Status = ModuleStatus.Ready;
             logger.LogDebug("{Message}", e.Message);
         }
         catch (Exception e)
         {
-            Status = ComponentStatus.Error;
+            Status = ModuleStatus.Error;
             logger.LogError("{Message}", e.Message);
         }
     }
@@ -90,6 +54,9 @@ public class ParascriptCrawler
             return;
         }
 
+        // Clear tempfiles in case of leftovers from last pass
+        tempFiles.Clear();
+
         // Download local chromium binary to launch browser
         BrowserFetcher fetcher = new();
         await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
@@ -98,9 +65,9 @@ public class ParascriptCrawler
         LaunchOptions options = new() { Headless = true };
 
         // Create a browser instance, page instance
-        using Browser browser = await Puppeteer.LaunchAsync(options);
+        using Browser browser = (Browser)await Puppeteer.LaunchAsync(options);
         using (stoppingToken.Register(async () => await browser.CloseAsync()))
-        using (Page page = await browser.NewPageAsync())
+        using (Page page = (Page)await browser.NewPageAsync())
         {
             await page.Client.SendAsync("Page.setDownloadBehavior", new { behavior = "allow", downloadPath = Path.Combine(Settings.AddressDataPath, "Temp") });
 
@@ -119,10 +86,10 @@ public class ParascriptCrawler
             await page.WaitForSelectorAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.grid_1joc06t > div:nth-child(1) > div.metadataSlot_1kvnsfa > div > span.name_eol401");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
-            HtmlDocument doc = new();
+            HtmlAgilityPack.HtmlDocument doc = new();
             doc.LoadHtml(page.GetContentAsync().Result);
 
-            HtmlNode node = doc.DocumentNode.SelectSingleNode("/html/body/div/div[1]/div/div[1]/div[5]/div/div[2]/div[1]/div[2]/div/span[1]");
+            HtmlAgilityPack.HtmlNode node = doc.DocumentNode.SelectSingleNode("/html/body/div/div[1]/div/div[1]/div[5]/div/div[2]/div[1]/div[2]/div/span[1]");
 
             string foundDataYearMonth = node.InnerText.Substring(11, 4);
 
@@ -158,50 +125,50 @@ public class ParascriptCrawler
             return;
         }
 
-        foreach (var file in tempFiles)
+        foreach (ParaFile file in tempFiles)
         {
             // Check if file is unique against the db
             bool fileInDb = context.ParaFiles.Any(x => (file.FileName == x.FileName) && (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
 
-            if (!fileInDb)
+            if (fileInDb)
             {
-                // Check if the folder exists on the disk
-                if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.FileName)))
-                {
-                    file.OnDisk = false;
-                }
-
-                // regardless of check file is unique, add to db
-                context.ParaFiles.Add(file);
-                logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", file.FileName, file.DataMonth, file.DataYear);
-
-                bool bundleExists = context.ParaBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
-
-                if (!bundleExists)
-                {
-                    ParaBundle newBundle = new()
-                    {
-                        DataMonth = file.DataMonth,
-                        DataYear = file.DataYear,
-                        DataYearMonth = file.DataYearMonth,
-                        IsReadyForBuild = false
-                    };
-
-                    newBundle.BuildFiles.Add(file);
-                    context.ParaBundles.Add(newBundle);
-                }
-                else
-                {
-                    ParaBundle existingBundle = context.ParaBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear)).FirstOrDefault();
-
-                    existingBundle.BuildFiles.Add(file);
-                }
-
-                context.SaveChanges();
+                continue;
             }
-        }
 
-        tempFiles.Clear();
+            // Regardless of file check is unique, add to db
+            context.ParaFiles.Add(file);
+
+            // Check if the folder exists on the disk
+            if (!Directory.Exists(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.FileName)))
+            {
+                file.OnDisk = false;
+            }
+            logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", file.FileName, file.DataMonth, file.DataYear);
+
+            bool bundleExists = context.ParaBundles.Any(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear));
+
+            if (!bundleExists)
+            {
+                ParaBundle newBundle = new()
+                {
+                    DataMonth = file.DataMonth,
+                    DataYear = file.DataYear,
+                    DataYearMonth = file.DataYearMonth,
+                    IsReadyForBuild = false
+                };
+
+                newBundle.BuildFiles.Add(file);
+                context.ParaBundles.Add(newBundle);
+            }
+            else
+            {
+                ParaBundle existingBundle = context.ParaBundles.Where(x => (file.DataMonth == x.DataMonth) && (file.DataYear == x.DataYear)).FirstOrDefault();
+
+                existingBundle.BuildFiles.Add(file);
+            }
+
+            context.SaveChanges();
+        }
     }
 
     private async Task DownloadFiles(CancellationToken stoppingToken)
@@ -229,9 +196,9 @@ public class ParascriptCrawler
         LaunchOptions options = new() { Headless = true };
 
         // Create a browser instance, page instance
-        using Browser browser = await Puppeteer.LaunchAsync(options);
+        using Browser browser = (Browser)await Puppeteer.LaunchAsync(options);
         using (stoppingToken.Register(async () => await browser.CloseAsync()))
-        using (Page page = await browser.NewPageAsync())
+        using (Page page = (Page)await browser.NewPageAsync())
         {
             await page.Client.SendAsync("Page.setDownloadBehavior", new { behavior = "allow", downloadPath = Path.Combine(Settings.AddressDataPath, offDisk[0].DataYearMonth) });
 
@@ -253,9 +220,9 @@ public class ParascriptCrawler
             logger.LogInformation("Currently downloading: Parascript files");
             // Cancellation closes page and browser using statement, clears crdownload so no cleanup there
 
-            foreach (var file in offDisk)
+            foreach (ParaFile file in offDisk)
             {
-                await WaitForDownload(file, stoppingToken);
+                await WaitForDownload(logger, context, file, "Parascript", stoppingToken);
             }
         }
     }
@@ -267,7 +234,7 @@ public class ParascriptCrawler
             return;
         }
 
-        foreach (var bundle in context.ParaBundles.ToList())
+        foreach (ParaBundle bundle in context.ParaBundles.ToList())
         {
             // idk why but you need to do some linq query to populate bundle.buildfiles? 
             // Something to do with one -> many relationship between the tables, investigate
@@ -307,52 +274,6 @@ public class ParascriptCrawler
             }
 
             context.SaveChanges();
-        }
-    }
-
-    // Helper methods
-    private async Task WaitForDownload(ParaFile file, CancellationToken stoppingToken)
-    {
-        if (stoppingToken.IsCancellationRequested)
-        {
-            logger.LogInformation("Download in progress was stopped due to cancellation");
-            return;
-        }
-
-        string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth);
-        string[] files = Directory.GetFiles(path, "*.CRDOWNLOAD");
-
-        if (files.Length < 1)
-        {
-            logger.LogDebug("Finished downloading");
-            file.OnDisk = true;
-            file.DateDownloaded = DateTime.Now;
-            context.ParaFiles.Update(file);
-            context.SaveChanges();
-            return;
-        }
-
-        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-        await WaitForDownload(file, stoppingToken);
-    }
-
-    private static void Cleanup(string path, CancellationToken stoppingToken)
-    {
-        if (stoppingToken.IsCancellationRequested)
-        {
-            return;
-        }
-
-        // Cleanup from previous run
-        DirectoryInfo op = new(path);
-
-        foreach (var file in op.GetFiles())
-        {
-            file.Delete();
-        }
-        foreach (var dir in op.GetDirectories())
-        {
-            dir.Delete(true);
         }
     }
 }
