@@ -5,8 +5,62 @@ using System.Text;
 
 namespace Server.Common;
 
-public class Utils
+public static class Utils
 {
+    public static void Cleanup(string path, CancellationToken stoppingToken)
+    {
+        if (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
+        // Cleanup from previous run
+        DirectoryInfo cleanupPath = new(path);
+
+        foreach (var file in cleanupPath.GetFiles())
+        {
+            file.Delete();
+        }
+        foreach (var dir in cleanupPath.GetDirectories())
+        {
+            dir.Delete(true);
+        }
+    }
+
+    public static string CalculateDbDate()
+    {
+        DateTime timestamp = DateTime.Now;
+        return $"{timestamp.Month}/{timestamp.Day}/{timestamp.Year}";
+    }
+
+    public static string CalculateDbTime()
+    {
+        DateTime timestamp = DateTime.Now;
+        string hour;
+        string minute;
+        string ampm;
+        if (timestamp.Minute < 10)
+        {
+            minute = timestamp.Minute.ToString().PadLeft(2, '0');
+        }
+        else
+        {
+            minute = timestamp.Minute.ToString();
+        }
+        if (timestamp.Hour > 12)
+        {
+            hour = (timestamp.Hour - 12).ToString();
+            ampm = "pm";
+        }
+        else
+        {
+            hour = timestamp.Hour.ToString();
+            ampm = "am";
+        }
+
+        return $"{hour}:{minute} {ampm}";
+    }
+
     public static string WrapQuotes(string input)
     {
         StringBuilder sb = new();
@@ -130,13 +184,6 @@ public class Utils
         {
             process.Kill(true);
         }
-    }
-
-    public static void KillAllProcs(object sender, EventArgs e)
-    {
-        KillSmProcs();
-        KillPsProcs();
-        KillRmProcs();
     }
 
     public static async Task StopService(string serviceName)

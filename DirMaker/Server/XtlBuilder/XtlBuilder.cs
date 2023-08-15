@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using Com.Raf.Utility;
 using log4net;
 
 namespace Com.Raf.Xtl.Build
 {
-    public delegate void StatusDelegate(string message);
+    public delegate void StatusDelegate(string message, Logging.LogLevel logLevel);
 
     public class XtlBuilder
     {

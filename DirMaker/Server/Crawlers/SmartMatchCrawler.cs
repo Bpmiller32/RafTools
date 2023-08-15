@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PuppeteerSharp;
 using Server.Common;
 
@@ -6,6 +7,7 @@ namespace Server.Crawlers;
 public class SmartMatchCrawler : DirModule
 {
     private readonly ILogger<SmartMatchCrawler> logger;
+    private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
     private readonly List<UspsFile> tempFiles = new();
@@ -13,10 +15,35 @@ public class SmartMatchCrawler : DirModule
     public SmartMatchCrawler(ILogger<SmartMatchCrawler> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
+        this.config = config;
         this.context = context;
 
-        Settings.Directory = "SmartMatch";
-        Settings.Validate(config);
+        Settings.DirectoryName = "SmartMatch";
+    }
+
+    public async Task AutoStart(CancellationToken stoppingToken)
+    {
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Crawler - Auto mode");
+                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+                Status = ModuleStatus.Standby;
+                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                await Start(stoppingToken);
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug($"{e.Message}");
+        }
+        catch (Exception e)
+        {
+            Status = ModuleStatus.Error;
+            logger.LogError($"{e.Message}");
+        }
     }
 
     public async Task Start(CancellationToken stoppingToken)
@@ -25,6 +52,8 @@ public class SmartMatchCrawler : DirModule
         {
             logger.LogInformation("Starting Crawler");
             Status = ModuleStatus.InProgress;
+
+            Settings.Validate(config);
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
@@ -215,7 +244,7 @@ public class SmartMatchCrawler : DirModule
         {
             // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
             Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle));
-            Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle), stoppingToken);
+            Utils.Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle), stoppingToken);
         }
 
         // Download local chromium binary to launch browser
@@ -223,7 +252,7 @@ public class SmartMatchCrawler : DirModule
         await fetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
 
         // Set launchoptions, extras
-        LaunchOptions options = new() { Headless = false };
+        LaunchOptions options = new() { Headless = true };
         // PuppeteerExtra extra = new();
         // extra.Use(new StealthPlugin());
 
@@ -258,12 +287,17 @@ public class SmartMatchCrawler : DirModule
                 string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle);
                 await page.Client.SendAsync("Page.setDownloadBehavior", new { behavior = "allow", downloadPath = path });
 
-                // await page.EvaluateExpressionAsync(string.Format("getFileForDownload({0}, {1}, document.querySelector('#rw_{1}'))", file.ProductKey, file.FileId));
-                await page.EvaluateExpressionAsync(string.Format("document.querySelector('#td_{0}').childNodes[0].click()", file.FileId));
+                await page.EvaluateExpressionAsync($"document.querySelector('#td_{file.FileId}').childNodes[0].click()");
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
 
                 logger.LogInformation($"Currently downloading: {file.FileName} {file.DataMonth}/{file.DataYear} {file.Cycle}");
-                await WaitForDownload(logger, context, file, "SmartMatch", stoppingToken);
+                await WaitForDownload(file, stoppingToken);
+
+                if (file.FileName == "zip4natl.tar" || file.FileName == "zipmovenatl.tar")
+                {
+                    // Since Zip data is the same for N and O, make sure in both folders
+                    File.Copy(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-N", file.FileName), Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-O", file.FileName));
+                }
             }
         }
     }
@@ -275,46 +309,43 @@ public class SmartMatchCrawler : DirModule
             return;
         }
 
-        foreach (UspsBundle bundle in context.UspsBundles.ToList())
+        foreach (UspsBundle bundle in context.UspsBundles.Include("BuildFiles").ToList())
         {
-            // idk why but you need to do some linq query to populate bundle.buildfiles? 
-            // Something to do with one -> many relationship between the tables, investigate
-            List<UspsFile> files = context.UspsFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear) && (x.Cycle == bundle.Cycle)).ToList();
-
-            if (bundle.BuildFiles.All(x => x.OnDisk) && bundle.BuildFiles.Count >= 6)
+            if (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 6)
             {
-                bundle.IsReadyForBuild = true;
-
-                DateTime timestamp = DateTime.Now;
-                string hour;
-                string minute;
-                string ampm;
-                if (timestamp.Minute < 10)
-                {
-                    minute = timestamp.Minute.ToString().PadLeft(2, '0');
-                }
-                else
-                {
-                    minute = timestamp.Minute.ToString();
-                }
-                if (timestamp.Hour > 12)
-                {
-                    hour = (timestamp.Hour - 12).ToString();
-                    ampm = "pm";
-                }
-                else
-                {
-                    hour = timestamp.Hour.ToString();
-                    ampm = "am";
-                }
-                bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
-                bundle.DownloadTime = hour + ":" + minute + ampm;
-                bundle.FileCount = bundle.BuildFiles.Count;
-
-                logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
+                continue;
             }
 
+            bundle.IsReadyForBuild = true;
+            bundle.DownloadDate = Utils.CalculateDbDate();
+            bundle.DownloadTime = Utils.CalculateDbTime();
+            bundle.FileCount = bundle.BuildFiles.Count;
+
+            logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             context.SaveChanges();
         }
+    }
+
+    private async Task WaitForDownload(UspsFile file, CancellationToken stoppingToken)
+    {
+        if (stoppingToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Download in progress was stopped due to cancellation");
+            return;
+        }
+
+        string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle);
+        if (!File.Exists(Path.Combine(path, file.FileName + ".CRDOWNLOAD")))
+        {
+            logger.LogDebug("Finished downloading");
+            file.OnDisk = true;
+            file.DateDownloaded = DateTime.Now;
+            context.UspsFiles.Update(file);
+            context.SaveChanges();
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+        await WaitForDownload(file, stoppingToken);
     }
 }

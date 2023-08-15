@@ -7,6 +7,7 @@ namespace Server.Crawlers;
 public class ParascriptCrawler : DirModule
 {
     private readonly ILogger<ParascriptCrawler> logger;
+    private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
     private readonly List<ParaFile> tempFiles = new();
@@ -14,10 +15,35 @@ public class ParascriptCrawler : DirModule
     public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, DatabaseContext context)
     {
         this.logger = logger;
+        this.config = config;
         this.context = context;
 
-        Settings.Directory = "Parascript";
-        Settings.Validate(config);
+        Settings.DirectoryName = "Parascript";
+    }
+
+    public async Task AutoStart(CancellationToken stoppingToken)
+    {
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Crawler - Auto mode");
+                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+                Status = ModuleStatus.Standby;
+                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                await Start(stoppingToken);
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug($"{e.Message}");
+        }
+        catch (Exception e)
+        {
+            Status = ModuleStatus.Error;
+            logger.LogError($"{e.Message}");
+        }
     }
 
     public async Task Start(CancellationToken stoppingToken)
@@ -26,6 +52,8 @@ public class ParascriptCrawler : DirModule
         {
             logger.LogInformation("Starting Crawler");
             Status = ModuleStatus.InProgress;
+
+            Settings.Validate(config);
 
             await PullFiles(stoppingToken);
             CheckFiles(stoppingToken);
@@ -185,7 +213,7 @@ public class ParascriptCrawler : DirModule
         foreach (ParaFile file in offDisk)
         {
             Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth));
-            Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth), stoppingToken);
+            Utils.Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth), stoppingToken);
         }
 
         // Download local chromium binary to launch browser
@@ -222,7 +250,7 @@ public class ParascriptCrawler : DirModule
 
             foreach (ParaFile file in offDisk)
             {
-                await WaitForDownload(logger, context, file, "Parascript", stoppingToken);
+                await WaitForDownload(file, stoppingToken);
             }
         }
     }
@@ -234,46 +262,45 @@ public class ParascriptCrawler : DirModule
             return;
         }
 
-        foreach (ParaBundle bundle in context.ParaBundles.ToList())
+        foreach (ParaBundle bundle in context.ParaBundles.Include("BuildFiles").ToList())
         {
-            // idk why but you need to do some linq query to populate bundle.buildfiles? 
-            // Something to do with one -> many relationship between the tables, investigate
-            List<ParaFile> files = context.ParaFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
-
-            if (bundle.BuildFiles.All(x => x.OnDisk) && bundle.BuildFiles.Count >= 2)
+            if (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 2)
             {
-                bundle.IsReadyForBuild = true;
-
-                DateTime timestamp = DateTime.Now;
-                string hour;
-                string minute;
-                string ampm;
-                if (timestamp.Minute < 10)
-                {
-                    minute = timestamp.Minute.ToString().PadLeft(2, '0');
-                }
-                else
-                {
-                    minute = timestamp.Minute.ToString();
-                }
-                if (timestamp.Hour > 12)
-                {
-                    hour = (timestamp.Hour - 12).ToString();
-                    ampm = "pm";
-                }
-                else
-                {
-                    hour = timestamp.Hour.ToString();
-                    ampm = "am";
-                }
-                bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
-                bundle.DownloadTime = hour + ":" + minute + ampm;
-                bundle.FileCount = bundle.BuildFiles.Count;
-
-                logger.LogInformation("Bundle ready to build: {DataMonth}/{DataYear}", bundle.DataMonth, bundle.DataYear);
+                continue;
             }
 
+            bundle.IsReadyForBuild = true;
+            bundle.DownloadDate = Utils.CalculateDbDate();
+            bundle.DownloadTime = Utils.CalculateDbTime();
+            bundle.FileCount = bundle.BuildFiles.Count;
+
+            logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             context.SaveChanges();
         }
+    }
+
+    private async Task WaitForDownload(ParaFile file, CancellationToken stoppingToken)
+    {
+        if (stoppingToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Download in progress was stopped due to cancellation");
+            return;
+        }
+
+        string path = Path.Combine(Settings.AddressDataPath, file.DataYearMonth);
+        string[] files = Directory.GetFiles(path, "*.CRDOWNLOAD");
+
+        if (files.Length < 1)
+        {
+            logger.LogDebug("Finished downloading");
+            file.OnDisk = true;
+            file.DateDownloaded = DateTime.Now;
+            context.ParaFiles.Update(file);
+            context.SaveChanges();
+            return;
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+        await WaitForDownload(file, stoppingToken);
     }
 }

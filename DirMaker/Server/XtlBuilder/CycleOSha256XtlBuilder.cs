@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -16,17 +16,19 @@ using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 
 using log4net;
+using Server.Common;
 
 namespace Com.Raf.Xtl.Build
 {
-    public class CycleN2Sha256XtlBuilder : XtlBuilder
+    public class CycleOSha256XtlBuilder : XtlBuilder
     {
-        private static ILog log = LogManager.GetLogger(typeof(CycleN2Sha256XtlBuilder));
+        private static ILog log = LogManager.GetLogger(typeof(CycleOSha256XtlBuilder));
 
         private const bool SKIP_BUILD = false;
 
         public string BuildNumber { get; protected set; } = string.Empty;
         public string Expiration { get; protected set; } = string.Empty;
+        public string KeyXtlDataMonth { get; set; } = string.Empty;
         public string NetworkPassword { get; protected set; } = string.Empty;
         public string NetworkShare { get; protected set; } = string.Empty;
         public string NetworkUser { get; protected set; } = string.Empty;
@@ -36,10 +38,10 @@ namespace Com.Raf.Xtl.Build
         public string TestFile { get; protected set; } = string.Empty;
 
         private string ToolsDirectory = System.Environment.CurrentDirectory + "\\Tools";
-        private string CycleToolsDirectory = System.Environment.CurrentDirectory + "\\Tools\\Cycle-N2-256";
+        private string CycleToolsDirectory = System.Environment.CurrentDirectory + "\\Tools\\Cycle-O-256";
 
 
-        public CycleN2Sha256XtlBuilder(string buildNum, string sourceFolder, string outputFolder, string networkShare, string networkUser,
+        public CycleOSha256XtlBuilder(string buildNum, string sourceFolder, string outputFolder, string networkShare, string networkUser,
             string networkPassword, string expiration, string queries, string testFile)
         {
             BuildNumber = buildNum;
@@ -53,7 +55,6 @@ namespace Com.Raf.Xtl.Build
             TestFile = testFile;
         }
 
-        // NOTE: cassMass flag is ignored for N2
         public override void Build(bool cassMass, bool runTests)
         {
             try
@@ -84,15 +85,25 @@ namespace Com.Raf.Xtl.Build
 
                 // do a bunch of stuff
                 LogAndUpdateUser("Setting up new build parameters...", Logging.LogLevel.Debug);
-                string targetDir = "Xtl Database Creation Cycle-N2 SHA-256";
+                string targetDir = "Xtl Database Creation Cycle-O SHA-256";
                 string xtlOutput = $"C:\\{targetDir}\\Output\\Build {BuildNumber}";
                 string month = BuildNumber.Substring(2, 2);
                 string twoDigitYear = BuildNumber.Substring(0, 2);
                 string year = $"20{twoDigitYear}";
-                string xtlDataMonth = $"{month}/15/{year}";
+                string xtlDataMonth = $"{month}/1/{year}";
 
                 // check the expiration
-                DateTime expirationDate = DateTime.Parse(xtlDataMonth);
+                DateTime expirationDate;
+                if (KeyXtlDataMonth.Length > 0)
+                {
+                    expirationDate = DateTime.Parse(KeyXtlDataMonth);
+                }
+                else
+                {
+                    expirationDate = DateTime.Parse(xtlDataMonth);
+                }
+
+                // check the expiration
                 if (expirationDate.AddDays(Convert.ToDouble(Expiration)) < DateTime.Now)
                 {
                     /*if (MessageBox.Show($"Expiration date ({expirationDate.AddDays(Convert.ToDouble(Expiration))}) will be in the past. Continue?", "Expiration Problem", MessageBoxButtons.OKCancel) != DialogResult.OK)
@@ -128,7 +139,7 @@ namespace Com.Raf.Xtl.Build
                 string mappedOutput = OutputFolder.Replace(NetworkShare, $"{mappedDrive}\\");
                 if (Directory.Exists(mappedOutput))
                 {
-                    if (MessageBox.Show("", "", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                    if (MessageBox.Show("Directory data output folder exists. Overwrite?", "Overwrite Data?", MessageBoxButtons.OKCancel) == DialogResult.OK)
                     {
                         FileSystem.DeleteDirectory(mappedOutput);
                     }
@@ -141,7 +152,7 @@ namespace Com.Raf.Xtl.Build
 
                 if (!SKIP_BUILD)
                 {
-                    LogAndUpdateUser("Cleaning up from any previous build(s)...", Logging.LogLevel.Debug);
+                    LogAndUpdateUser("Cleaning up from any previous build(s)...");
                     string srcData = $"C:\\{targetDir}\\Source Data";
                     try
                     {
@@ -162,7 +173,15 @@ namespace Com.Raf.Xtl.Build
                     }
 
                     // Copying USPS source data to staging folder (was Stage 1)
-                    if (!CopyUspsSourceData(sourceFolder, tempDir, out extractedFolder))
+                    if (cassMass)
+                    {
+                        if (!CopyUspsSourceDataMass(sourceFolder, tempDir, out extractedFolder))
+                        {
+                            LogAndUpdateUser("Could not copy USPS MASS source data (was Stage 1)", Logging.LogLevel.Error);
+                            return;
+                        }
+                    }
+                    else if (!CopyUspsSourceData(sourceFolder, tempDir, out extractedFolder))
                     {
                         LogAndUpdateUser("Could not copy USPS source data (was Stage 1)", Logging.LogLevel.Error);
                         return;
@@ -175,7 +194,7 @@ namespace Com.Raf.Xtl.Build
                     string sourceDataDir = $"{extractedFolder}";   // supposed to be blank???
                     if (!CreateDatabase($"{CycleToolsDirectory}\\DBCreate.exe", sqlXtlPath, $"{CycleToolsDirectory}\\ImportUsps.exe", sourceDataDir))
                     {
-                        LogAndUpdateUser("Could not create database and import source data");
+                        LogAndUpdateUser("Could not create database and import source data", Logging.LogLevel.Error);
                         return;
                     }
 
@@ -194,10 +213,22 @@ namespace Com.Raf.Xtl.Build
                     RestartSqlService();
 
                     // Generate Key Xtl (was Stage 4)
-                    if (!GenerateKeyXtl($"{CycleToolsDirectory}\\GenerateKeyXtl.exe", xtlOutput, Expiration, xtlDataMonth))
+                    if (KeyXtlDataMonth.Length > 0)
                     {
-                        LogAndUpdateUser("Could not generate key XTL (was Stage 4)", Logging.LogLevel.Error);
-                        return;
+                        LogAndUpdateUser($"Using non-standard data month '{KeyXtlDataMonth}'");
+                        if (!GenerateKeyXtl($"{CycleToolsDirectory}\\GenerateKeyXtl.exe", xtlOutput, KeyXtlDataMonth))
+                        {
+                            LogAndUpdateUser("Could not generate key XTL (was Stage 4)", Logging.LogLevel.Error);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!GenerateKeyXtl($"{CycleToolsDirectory}\\GenerateKeyXtl.exe", xtlOutput, xtlDataMonth))
+                        {
+                            LogAndUpdateUser("Could not generate key XTL (was Stage 4)", Logging.LogLevel.Error);
+                            return;
+                        }
                     }
 
                     LogAndUpdateUser("Successfully generated key XTL (was Stage 4)!");
@@ -211,32 +242,20 @@ namespace Com.Raf.Xtl.Build
 
                     LogAndUpdateUser("Successfully created XTL ID file (was Stage 5)!");
 
-                    // extract DPV, LACS, SUITE data
-                    LogAndUpdateUser("Extracting USPS (non-Zip4) data...");
-
-                    string dpvTar = $"{sourceFolder}\\dpvfl2.tar";
-                    if (!Compression.ExtractTar(dpvTar, tempDir))
+                    if (cassMass)
                     {
-                        LogAndUpdateUser($"Could not extract {dpvTar}", Logging.LogLevel.Error);
-                        return;
+                        if (!ExtractNonZip4DataMass(sourceFolder, tempDir))
+                        {
+                            LogAndUpdateUser("Could not extract USPS (non-Zip4) MASS data", Logging.LogLevel.Error);
+                            return;
+                        }
                     }
-
-                    string lacsTar = $"{sourceFolder}\\laclnk2.tar";
-                    if (!Compression.ExtractTar(lacsTar, tempDir))
+                    else if (!ExtractNonZip4Data(sourceFolder, tempDir))
                     {
-                        LogAndUpdateUser($"Could not extract {lacsTar}", Logging.LogLevel.Error);
-                        return;
-                    }
-
-                    string suiteTar = $"{sourceFolder}\\stelnk2.tar";
-                    if (!Compression.ExtractTar(suiteTar, tempDir))
-                    {
-                        LogAndUpdateUser($"Could not extract {suiteTar}", Logging.LogLevel.Error);
+                        LogAndUpdateUser("Could not extract USPS (non-Zip4) data", Logging.LogLevel.Error);
                         return;
                     }
                 }
-
-                Directory.CreateDirectory(mappedOutput);
 
                 // check out the dongle lists
                 string encryptExe = $"{ToolsDirectory}\\EncryptREP.exe";
@@ -250,13 +269,16 @@ namespace Com.Raf.Xtl.Build
                 if (!ProcessSuiteData($"{tempDir}\\SUITELink", xtlDataMonth,
                     DateTime.Parse(xtlDataMonth).AddDays(Convert.ToInt32(Expiration)).ToString("MM/dd/yyyy")))
                 {
-                    LogAndUpdateUser($"Could not process raw DPV data in {tempDir}", Logging.LogLevel.Error);
+                    LogAndUpdateUser($"Could not process raw SuiteLink data in {tempDir}", Logging.LogLevel.Error);
                     return;
                 }
 
+                LogAndUpdateUser("Creating output directory...");
+                Directory.CreateDirectory(mappedOutput);
+
                 if (runTests)
                 {
-                    string testExe = $"{CycleToolsDirectory}\\TestXtlsN2.exe";
+                    string testExe = $"{CycleToolsDirectory}\\TestXtlsO.exe";
                     if (!RunApcTests(testExe, xtlOutput, lacsOutput, dpvOutput, suiteOutput, TestFile, $"{mappedOutput}\\TestResults.txt"))
                     {
                         LogAndUpdateUser("Could not run APC tests (replaced Stage 6)", Logging.LogLevel.Error);
@@ -285,7 +307,7 @@ namespace Com.Raf.Xtl.Build
                 }
 
                 // package all data (DPV, LACS, SUITE, and Zip4)
-                if (!PackageDirectoryData(mappedOutput, lacsOutput, suiteOutput, xtlOutput, dpvOutput))
+                if (!PackageDirectoryData(mappedOutput, lacsOutput, suiteOutput, xtlOutput, dpvOutput, cassMass))
                 {
                     LogAndUpdateUser("Could not package directory data!", Logging.LogLevel.Error);
                     return;
@@ -299,66 +321,8 @@ namespace Com.Raf.Xtl.Build
             }
             catch (Exception ex)
             {
-                LogAndUpdateUser($"{ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
+                LogAndUpdateUser($"Build Exception: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
             }
-        }
-
-        private bool CopyUspsSourceData(string sourceFolder, string tempDir, out string extractedData)
-        {
-            if (Directory.Exists(tempDir))
-            {
-                FileSystem.DeleteDirectory(tempDir);
-            }
-
-            Directory.CreateDirectory(tempDir);
-
-            extractedData = $"{tempDir}\\USPS";
-            if (Directory.Exists(extractedData))
-            {
-                FileSystem.DeleteDirectory(extractedData);
-            }
-
-            Directory.CreateDirectory(extractedData);
-
-            LogAndUpdateUser("Copying USPS source data to staging folder...");
-
-            LogAndUpdateUser("Extracting AIS ZIPMOVE...");
-            string zipMoveTar = $"{sourceFolder}\\zipmovenatl.tar";
-            if (!Compression.ExtactTarAndUnzip(zipMoveTar, tempDir, $"\\zipmovenatl\\zipmove\\zipmove.zip", "/MP7IOPE0ZV", $"{extractedData}\\AIS ZIP4 NATIONAL\\zipmove"))
-            {
-                LogAndUpdateUser("Could not extract AIS ZIPMOVE data", Logging.LogLevel.Error);
-                return false;
-            }
-
-            LogAndUpdateUser("Extracting AIS ZIP4+NATIONAL...");
-            string zip4Tar = $"{sourceFolder}\\zip4natl.tar";
-            if (!Compression.ExtactTarAndUnzip(zip4Tar, tempDir, $"\\epf-zip4natl\\zip4\\zip4.zip", "/ZI1APLSZP4", $"{extractedData}\\AIS ZIP4 NATIONAL\\zip4"))
-            {
-                LogAndUpdateUser("Could not extract AIS ZIP4+NATIONAL data", Logging.LogLevel.Error);
-                return false;
-            }
-
-            LogAndUpdateUser("Extracting AIS CTYSTATE...");
-            string cityStateZip = $"{tempDir}\\epf-zip4natl\\ctystate\\ctystate.zip";
-            if (!File.Exists(cityStateZip))
-            {
-                LogAndUpdateUser($"Could not find CityState archive {cityStateZip}", Logging.LogLevel.Error);
-                return false;
-            }
-
-            string cityStateSource = $"{extractedData}\\AIS ZIP4 NATIONAL\\ctystate";
-            if (!Directory.Exists(cityStateSource))
-            {
-                Directory.CreateDirectory(cityStateSource);
-            }
-
-            if (!Compression.ExtractZip(cityStateZip, "/TI0ZST9ACY", cityStateSource))
-            {
-                LogAndUpdateUser($"Could not unzip {cityStateZip} to {cityStateSource}");
-                return false;
-            }
-
-            return true;
         }
 
         private bool AddDpvHeader(string exe, string dpvDir)
@@ -385,6 +349,159 @@ namespace Com.Raf.Xtl.Build
             return false;
         }
 
+        private bool CopyUspsSourceData(string sourceFolder, string tempDir, out string extractedData)
+        {
+            if (Directory.Exists(tempDir))
+            {
+                FileSystem.DeleteDirectory(tempDir);
+            }
+
+            Directory.CreateDirectory(tempDir);
+
+            extractedData = $"{tempDir}\\USPS";
+            if (Directory.Exists(extractedData))
+            {
+                FileSystem.DeleteDirectory(extractedData);
+            }
+
+            Directory.CreateDirectory(extractedData);
+
+            LogAndUpdateUser("Copying USPS source data to staging folder...");
+            LogAndUpdateUser("Extracting AIS ZIPMOVE...");
+            string zipMoveTar = $"{sourceFolder}\\zipmovenatl.tar";
+
+            if (!Compression.ExtactTarAndUnzip(zipMoveTar, tempDir, $"\\zipmovenatl\\zipmove\\zipmove.zip", "/MP7IOPE0ZV", $"{extractedData}\\AIS ZIP4 NATIONAL\\zipmove"))
+            {
+                LogAndUpdateUser("Could not extract AIS ZIPMOVE", Logging.LogLevel.Error);
+                return false;
+            }
+
+            LogAndUpdateUser("Extracting AIS ZIP4+NATIONAL...");
+            string zip4Tar = $"{sourceFolder}\\zip4natl.tar";
+
+            if (!Compression.ExtactTarAndUnzip(zip4Tar, tempDir, $"\\epf-zip4natl\\zip4\\zip4.zip", "/ZI1APLSZP4", $"{extractedData}\\AIS ZIP4 NATIONAL\\zip4"))
+            {
+                LogAndUpdateUser("Could not extract AIS ZIP4+NATIONAL", Logging.LogLevel.Error);
+                return false;
+            }
+
+            LogAndUpdateUser("Extracting AIS CTYSTATE...");
+            string cityStateZip = $"{tempDir}\\epf-zip4natl\\ctystate\\ctystate.zip";
+            if (!File.Exists(cityStateZip))
+            {
+                LogAndUpdateUser($"Could not find CityState archive {cityStateZip}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            string cityStateSource = $"{extractedData}\\AIS ZIP4 NATIONAL\\ctystate";
+            if (!Directory.Exists(cityStateSource))
+            {
+                Directory.CreateDirectory(cityStateSource);
+            }
+
+            if (!Compression.ExtractZip(cityStateZip, "/TI0ZST9ACY", cityStateSource))
+            {
+                LogAndUpdateUser($"Could not unzip {cityStateZip} to {cityStateSource}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool CopyUspsSourceDataMass(string sourceFolder, string tempDir, out string extractedData)
+        {
+            extractedData = $"{tempDir}\\USPS";
+            try
+            {
+                if (Directory.Exists(tempDir))
+                {
+                    FileSystem.DeleteDirectory(tempDir);
+                }
+
+                Directory.CreateDirectory(tempDir);
+
+                if (Directory.Exists(extractedData))
+                {
+                    FileSystem.DeleteDirectory(extractedData);
+                }
+
+                Directory.CreateDirectory(extractedData);
+
+                LogAndUpdateUser("Copying USPS source MASS data to staging folder...");
+                LogAndUpdateUser("Extracting AIS ZIPMOVE...");
+                /*string zipMoveTar = $"{sourceFolder}\\zipmovenatl.tar";
+                if (!Compression.ExtactTarAndUnzip(zipMoveTar, tempDir, $"\\zipmovenatl\\zipmove\\zipmove.zip", "/MP7IOPE0ZV", $"{extractedData}\\AIS ZIP4 NATIONAL\\zipmove"))
+                {
+                    LogAndUpdateUser("Could not extract AIS ZIPMOVE", Logging.LogLevel.Error);
+                    return false;
+                }*/
+
+                // extact sourceFolder\zipmovenatl.zip -> tempDir\USPS\AIS ZIP4 NATIONAL\zipmove\
+                string zipMoveDir = $"{extractedData}\\AIS ZIP4 NATIONAL\\zipmove";
+                if (!Directory.Exists(zipMoveDir))
+                {
+                    Directory.CreateDirectory(zipMoveDir);
+                }
+
+                string zipMoveZip = $"{sourceFolder}\\zipmovenatl.zip";
+                if (!Compression.ExtractZip(zipMoveZip, "", zipMoveDir))
+                {
+                    LogAndUpdateUser($"Could not extract AIS ZIPMOVE {zipMoveZip} to {zipMoveDir}", Logging.LogLevel.Error);
+                    return false;
+                }
+
+                LogAndUpdateUser("Extracting AIS ZIP4+NATIONAL...");
+                /*string zip4Tar = $"{sourceFolder}\\zip4natl.tar";
+                if (!Compression.ExtactTarAndUnzip(zip4Tar, tempDir, $"\\epf-zip4natl\\zip4\\zip4.zip", "/ZI1APLSZP4", $"{extractedData}\\AIS ZIP4 NATIONAL\\zip4"))
+                {
+                    LogAndUpdateUser("Could not extract AIS ZIP4+NATIONAL", Logging.LogLevel.Error);
+                    return false;
+                }*/
+
+                string zip4Dir = $"{extractedData}\\AIS ZIP4 NATIONAL\\zip4";
+                if (!Directory.Exists(zip4Dir))
+                {
+                    Directory.CreateDirectory(zip4Dir);
+                }
+
+                string zip4Zip = $"{sourceFolder}\\zip4natl.zip";
+                if (!Compression.ExtractZip(zip4Zip, "", zip4Dir))
+                {
+                    LogAndUpdateUser($"Could not extract AIS ZIP4 NATIONAL {zip4Zip} to {zip4Dir}", Logging.LogLevel.Error);
+                    return false;
+                }
+
+                LogAndUpdateUser("Extracting AIS CTYSTATE...");
+                // string cityStateZip = $"{tempDir}\\epf-zip4natl\\ctystate\\ctystate.zip";
+                string cityStateZip = $"{sourceFolder}\\ctystatenatl.zip";
+                if (!File.Exists(cityStateZip))
+                {
+                    LogAndUpdateUser($"Could not find CityState archive {cityStateZip}", Logging.LogLevel.Error);
+                    return false;
+                }
+
+                string cityStateSource = $"{extractedData}\\AIS ZIP4 NATIONAL\\ctystate";
+                if (!Directory.Exists(cityStateSource))
+                {
+                    Directory.CreateDirectory(cityStateSource);
+                }
+
+                if (!Compression.ExtractZip(cityStateZip, "/TI0ZST9ACY", cityStateSource))
+                {
+                    LogAndUpdateUser($"Could not unzip {cityStateZip} to {cityStateSource}", Logging.LogLevel.Error);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                LogAndUpdateUser($"CopyUspsSourceDataMass: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
+            }
+
+            return false;
+        }
+
 
         private bool CleanupDatabase(string exe, string server = "127.0.0.1", string user = "sa", string pwd = "cry5taL")
         {
@@ -399,7 +516,14 @@ namespace Com.Raf.Xtl.Build
                 }
                 else
                 {
-                    LogAndUpdateUser(output, Logging.LogLevel.Error);
+                    if (output.Length > 0)
+                    {
+                        LogAndUpdateUser(output, Logging.LogLevel.Error);
+                    }
+                    else
+                    {
+                        LogAndUpdateUser("Unknown Error", Logging.LogLevel.Error);
+                    }
                 }
             }
             catch (Exception ex)
@@ -418,6 +542,13 @@ namespace Com.Raf.Xtl.Build
 
                 // create the database
                 LogAndUpdateUser("Creating database...");
+
+                // Visual C++ returns an error if you try to create a path with a trailing slash, so the workaround is
+                // to create the folder first so it doesn't complain and hose the whole process...
+                if (!Directory.Exists($"{sqlXtlPath}\\Intermediate Database"))
+                {
+                    Directory.CreateDirectory($"{sqlXtlPath}\\Intermediate Database");
+                }
 
                 string output;
                 if (Executable.RunProcess(dbCreateExe, $" {server} {user} {pwd} \"{sqlXtlPath}\"", out output))
@@ -462,7 +593,7 @@ namespace Com.Raf.Xtl.Build
                 {
                     sw.WriteLine($"Copyright © {xtlDataYear}, RAF Technology, Inc.");
                     sw.WriteLine("");
-                    sw.WriteLine($"Cycle-N2");
+                    sw.WriteLine($"Cycle-O");
                     sw.WriteLine("");
                     sw.WriteLine("Xtl Key File : 0.xtl");
 
@@ -505,18 +636,95 @@ namespace Com.Raf.Xtl.Build
             return false;
         }
 
-        private bool GenerateKeyXtl(string exe, string xtlOutputDir, string expirationDays, string xtlDataMonth)
+        private bool ExtractNonZip4Data(string sourceFolder, string tempDir)
+        {
+            // extract DPV, LACS, SUITE data
+            LogAndUpdateUser("Extracting USPS (non-Zip4) data...");
+
+            string dpvTar = $"{sourceFolder}\\dpvfl2.tar";
+            if (!Compression.ExtractTar(dpvTar, tempDir))
+            {
+                LogAndUpdateUser($"Could not extract {dpvTar}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            string lacsTar = $"{sourceFolder}\\laclnk2.tar";
+            if (!Compression.ExtractTar(lacsTar, tempDir))
+            {
+                LogAndUpdateUser($"Could not extract {lacsTar}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            string suiteTar = $"{sourceFolder}\\stelnk2.tar";
+            if (!Compression.ExtractTar(suiteTar, tempDir))
+            {
+                LogAndUpdateUser($"Could not extract {suiteTar}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool ExtractNonZip4DataMass(string sourceFolder, string tempDir)
+        {
+            // extract DPV, LACS, SUITE data
+            LogAndUpdateUser("Extracting USPS (non-Zip4) MASS data...");
+
+            // extract dpvfl.zip -> tempDir\DPV_Full
+            string dpvZip = $"{sourceFolder}\\dpvfl.zip";
+            string dpvDest = $"{tempDir}\\DPV_Full";
+            if (!Directory.Exists(dpvDest))
+            {
+                Directory.CreateDirectory(dpvDest);
+            }
+
+            if (!Compression.ExtractZip(dpvZip, "", dpvDest))
+            {
+                LogAndUpdateUser($"Could not extract {dpvZip} to {dpvDest}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            // extract laclnk.zip -> tempDir\LACsLINK
+            string lacsZip = $"{sourceFolder}\\laclnk.zip";
+            string lacDest = $"{tempDir}\\LACsLINK";
+            if (!Directory.Exists(lacDest))
+            {
+                Directory.CreateDirectory(lacDest);
+            }
+
+            if (!Compression.ExtractZip(lacsZip, "", lacDest))
+            {
+                LogAndUpdateUser($"Could not extract {lacsZip} to {lacDest}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            // extract stelnk.zip -> tempDir\Suitelink
+            string suiteZip = $"{sourceFolder}\\stelnk.zip";
+            string suiteDest = $"{tempDir}\\Suitelink";
+            if (!Directory.Exists(suiteDest))
+            {
+                Directory.CreateDirectory(suiteDest);
+            }
+
+            if (!Compression.ExtractZip(suiteZip, "", suiteDest))
+            {
+                LogAndUpdateUser($"Could not extract {suiteZip} to {suiteDest}", Logging.LogLevel.Error);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool GenerateKeyXtl(string exe, string xtlOutputDir, string xtlDataMonth)
         {
             try
             {
                 LogAndUpdateUser("Generating key XTL...");
 
                 string output;
-                // NOTE: Parameter '1' is the XTL "format" flag
-                // if(Executable.RunProcess(exe, $" 1 \"{xtlOutputDir}\" {expirationDays} {xtlDataMonth} {xtlDataMonth} {Queries}", out output))    \\ old command-line parameters
-                DateTime dataMonth = DateTime.Parse(xtlDataMonth);
-                string xtlExpirationDate = dataMonth.AddDays(Convert.ToInt32(expirationDays)).ToString("MM/dd/yyyy");
-                if (Executable.RunProcess(exe, $" \"{xtlOutputDir}\" {xtlExpirationDate} {xtlDataMonth}", out output))
+                // Usage: GenerateKeyXtl <output folder> <releaseDate> [expiration date] [cassMassDate-format 2 only]
+                string parameters = $" \"{xtlOutputDir}\" {xtlDataMonth}";
+                if (Executable.RunProcess(exe, parameters, out output))
                 {
                     return true;
                 }
@@ -527,7 +735,7 @@ namespace Com.Raf.Xtl.Build
             }
             catch (Exception ex)
             {
-                LogAndUpdateUser($"GenerateKeyXtl: {ex.Message} - {ex.StackTrace}");
+                LogAndUpdateUser($"GenerateKeyXtl: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
             }
 
             return false;
@@ -541,16 +749,15 @@ namespace Com.Raf.Xtl.Build
 
                 LogAndUpdateUser("Generating USPS XTLs...");
 
-                string output;
-                string parameters = $" {server} {user} {pwd} {BuildNumber} \"{xtlSchemaDir}\" \"{xtlOutputDir}\"";
-                if (Executable.RunProcess(exe, parameters, out output))
+                // string output;
+                // if (RunProcess(exe, $" {server} {user} {pwd} {BuildNumber} \"{xtlSchemaDir}\" \"{xtlOutputDir}\"", out output))
+                if (Executable.RunProcess(exe, $" {server} {user} {pwd} {BuildNumber} \"{xtlSchemaDir}\" \"{xtlOutputDir}\""))
                 {
                     return true;
                 }
                 else
                 {
-                    LogAndUpdateUser($"Parameters: {parameters}", Logging.LogLevel.Error);
-                    LogAndUpdateUser(output, Logging.LogLevel.Error);
+                    LogAndUpdateUser("Error generating USPS XTLs", Logging.LogLevel.Error);
                 }
             }
             catch (Exception ex)
@@ -582,19 +789,13 @@ namespace Com.Raf.Xtl.Build
             UpdateStatus(msg, logLevel);
         }
 
-        private bool PackageDirectoryData(string mappedOutput, string lacsOutput, string suiteOutput, string xtlOutput, string dpvOutput)
+        private bool PackageDirectoryData(string mappedOutput, string lacsOutput, string suiteOutput, string xtlOutput, string dpvOutput, bool cassMass)
         {
             try
             {
                 LogAndUpdateUser("Packaging directory data...");
 
                 string tempFolder = Path.GetTempPath();
-
-                /*string disk1 = $"{mappedOutput}\\Disk1";
-                Directory.CreateDirectory(disk1);
-
-                string disk2 = $"{mappedOutput}\\Disk2";
-                Directory.CreateDirectory(disk2);*/
 
                 // TS says they don't need them separated anymore
                 string disk1 = mappedOutput, disk2 = mappedOutput;
@@ -647,9 +848,8 @@ namespace Com.Raf.Xtl.Build
 
                 LogAndUpdateUser("Packaging SUITE data...");
 
-                filesToPackage = new List<string>() { $"{suiteOutput}\\lcd", liveFile, $"{suiteOutput}\\SLK.dat", $"{suiteOutput}\\SLK.RAF",
-                    $"{suiteOutput}\\slkhdr01.dat", $"{suiteOutput}\\slknine.lst", $"{suiteOutput}\\slknoise.lst", $"{suiteOutput}\\slknormal.lst",
-                    $"{suiteOutput}\\SLKSecNums.dat", $"{suiteOutput}\\SLKSecNums.RAF"};
+                filesToPackage = new List<string>() { $"{suiteOutput}\\lcd", liveFile, $"{suiteOutput}\\SLK.dat", $"{suiteOutput}\\slkhdr01.dat",
+                    $"{suiteOutput}\\slknine.lst", $"{suiteOutput}\\slknoise.lst", $"{suiteOutput}\\slknormal.lst", $"{suiteOutput}\\SLKSecNums.dat"};
 
                 // generate the checksum file
                 checksumFile = tempFolder + "\\SUITEcrcs.txt";
@@ -682,19 +882,19 @@ namespace Com.Raf.Xtl.Build
 
                 filesToPackage = new List<string>() { $"{xtlOutput}\\0.xtl", $"{xtlOutput}\\51.xtl", $"{xtlOutput}\\55.xtl",
                     $"{xtlOutput}\\56.xtl", $"{xtlOutput}\\200.xtl", $"{xtlOutput}\\201.xtl", $"{xtlOutput}\\202.xtl",
-                    $"{xtlOutput}\\203.xtl", $"{xtlOutput}\\204.xtl", $"{xtlOutput}\\206.xtl", $"{xtlOutput}\\207.xtl",
-                    $"{xtlOutput}\\208.xtl", $"{xtlOutput}\\209.xtl", $"{xtlOutput}\\210.xtl", $"{xtlOutput}\\211.xtl",
-                    $"{xtlOutput}\\212.xtl", $"{xtlOutput}\\213.xtl", $"{xtlOutput}\\ArgosyMonthly.lcs",
-                    $"{xtlOutput}\\SmSdkMonthly.lcs", $"{xtlOutput}\\xtlcrcs.txt", $"{xtlOutput}\\xtl-id.txt"};
+                    $"{xtlOutput}\\203.xtl", $"{xtlOutput}\\204.xtl", $"{xtlOutput}\\205.xtl", $"{xtlOutput}\\206.xtl",
+                    $"{xtlOutput}\\207.xtl", $"{xtlOutput}\\208.xtl", $"{xtlOutput}\\209.xtl", $"{xtlOutput}\\210.xtl",
+                    $"{xtlOutput}\\211.xtl", $"{xtlOutput}\\212.xtl", $"{xtlOutput}\\213.xtl", $"{xtlOutput}\\ArgosyMonthly.elcs",
+                    $"{xtlOutput}\\SmSdkMonthly.elcs", $"{xtlOutput}\\SS.elcs", $"{xtlOutput}\\xtlcrcs.txt", $"{xtlOutput}\\xtl-id.txt"};
 
-                // generate the LiveN2.txt file
-                string liveN2File = tempFolder + "\\LiveN2.txt";
-                using (StreamWriter sw = new StreamWriter(liveN2File))
+                // generate the LiveO.txt file
+                string liveOFile = tempFolder + "\\LiveO.txt";
+                using (StreamWriter sw = new StreamWriter(liveOFile))
                 {
                     sw.WriteLine("LIVE");
                 }
 
-                filesToPackage.Add(liveN2File);
+                filesToPackage.Add(liveOFile);
 
                 sortedFilesToPackage = filesToPackage.OrderBy(s => Path.GetFileName(s)).ToList();
 
@@ -727,8 +927,67 @@ namespace Com.Raf.Xtl.Build
 
                 LogAndUpdateUser("Packaging DPV data...");
 
+                /*filesToPackage = new List<string>() { $"{dpvOutput}\\dph.hsa", $"{dpvOutput}\\dph.hsc", $"{dpvOutput}\\dph.hsf",
+                    $"{dpvOutput}\\dph.hsp", $"{dpvOutput}\\dph.hsr", $"{dpvOutput}\\dph.hsx", $"{dpvOutput}\\dvdhdr01.dat",
+                    $"{dpvOutput}\\lcd", liveFile, $"{lacsOutput}\\llk.hsa", $"{dpvOutput}\\month.dat"};*/
                 filesToPackage = new List<string>() { $"{dpvOutput}\\dph.hsa", $"{dpvOutput}\\dph.hsc", $"{dpvOutput}\\dph.hsf",
-                    $"{dpvOutput}\\dvdhdr01.dat", $"{dpvOutput}\\lcd", liveFile, $"{lacsOutput}\\llk.hsa", $"{dpvOutput}\\month.dat"};
+                    $"{dpvOutput}\\dvdhdr01.dat", $"{dpvOutput}\\lcd", liveFile, $"{lacsOutput}\\llk.hsa" };
+                if (!cassMass)
+                {
+                    filesToPackage.Add($"{dpvOutput}\\month.dat");
+                }
+
+                // don't try to add these files if they don't exist...
+                string msg, file = $"{dpvOutput}\\dph.hsp";
+                if (File.Exists(file))
+                {
+                    filesToPackage.Add(file);
+                }
+                else
+                {
+                    msg = $"{file} file is missing from DPV data!";
+                    UpdateStatus($"WARNING: {msg}", Logging.LogLevel.Warn);
+                    log.Warn(msg);
+                }
+
+                file = $"{dpvOutput}\\dph.hsr";
+                if (File.Exists(file))
+                {
+                    filesToPackage.Add(file);
+                }
+                else
+                {
+                    msg = $"{file} file is missing from DPV data!";
+                    UpdateStatus($"WARNING: {msg}", Logging.LogLevel.Warn);
+                    log.Warn(msg);
+                }
+
+                file = $"{dpvOutput}\\dph.hsx";
+                if (File.Exists(file))
+                {
+                    filesToPackage.Add(file);
+                }
+                else
+                {
+                    msg = $"{file} file is missing from DPV data!";
+                    UpdateStatus($"WARNING: {msg}", Logging.LogLevel.Warn);
+                    log.Warn(msg);
+                }
+
+                foreach (char ch in new char[] { 'd', 'n', 't', 'u', 'v', 'y', 'z' })
+                {
+                    file = $"{dpvOutput}\\dph.hs{ch}";
+                    if (File.Exists(file))
+                    {
+                        filesToPackage.Add(file);
+                    }
+                    else
+                    {
+                        msg = $"{file} file is missing from DPV data!";
+                        UpdateStatus($"WARNING: {msg}", Logging.LogLevel.Warn);
+                        log.Warn(msg);
+                    }
+                }
 
                 // generate the checksum file
                 checksumFile = tempFolder + "\\DPVcrcs.txt";
@@ -773,25 +1032,20 @@ namespace Com.Raf.Xtl.Build
             {
                 LogAndUpdateUser("Processing dongle lists...");
 
-                string adFolder = $"{tempFolder}\\data";
-                if (Directory.Exists(adFolder))
+                string dongleListsFolder = $"{tempFolder}\\dongleLists";
+                if (Directory.Exists(dongleListsFolder))
                 {
-                    FileSystem.DeleteDirectory(adFolder);
+                    FileSystem.DeleteDirectory(dongleListsFolder);
                 }
 
-                string smSdkFolder = $"{tempFolder}\\SMLicense";
-                if (Directory.Exists(smSdkFolder))
-                {
-                    FileSystem.DeleteDirectory(smSdkFolder);
-                }
-
-                // https://scm.raf.com/repo/ArgosyPost/trunk/Code/data/ (ArgosyDefault.txt)
-                // https://scm.raf.com/repo/APC/trunk/Code/SMLicense/ (SmSdkMonthly.txt)
-                if (SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/ArgosyPost/trunk/Code/data/", NetworkUser, NetworkPassword, adFolder) &&
-                    SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/APC/trunk/Code/SMLicense/", NetworkUser, NetworkPassword, smSdkFolder))
+                Directory.CreateDirectory(dongleListsFolder);
+                Utils.CopyFiles(@"C:\Users\billy\Desktop\DongleLists", dongleListsFolder);
+                // if (SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/DongleLists/trunk", NetworkUser, NetworkPassword, dongleListsFolder))
+                if (true)
                 {
                     string adText = $"ArgosyDefault.txt";
                     string smSdkText = $"SmSdkMonthly.txt";
+                    string ssText = $"SS.txt";
 
                     // prepend the month to both files
                     // Line 1: Date=YYYYMMDD
@@ -800,23 +1054,33 @@ namespace Com.Raf.Xtl.Build
 
                     // ArgosyDefault.txt
                     string prependDate = $"Date={dateYYYYMMDD}{System.Environment.NewLine}";
-                    string newContents = prependDate + File.ReadAllText($"{adFolder}\\{adText}");
-                    File.WriteAllText($"{adFolder}\\{adText}", newContents);
+                    string newContents = prependDate + File.ReadAllText($"{dongleListsFolder}\\{adText}");
+                    File.WriteAllText($"{dongleListsFolder}\\{adText}", newContents);
 
                     // SmSdkMonthly.txt
-                    newContents = prependDate + File.ReadAllText($"{smSdkFolder}\\{smSdkText}");
-                    File.WriteAllText($"{smSdkFolder}\\{smSdkText}", newContents);
+                    newContents = prependDate + File.ReadAllText($"{dongleListsFolder}\\{smSdkText}");
+                    File.WriteAllText($"{dongleListsFolder}\\{smSdkText}", newContents);
+
+                    // SS.txt
+                    newContents = prependDate + File.ReadAllText($"{dongleListsFolder}\\{ssText}");
+                    File.WriteAllText($"{dongleListsFolder}\\{ssText}", newContents);
 
                     // encrypt both files (EncryptREP.exe)
                     string output;
-                    if (Executable.RunProcess(encryptExe, $" -x lcs \"{adFolder}\\{adText}\"", out output) &&
-                        Executable.RunProcess(encryptExe, $" -x lcs \"{smSdkFolder}\\{smSdkText}\"", out output))
+                    if (Executable.RunProcess(encryptExe, $" -x elcs \"{dongleListsFolder}\\{adText}\"", out output) &&
+                        Executable.RunProcess(encryptExe, $" -x elcs \"{dongleListsFolder}\\{smSdkText}\"", out output) &&
+                        Executable.RunProcess(encryptExe, $" -x elcs \"{dongleListsFolder}\\{ssText}\"", out output))
                     {
-                        // copy both .lcs files to xtlOutput
-                        string adLcs = adText.Replace(".txt", ".lcs");
-                        string smSdkLcs = smSdkText.Replace(".txt", ".lcs");
-                        File.Copy($"{adFolder}\\{adLcs}", $"{xtlOutput}\\ArgosyMonthly.lcs");
-                        File.Copy($"{smSdkFolder}\\{smSdkLcs}", $"{xtlOutput}\\{smSdkLcs}");
+                        // copy both .elcs files to xtlOutput
+                        string adLcs = adText.Replace(".txt", ".elcs");
+                        string smSdkLcs = smSdkText.Replace(".txt", ".elcs");
+                        string ssLcs = ssText.Replace(".txt", ".elcs");
+                        File.Copy($"{dongleListsFolder}\\{adLcs}", $"{xtlOutput}\\ArgosyMonthly.elcs");
+                        File.Copy($"{dongleListsFolder}\\{smSdkLcs}", $"{xtlOutput}\\{smSdkLcs}");
+                        File.Copy($"{dongleListsFolder}\\{ssLcs}", $"{xtlOutput}\\{ssLcs}");
+
+                        LogAndUpdateUser("Successfully processed dongle lists");
+
                         return true;
                     }
                     else
@@ -831,7 +1095,7 @@ namespace Com.Raf.Xtl.Build
             }
             catch (Exception ex)
             {
-                LogAndUpdateUser($"ProcessDongleLists: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
+                LogAndUpdateUser($"ProcessDongleLists: {ex.Message} - {ex.StackTrace}");
             }
 
             return false;
@@ -860,7 +1124,7 @@ namespace Com.Raf.Xtl.Build
             }
             catch (Exception ex)
             {
-                LogAndUpdateUser($"ProcessDpvData: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
+                LogAndUpdateUser($"ProcessSuiteData: {ex.Message} - {ex.StackTrace}", Logging.LogLevel.Error);
             }
 
             return false;
@@ -868,7 +1132,7 @@ namespace Com.Raf.Xtl.Build
 
         private void RestartSqlService()
         {
-            LogAndUpdateUser("Restarting SQL Server service...", Logging.LogLevel.Debug);
+            LogAndUpdateUser("Restarting SQL Server service...");
             if (!Service.RestartService("MSSQLSERVER", 60000))
             {
                 LogAndUpdateUser("Could not restart SQL Server service!", Logging.LogLevel.Error);
@@ -880,6 +1144,7 @@ namespace Com.Raf.Xtl.Build
             try
             {
                 LogAndUpdateUser("Running APC tests...");
+
                 string output;
                 if (Executable.RunProcess(testExe, $" \"{xtlDir}\" \"{lacsDir}\" \"{dpvDir}\" \"{suiteDir}\" \"{testFile}\" \"{resultsFile}\"", out output))
                 {

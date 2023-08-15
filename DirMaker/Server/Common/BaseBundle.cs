@@ -14,7 +14,6 @@ public class BaseBundle
     public string CompileDate { get; set; }
     public string CompileTime { get; set; }
 
-    public string Cycle { get; set; }
     public bool IsReadyForBuild { get; set; }
     public bool IsBuildComplete { get; set; }
 }

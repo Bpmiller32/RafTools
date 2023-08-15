@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.EntityFrameworkCore;
 using Server.Common;
 
 #pragma warning disable SYSLIB0014 // ignore that WebRequest and WebClient are deprecated in net6.0, replace with httpClient later
@@ -19,16 +20,42 @@ public class RoyalMailCrawler : DirModule
         this.config = config;
         this.context = context;
 
-        Settings.Directory = "RoyalMail";
+        Settings.DirectoryName = "RoyalMail";
+    }
+
+    public async Task AutoStart(CancellationToken stoppingToken)
+    {
+        try
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Crawler - Auto mode");
+                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+                Status = ModuleStatus.Standby;
+                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
+
+                await Start(stoppingToken);
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug($"{e.Message}");
+        }
+        catch (Exception e)
+        {
+            Status = ModuleStatus.Error;
+            logger.LogError($"{e.Message}");
+        }
     }
 
     public async Task Start(CancellationToken stoppingToken)
     {
         try
         {
-            Settings.Validate(config);
             logger.LogInformation("Starting Crawler");
             Status = ModuleStatus.InProgress;
+
+            Settings.Validate(config);
 
             PullFile(stoppingToken);
             CheckFile(stoppingToken);
@@ -153,7 +180,7 @@ public class RoyalMailCrawler : DirModule
         using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
         {
             logger.LogInformation("Currently downloading: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
-            // Throws error is request is canceled, caught in catch
+            // Throws error if request is canceled, caught in catch
             fileData = await request.DownloadDataTaskAsync("ftp://pafdownload.afd.co.uk/SetupRM.exe");
         }
 
@@ -178,45 +205,19 @@ public class RoyalMailCrawler : DirModule
             return;
         }
 
-        foreach (RoyalBundle bundle in context.RoyalBundles.ToList())
+        foreach (RoyalBundle bundle in context.RoyalBundles.Include("BuildFiles").ToList())
         {
-            // idk why but you need to do some linq query to populate bundle.buildfiles? 
-            // Something to do with one -> many relationship between the tables, investigate
-            List<RoyalFile> files = context.RoyalFiles.Where(x => (x.DataMonth == bundle.DataMonth) && (x.DataYear == bundle.DataYear)).ToList();
-
-            if (bundle.BuildFiles.All(x => x.OnDisk) && bundle.BuildFiles.Count >= 1)
+            if (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 1)
             {
-                bundle.IsReadyForBuild = true;
-
-                DateTime timestamp = DateTime.Now;
-                string hour;
-                string minute;
-                string ampm;
-                if (timestamp.Minute < 10)
-                {
-                    minute = timestamp.Minute.ToString().PadLeft(2, '0');
-                }
-                else
-                {
-                    minute = timestamp.Minute.ToString();
-                }
-                if (timestamp.Hour > 12)
-                {
-                    hour = (timestamp.Hour - 12).ToString();
-                    ampm = "pm";
-                }
-                else
-                {
-                    hour = timestamp.Hour.ToString();
-                    ampm = "am";
-                }
-                bundle.DownloadDate = timestamp.Month.ToString() + "/" + timestamp.Day + "/" + timestamp.Year.ToString();
-                bundle.DownloadTime = hour + ":" + minute + ampm;
-                bundle.FileCount = bundle.BuildFiles.Count;
-
-                logger.LogInformation("Bundle ready to build: {DataMonth}/{DataYear}", bundle.DataMonth, bundle.DataYear);
+                continue;
             }
 
+            bundle.IsReadyForBuild = true;
+            bundle.DownloadDate = Utils.CalculateDbDate();
+            bundle.DownloadTime = Utils.CalculateDbTime();
+            bundle.FileCount = bundle.BuildFiles.Count;
+
+            logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             context.SaveChanges();
         }
     }
