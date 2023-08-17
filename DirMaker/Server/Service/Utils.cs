@@ -184,6 +184,10 @@ public static class Utils
         {
             process.Kill(true);
         }
+        foreach (Process process in Process.GetProcessesByName("SetupRM"))
+        {
+            process.Kill(true);
+        }
     }
 
     public static async Task StopService(string serviceName)

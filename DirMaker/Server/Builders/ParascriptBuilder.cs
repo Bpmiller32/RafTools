@@ -4,7 +4,7 @@ using Server.Common;
 
 namespace Server.Builders;
 
-public class ParascriptBuilder : DirModule
+public class ParascriptBuilder : BaseModule
 {
     private readonly ILogger<ParascriptBuilder> logger;
     private readonly IConfiguration config;
@@ -38,6 +38,8 @@ public class ParascriptBuilder : DirModule
                 foreach (ParaBundle bundle in context.ParaBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
                 {
                     await Start(bundle.DataYearMonth, stoppingToken);
+                    // Edge case where end of the month, no bundles to process, this loop executes in < 1 second and potentially calulates next waitTime too early
+                    await Task.Delay(TimeSpan.FromSeconds(2));
                 }
             }
         }
@@ -56,7 +58,7 @@ public class ParascriptBuilder : DirModule
     {
         try
         {
-            logger.LogInformation("Starting Builder - Manual mode");
+            logger.LogInformation("Starting Builder");
             Status = ModuleStatus.InProgress;
 
             Settings.Validate(config);
@@ -64,13 +66,32 @@ public class ParascriptBuilder : DirModule
             dataSourcePath = Path.Combine(Settings.AddressDataPath, dataYearMonth);
             dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth);
 
+            Message = "Extracting files from download";
+            Progress = 0;
             ExtractDownload(stoppingToken);
+
+            Message = "Cleaning up from previous builds";
+            Progress = 1;
             Cleanup(fullClean: true, stoppingToken);
+
+            Message = "Compiling database";
+            Progress = 3;
             await Extract(stoppingToken);
+
+            Message = "Packaging database";
+            Progress = 21;
             await Archive(stoppingToken);
+
+            Message = "Cleaning up post build";
+            Progress = 98;
             Cleanup(fullClean: false, stoppingToken);
+
+            Message = "Updating packaged directories";
+            Progress = 99;
             CheckBuildComplete(stoppingToken);
 
+            Message = "";
+            Progress = 100;
             logger.LogInformation($"Build Complete: {dataYearMonth}");
             Status = ModuleStatus.Ready;
         }
@@ -82,6 +103,7 @@ public class ParascriptBuilder : DirModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
+            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }
@@ -228,5 +250,6 @@ public class ParascriptBuilder : DirModule
         bundle.CompileTime = Utils.CalculateDbTime();
 
         context.SaveChanges();
+        SendDbUpdate = true;
     }
 }

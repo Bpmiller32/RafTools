@@ -8,6 +8,7 @@ using Server.Builders;
 using Server.Common;
 using Server.Crawlers;
 using Server.Service;
+using Server.Tester;
 
 string applicationName = "DirMaker";
 using var mutex = new Mutex(false, applicationName);
@@ -29,7 +30,7 @@ Log.Logger = new LoggerConfiguration()
         .MinimumLevel.Information()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
-        .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"))
+        .WriteTo.Console(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u1}] {@m}\n{@x}"))
         // .WriteTo.File(new ExpressionTemplate("[{@t:MM-dd-yyyy HH:mm:ss} {Substring(SourceContext, LastIndexOf(SourceContext, '.') + 1)}]  [{@l:u3}] {@m}\n{@x}"), Path.Combine(AppDomain.CurrentDomain.BaseDirectory, string.Format("{0}.log", applicationName)))
         .CreateLogger();
 builder.Logging.ClearProviders();
@@ -50,7 +51,10 @@ builder.Services.AddSingleton<SmartMatchBuilder>();
 builder.Services.AddSingleton<ParascriptBuilder>();
 builder.Services.AddSingleton<RoyalMailBuilder>();
 
+builder.Services.AddSingleton<DirTester>();
+
 builder.Services.AddSingleton<StatusReporter>();
+builder.Services.AddSingleton<SynchronizeDb>();
 
 // Build Application
 WebApplication app = builder.Build();
@@ -85,12 +89,12 @@ app.MapGet("/status", async (HttpContext context, StatusReporter statusReporter)
 
     for (var i = 0; true; i++)
     {
-        string message = statusReporter.Report();
+        string message = statusReporter.UpdateReport();
         byte[] bytes = Encoding.ASCII.GetBytes($"data: {message}\r\r");
 
         await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
         await context.Response.Body.FlushAsync();
-        await Task.Delay(TimeSpan.FromSeconds(3));
+        await Task.Delay(TimeSpan.FromSeconds(1));
     }
 });
 
@@ -164,8 +168,6 @@ app.MapGet("/royalmail/crawler/{moduleCommand}", (RoyalMailCrawler royalMailCraw
     }
 });
 
-
-
 // Builder Endpoints
 app.MapGet("/smartmatch/builder/{moduleCommand}/{dataYearMonth?}/{cycle?}", (SmartMatchBuilder smartMatchBuilder, string moduleCommand, string cycle, string dataYearMonth) =>
 {
@@ -219,7 +221,7 @@ app.MapGet("/parascript/builder/{moduleCommand}/{dataYearMonth?}", (ParascriptBu
     }
 });
 
-app.MapGet("/royalmail/builder/{moduleCommand}/{dataYearMonth?}/{key?}", (RoyalMailBuilder royalMailBuilder, string moduleCommand, string dataYearMonth, string key) =>
+app.MapGet("/royalmail/builder/{moduleCommand}/{dataYearMonth?}/{key?}/{autoStartTime?}", (RoyalMailBuilder royalMailBuilder, string moduleCommand, string dataYearMonth, string key, string autoStartTime) =>
 {
     switch (moduleCommand)
     {
@@ -229,11 +231,11 @@ app.MapGet("/royalmail/builder/{moduleCommand}/{dataYearMonth?}/{key?}", (RoyalM
             Task.Run(() => royalMailBuilder.Start(dataYearMonth, key, cancelTokens["RoyalMailBuilder"].Token));
             return Results.Ok("Started - Normal mode");
 
-        // case "autostart":
-        //     cancelTokens["RoyalMailBuilder"] = new();
-        //     Utils.KillRmProcs();
-        //     Task.Run(() => royalMailBuilder.AutoStart(cancelTokens["RoyalMailBuilder"].Token));
-        //     return Results.Ok("Started - Auto mode");
+        case "autostart":
+            cancelTokens["RoyalMailBuilder"] = new();
+            Utils.KillRmProcs();
+            Task.Run(() => royalMailBuilder.AutoStart(autoStartTime, cancelTokens["RoyalMailBuilder"].Token));
+            return Results.Ok("Started - Auto mode");
 
         case "stop":
             cancelTokens["RoyalMailBuilder"].Cancel();
@@ -245,4 +247,38 @@ app.MapGet("/royalmail/builder/{moduleCommand}/{dataYearMonth?}/{key?}", (RoyalM
     }
 });
 
+// Tester
+app.MapGet("/dirtester/{moduleCommand}/{directoryName}", (DirTester dirTester, string moduleCommand, string directoryName) =>
+{
+    switch (moduleCommand)
+    {
+        case "Start":
+            Task.Run(() => dirTester.Start(directoryName));
+            return Results.Ok("Started Testing");
+
+        default:
+            return Results.BadRequest();
+    }
+});
+
+// Debug
+app.MapGet("/debug/{moduleCommand}", (SynchronizeDb synchronizeDb, string moduleCommand) =>
+{
+    switch (moduleCommand)
+    {
+        case "ScanDb":
+            synchronizeDb.ScanDb();
+            return Results.Ok("Scanning Db, adding/removing to Db accordingly");
+
+        case "ScanFilesystem":
+            synchronizeDb.ScanFilesystem();
+            return Results.Ok("Scanning filesystem, adding to Db accordingly");
+
+        default:
+            return Results.BadRequest();
+    }
+});
+
+app.Urls.Add("http://localhost:5000");
+app.Urls.Add("http://192.168.0.39:5000");
 app.Run();

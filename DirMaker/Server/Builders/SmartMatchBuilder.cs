@@ -4,7 +4,7 @@ using Server.Common;
 
 namespace Server.Builders;
 
-public class SmartMatchBuilder : DirModule
+public class SmartMatchBuilder : BaseModule
 {
     private readonly ILogger<SmartMatchBuilder> logger;
     private readonly IConfiguration config;
@@ -36,6 +36,7 @@ public class SmartMatchBuilder : DirModule
                 foreach (UspsBundle bundle in context.UspsBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
                 {
                     await Start(bundle.Cycle.Substring(bundle.Cycle.Length - 1, 1), bundle.DataYearMonth, stoppingTokenSource);
+                    await Task.Delay(TimeSpan.FromSeconds(2));
                 }
             }
         }
@@ -46,6 +47,7 @@ public class SmartMatchBuilder : DirModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
+            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }
@@ -54,16 +56,18 @@ public class SmartMatchBuilder : DirModule
     {
         logger.LogInformation("Starting Builder");
         Status = ModuleStatus.InProgress;
+        Message = "Starting Builder";
+        Progress = 1;
 
         Settings.Validate(config);
 
         Task builderTask = Task.CompletedTask;
         string dataSourcePath = Path.Combine(Settings.AddressDataPath, dataYearMonth);
-        string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth);
 
         if (cycle == "N")
         {
             string sourceFolder = Path.Combine(dataSourcePath, $"Cycle-{cycle}");
+            string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N");
 
             CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
@@ -79,6 +83,7 @@ public class SmartMatchBuilder : DirModule
         else if (cycle == "O")
         {
             string sourceFolder = Path.Combine(dataSourcePath, $"Cycle-{cycle}");
+            string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-O");
 
             CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
@@ -94,6 +99,7 @@ public class SmartMatchBuilder : DirModule
         else if (cycle == "OtoN")
         {
             string sourceFolder = Path.Combine(dataSourcePath, "Cycle-O");
+            string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N-Using-O");
 
             CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
@@ -111,8 +117,10 @@ public class SmartMatchBuilder : DirModule
         {
             if (builderTask.Status == TaskStatus.RanToCompletion)
             {
+                Message = "";
+                Progress = 100;
                 logger.LogInformation("XtlBuilder finished running");
-                CheckBuildComplete(dataYearMonth, stoppingTokenSource.Token);
+                CheckBuildComplete(dataYearMonth, cycle, stoppingTokenSource.Token);
                 Status = ModuleStatus.Ready;
                 return;
             }
@@ -127,6 +135,37 @@ public class SmartMatchBuilder : DirModule
     {
         logger.LogInformation(status);
 
+        if (status.IndexOf("(was Stage ") != -1)
+        {
+            int stageNumberIndex = status.IndexOf("(was Stage ");
+            int stageNumber = int.Parse(status.Substring(stageNumberIndex + 11, 1));
+            Message = $"Completed Stage {stageNumber}";
+
+            switch (stageNumber)
+            {
+                case 1:
+                    Progress = 2;
+                    break;
+                case 2:
+                    Progress = 24;
+                    break;
+                case 3:
+                    Progress = 60;
+                    break;
+                case 4:
+                    Progress = 61;
+                    break;
+                case 5:
+                    Progress = 62;
+                    break;
+                case 6:
+                    Progress = 64;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         if (logLevel == Logging.LogLevel.Error)
         {
             cancellationTokenSource.Cancel();
@@ -134,19 +173,25 @@ public class SmartMatchBuilder : DirModule
         }
     }
 
-    private void CheckBuildComplete(string dataYearMonth, CancellationToken stoppingToken)
+    private void CheckBuildComplete(string dataYearMonth, string cycle, CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
             return;
         }
 
+        if (cycle == "OtoN")
+        {
+            cycle = "N";
+        }
+
         // Will be null if Crawler never made a record for it, watch out if running standalone
-        UspsBundle bundle = context.UspsBundles.Where(x => dataYearMonth == x.DataYearMonth).FirstOrDefault();
+        UspsBundle bundle = context.UspsBundles.Where(x => dataYearMonth == x.DataYearMonth && cycle == x.Cycle).FirstOrDefault();
         bundle.IsBuildComplete = true;
         bundle.CompileDate = Utils.CalculateDbDate();
         bundle.CompileTime = Utils.CalculateDbTime();
 
         context.SaveChanges();
+        SendDbUpdate = true;
     }
 }

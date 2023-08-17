@@ -7,6 +7,7 @@ public class ModuleSettings
     public string AddressDataPath { get; set; }
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
+    public string DongleListPath { get; set; }
 
     public string UserName { get; set; }
     public string Password { get; set; }
@@ -46,6 +47,15 @@ public class ModuleSettings
         else
         {
             OutputPath = Path.Combine(Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:OutputPath")));
+        }
+        if (string.IsNullOrEmpty(config.GetValue<string>("DongleListPath")))
+        {
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "DongleListPath"));
+            DongleListPath = Path.Combine(Directory.GetCurrentDirectory(), "DongleListPath");
+        }
+        else
+        {
+            DongleListPath = Path.Combine(Path.GetFullPath(config.GetValue<string>("DongleListPath")));
         }
 
         // Check that day hasn't passed, display next month

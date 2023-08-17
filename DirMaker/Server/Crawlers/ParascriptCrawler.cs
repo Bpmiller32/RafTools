@@ -4,7 +4,7 @@ using Server.Common;
 
 namespace Server.Crawlers;
 
-public class ParascriptCrawler : DirModule
+public class ParascriptCrawler : BaseModule
 {
     private readonly ILogger<ParascriptCrawler> logger;
     private readonly IConfiguration config;
@@ -33,6 +33,7 @@ public class ParascriptCrawler : DirModule
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
                 await Start(stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2));
             }
         }
         catch (TaskCanceledException e)
@@ -55,23 +56,32 @@ public class ParascriptCrawler : DirModule
 
             Settings.Validate(config);
 
+            Message = "Searching for available new files";
             await PullFiles(stoppingToken);
+
+            Message = "Veifying files against database";
             CheckFiles(stoppingToken);
+
+            Message = "Downloading new files";
             await DownloadFiles(stoppingToken);
+
+            Message = "Checking if directories are ready to build";
             CheckBuildReady(stoppingToken);
 
+            Message = "";
             logger.LogInformation("Finished Crawling");
             Status = ModuleStatus.Ready;
         }
         catch (TaskCanceledException e)
         {
             Status = ModuleStatus.Ready;
-            logger.LogDebug("{Message}", e.Message);
+            logger.LogDebug($"{e.Message}");
         }
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            logger.LogError("{Message}", e.Message);
+            Message = "Check logs for more details";
+            logger.LogError($"{e.Message}");
         }
     }
 
@@ -276,6 +286,7 @@ public class ParascriptCrawler : DirModule
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             context.SaveChanges();
+            SendDbUpdate = true;
         }
     }
 

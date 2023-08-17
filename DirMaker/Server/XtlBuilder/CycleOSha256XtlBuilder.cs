@@ -1039,7 +1039,7 @@ namespace Com.Raf.Xtl.Build
                 }
 
                 Directory.CreateDirectory(dongleListsFolder);
-                Utils.CopyFiles(@"C:\Users\billy\Desktop\DongleLists", dongleListsFolder);
+                Utils.CopyFiles(@"C:\DongleLists", dongleListsFolder);
                 // if (SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/DongleLists/trunk", NetworkUser, NetworkPassword, dongleListsFolder))
                 if (true)
                 {

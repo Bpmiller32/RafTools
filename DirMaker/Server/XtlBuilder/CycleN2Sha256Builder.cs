@@ -16,6 +16,8 @@ using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 
 using log4net;
+using Server.Common;
+
 
 namespace Com.Raf.Xtl.Build
 {
@@ -128,7 +130,7 @@ namespace Com.Raf.Xtl.Build
                 string mappedOutput = OutputFolder.Replace(NetworkShare, $"{mappedDrive}\\");
                 if (Directory.Exists(mappedOutput))
                 {
-                    if (MessageBox.Show("", "", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                    if (MessageBox.Show("Existing build found, override?", "Override existing build", MessageBoxButtons.OKCancel) == DialogResult.OK)
                     {
                         FileSystem.DeleteDirectory(mappedOutput);
                     }
@@ -773,22 +775,20 @@ namespace Com.Raf.Xtl.Build
             {
                 LogAndUpdateUser("Processing dongle lists...");
 
-                string adFolder = $"{tempFolder}\\data";
-                if (Directory.Exists(adFolder))
+                string dongleListsFolder = $"{tempFolder}\\dongleLists";
+                if (Directory.Exists(dongleListsFolder))
                 {
-                    FileSystem.DeleteDirectory(adFolder);
+                    FileSystem.DeleteDirectory(dongleListsFolder);
                 }
 
-                string smSdkFolder = $"{tempFolder}\\SMLicense";
-                if (Directory.Exists(smSdkFolder))
-                {
-                    FileSystem.DeleteDirectory(smSdkFolder);
-                }
+                Directory.CreateDirectory(dongleListsFolder);
+                Utils.CopyFiles(@"C:\DongleLists", dongleListsFolder);
 
                 // https://scm.raf.com/repo/ArgosyPost/trunk/Code/data/ (ArgosyDefault.txt)
                 // https://scm.raf.com/repo/APC/trunk/Code/SMLicense/ (SmSdkMonthly.txt)
-                if (SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/ArgosyPost/trunk/Code/data/", NetworkUser, NetworkPassword, adFolder) &&
-                    SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/APC/trunk/Code/SMLicense/", NetworkUser, NetworkPassword, smSdkFolder))
+                // if (SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/ArgosyPost/trunk/Code/data/", NetworkUser, NetworkPassword, adFolder) &&
+                //     SourceControl.CheckoutFolder("https://scm.raf.com/svn/repo/APC/trunk/Code/SMLicense/", NetworkUser, NetworkPassword, smSdkFolder))
+                if (true)
                 {
                     string adText = $"ArgosyDefault.txt";
                     string smSdkText = $"SmSdkMonthly.txt";
@@ -800,23 +800,23 @@ namespace Com.Raf.Xtl.Build
 
                     // ArgosyDefault.txt
                     string prependDate = $"Date={dateYYYYMMDD}{System.Environment.NewLine}";
-                    string newContents = prependDate + File.ReadAllText($"{adFolder}\\{adText}");
-                    File.WriteAllText($"{adFolder}\\{adText}", newContents);
+                    string newContents = prependDate + File.ReadAllText($"{dongleListsFolder}\\{adText}");
+                    File.WriteAllText($"{dongleListsFolder}\\{adText}", newContents);
 
                     // SmSdkMonthly.txt
-                    newContents = prependDate + File.ReadAllText($"{smSdkFolder}\\{smSdkText}");
-                    File.WriteAllText($"{smSdkFolder}\\{smSdkText}", newContents);
+                    newContents = prependDate + File.ReadAllText($"{dongleListsFolder}\\{smSdkText}");
+                    File.WriteAllText($"{dongleListsFolder}\\{smSdkText}", newContents);
 
                     // encrypt both files (EncryptREP.exe)
                     string output;
-                    if (Executable.RunProcess(encryptExe, $" -x lcs \"{adFolder}\\{adText}\"", out output) &&
-                        Executable.RunProcess(encryptExe, $" -x lcs \"{smSdkFolder}\\{smSdkText}\"", out output))
+                    if (Executable.RunProcess(encryptExe, $" -x lcs \"{dongleListsFolder}\\{adText}\"", out output) &&
+                        Executable.RunProcess(encryptExe, $" -x lcs \"{dongleListsFolder}\\{smSdkText}\"", out output))
                     {
                         // copy both .lcs files to xtlOutput
                         string adLcs = adText.Replace(".txt", ".lcs");
                         string smSdkLcs = smSdkText.Replace(".txt", ".lcs");
-                        File.Copy($"{adFolder}\\{adLcs}", $"{xtlOutput}\\ArgosyMonthly.lcs");
-                        File.Copy($"{smSdkFolder}\\{smSdkLcs}", $"{xtlOutput}\\{smSdkLcs}");
+                        File.Copy($"{dongleListsFolder}\\{adLcs}", $"{xtlOutput}\\ArgosyMonthly.lcs");
+                        File.Copy($"{dongleListsFolder}\\{smSdkLcs}", $"{xtlOutput}\\{smSdkLcs}");
                         return true;
                     }
                     else

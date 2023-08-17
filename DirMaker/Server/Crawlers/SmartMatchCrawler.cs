@@ -4,7 +4,7 @@ using Server.Common;
 
 namespace Server.Crawlers;
 
-public class SmartMatchCrawler : DirModule
+public class SmartMatchCrawler : BaseModule
 {
     private readonly ILogger<SmartMatchCrawler> logger;
     private readonly IConfiguration config;
@@ -33,6 +33,7 @@ public class SmartMatchCrawler : DirModule
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
                 await Start(stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2));
             }
         }
         catch (TaskCanceledException e)
@@ -55,11 +56,19 @@ public class SmartMatchCrawler : DirModule
 
             Settings.Validate(config);
 
+            Message = "Searching for available new files";
             await PullFiles(stoppingToken);
+
+            Message = "Veifying files against database";
             CheckFiles(stoppingToken);
+
+            Message = "Downloading new files";
             await DownloadFiles(stoppingToken);
+
+            Message = "Checking if directories are ready to build";
             CheckBuildReady(stoppingToken);
 
+            Message = "";
             logger.LogInformation("Finished Crawling");
             Status = ModuleStatus.Ready;
         }
@@ -71,6 +80,7 @@ public class SmartMatchCrawler : DirModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
+            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }
@@ -296,7 +306,8 @@ public class SmartMatchCrawler : DirModule
                 if (file.FileName == "zip4natl.tar" || file.FileName == "zipmovenatl.tar")
                 {
                     // Since Zip data is the same for N and O, make sure in both folders
-                    File.Copy(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-N", file.FileName), Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-O", file.FileName));
+                    Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-O"));
+                    File.Copy(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-N", file.FileName), Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-O", file.FileName), true);
                 }
             }
         }
@@ -311,9 +322,18 @@ public class SmartMatchCrawler : DirModule
 
         foreach (UspsBundle bundle in context.UspsBundles.Include("BuildFiles").ToList())
         {
-            if (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 6)
+            if (bundle.Cycle == "Cycle-N" && (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 6))
             {
                 continue;
+            }
+            if (bundle.Cycle == "Cycle-O" && (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 4))
+            {
+                UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
+
+                if (cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
+                {
+                    continue;
+                }
             }
 
             bundle.IsReadyForBuild = true;
@@ -321,8 +341,9 @@ public class SmartMatchCrawler : DirModule
             bundle.DownloadTime = Utils.CalculateDbTime();
             bundle.FileCount = bundle.BuildFiles.Count;
 
-            logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
+            logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear} {bundle.Cycle}");
             context.SaveChanges();
+            SendDbUpdate = true;
         }
     }
 

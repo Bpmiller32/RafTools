@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 namespace Server.Builders;
 
-public class RoyalMailBuilder : DirModule
+public class RoyalMailBuilder : BaseModule
 {
     private readonly ILogger<RoyalMailBuilder> logger;
     private readonly IConfiguration config;
@@ -26,11 +26,48 @@ public class RoyalMailBuilder : DirModule
         Settings.DirectoryName = "RoyalMail";
     }
 
+    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
+    {
+        try
+        {
+            Settings.ExecYear = int.Parse(autoStartTime[..4]);
+            Settings.ExecMonth = int.Parse(autoStartTime.Substring(4, 2));
+            Settings.ExecDay = int.Parse(autoStartTime.Substring(6, 2));
+            Settings.ExecHour = int.Parse(autoStartTime.Substring(8, 2));
+            Settings.ExecMinute = int.Parse(autoStartTime.Substring(10, 2));
+
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                logger.LogInformation("Starting Builder - Auto mode");
+
+                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+                Status = ModuleStatus.Standby;
+                await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
+
+                foreach (ParaBundle bundle in context.ParaBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
+                {
+                    PafKey pafKey = context.PafKeys.Where(x => x.DataMonth == bundle.DataMonth && x.DataYear == bundle.DataYear).FirstOrDefault();
+                    await Start(bundle.DataYearMonth, pafKey.Value, stoppingToken);
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                }
+            }
+        }
+        catch (TaskCanceledException e)
+        {
+            logger.LogDebug($"{e.Message}");
+        }
+        catch (Exception e)
+        {
+            Status = ModuleStatus.Error;
+            logger.LogError($"{e.Message}");
+        }
+    }
+
     public async Task Start(string dataYearMonth, string key, CancellationToken stoppingToken)
     {
         try
         {
-            logger.LogInformation("Starting Builder - Manual mode");
+            logger.LogInformation("Starting Builder");
             Status = ModuleStatus.InProgress;
 
             Settings.Validate(config);
@@ -38,28 +75,57 @@ public class RoyalMailBuilder : DirModule
             dataSourcePath = Path.Combine(Settings.AddressDataPath, dataYearMonth);
             dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth);
 
+            Message = "Verifying PAF Key";
+            Progress = 0;
             CheckKey(key, stoppingToken);
+
+            Message = "Extracing files from PAF executable download";
+            Progress = 1;
             await Extract(stoppingToken);
+
+            Message = "Cleaning up from previous builds";
+            Progress = 22;
             Cleanup(fullClean: true, stoppingToken);
+
+            Message = "Updating SMi files and dongle list";
+            Progress = 23;
             UpdateSmiFiles(stoppingToken);
+
+            Message = "Converting PAF data";
+            Progress = 24;
             ConvertPafData(stoppingToken);
+
+            Message = "Compiling database";
+            Progress = 47;
             await Compile(stoppingToken);
+
+            Message = "Packaging database";
+            Progress = 97;
             await Output(stoppingToken);
+
+            Message = "Cleaning up post build";
+            Progress = 98;
             Cleanup(fullClean: false, stoppingToken);
+
+            Message = "Updating packaged directories";
+            Progress = 99;
             CheckBuildComplete(stoppingToken);
 
+            Message = "";
+            Progress = 100;
             logger.LogInformation($"Build Complete: {dataYearMonth}");
             Status = ModuleStatus.Ready;
         }
         catch (TaskCanceledException e)
         {
             Status = ModuleStatus.Ready;
-            logger.LogDebug("{Message}", e.Message);
+            logger.LogDebug($"{e.Message}");
         }
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            logger.LogError("{Message}", e.Message);
+            Message = "Check logs for more details";
+            logger.LogError($"{e.Message}");
         }
     }
 
@@ -170,6 +236,7 @@ public class RoyalMailBuilder : DirModule
 
         Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, "Smi"));
 
+        Utils.CopyFiles(Settings.DongleListPath, Path.Combine(Settings.WorkingPath, "Smi"));
         Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "DirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, "Smi"));
 
         // Build for one month ahead
@@ -270,7 +337,7 @@ public class RoyalMailBuilder : DirModule
 
                 if (matchFound.Success)
                 {
-                    logger.LogDebug("ConvertPafData processing file: {Value}", matchFound.Value);
+                    logger.LogDebug($"ConvertPafData processing file: {matchFound.Value}");
                 }
             }
         }
@@ -315,6 +382,7 @@ public class RoyalMailBuilder : DirModule
         bundle.CompileTime = Utils.CalculateDbTime();
 
         context.SaveChanges();
+        SendDbUpdate = true;
     }
 
     private async Task WaitForExtract(Window[] windows, CancellationToken stoppingToken)
@@ -365,7 +433,7 @@ public class RoyalMailBuilder : DirModule
                 linesRead = int.Parse(matchFound.Value);
                 if (linesRead % 5000 == 0)
                 {
-                    logger.LogDebug("DirectoryDataCompiler {version} addresses processed: {Value}", version, matchFound.Value);
+                    logger.LogDebug($"DirectoryDataCompiler {version} addresses processed: {matchFound.Value}");
                 }
             }
         }

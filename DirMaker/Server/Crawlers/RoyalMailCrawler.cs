@@ -6,7 +6,7 @@ using Server.Common;
 
 namespace Server.Crawlers;
 
-public class RoyalMailCrawler : DirModule
+public class RoyalMailCrawler : BaseModule
 {
     private readonly ILogger<RoyalMailCrawler> logger;
     private readonly IConfiguration config;
@@ -35,6 +35,7 @@ public class RoyalMailCrawler : DirModule
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
                 await Start(stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2));
             }
         }
         catch (TaskCanceledException e)
@@ -57,23 +58,32 @@ public class RoyalMailCrawler : DirModule
 
             Settings.Validate(config);
 
+            Message = "Searching for available new files";
             PullFile(stoppingToken);
+
+            Message = "Veifying files against database";
             CheckFile(stoppingToken);
+
+            Message = "Downloading new files";
             await DownloadFile(stoppingToken);
+
+            Message = "Checking if directories are ready to build";
             CheckBuildReady(stoppingToken);
 
+            Message = "";
             logger.LogInformation("Finished Crawling");
             Status = ModuleStatus.Ready;
         }
         catch (TaskCanceledException e)
         {
             Status = ModuleStatus.Ready;
-            logger.LogDebug("{Message}", e.Message);
+            logger.LogDebug($"{e.Message}");
         }
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            logger.LogError("{Message}", e.Message);
+            Message = "Check logs for more details";
+            logger.LogError($"{e.Message}");
         }
     }
 
@@ -134,7 +144,7 @@ public class RoyalMailCrawler : DirModule
         {
             tempFile.OnDisk = false;
         }
-        logger.LogInformation("Discovered and not on disk: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
+        logger.LogInformation($"Discovered and not on disk: {tempFile.FileName} {tempFile.DataMonth}/{tempFile.DataYear}");
 
         bool bundleExists = context.RoyalBundles.Any(x => (tempFile.DataMonth == x.DataMonth) && (tempFile.DataYear == x.DataYear));
 
@@ -171,7 +181,7 @@ public class RoyalMailCrawler : DirModule
             return;
         }
 
-        logger.LogInformation("New files found for download: {Count}", offDisk.Count);
+        logger.LogInformation($"New files found for download: {offDisk.Count}");
 
         using WebClient request = new();
         request.Credentials = new NetworkCredential(Settings.UserName, Settings.Password);
@@ -179,7 +189,7 @@ public class RoyalMailCrawler : DirModule
 
         using (CancellationTokenRegistration registration = stoppingToken.Register(() => request.CancelAsync()))
         {
-            logger.LogInformation("Currently downloading: {FileName} {DataMonth}/{DataYear}", tempFile.FileName, tempFile.DataMonth, tempFile.DataYear);
+            logger.LogInformation($"Currently downloading: {tempFile.FileName} {tempFile.DataMonth}/{tempFile.DataYear}");
             // Throws error if request is canceled, caught in catch
             fileData = await request.DownloadDataTaskAsync("ftp://pafdownload.afd.co.uk/SetupRM.exe");
         }
@@ -219,6 +229,7 @@ public class RoyalMailCrawler : DirModule
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             context.SaveChanges();
+            SendDbUpdate = true;
         }
     }
 }
