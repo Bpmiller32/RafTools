@@ -47,31 +47,32 @@ public class SmartMatchBuilder : BaseModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }
 
-    public async Task Start(string cycle, string dataYearMonth, CancellationTokenSource stoppingTokenSource)
+    public async Task Start(string cycle, string dataYearMonth, CancellationTokenSource stoppingTokenSource, string expireDays = "105")
     {
         logger.LogInformation("Starting Builder");
         Status = ModuleStatus.InProgress;
         Message = "Starting Builder";
-        Progress = 1;
 
         Settings.Validate(config);
 
         Task builderTask = Task.CompletedTask;
+        cancellationTokenSource = stoppingTokenSource;
         string dataSourcePath = Path.Combine(Settings.AddressDataPath, dataYearMonth);
 
         if (cycle == "N")
         {
-            string sourceFolder = Path.Combine(dataSourcePath, $"Cycle-{cycle}");
+            string sourceFolder = Path.Combine(dataSourcePath, "Cycle-N");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N");
 
-            CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
+            CurrentTask = "Cycle-N";
+            Progress = 1;
+
+            CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
-            cancellationTokenSource = stoppingTokenSource;
             builderTask = Task.Run(() =>
             {
                 using (stoppingTokenSource.Token.Register(Thread.CurrentThread.Interrupt))
@@ -82,12 +83,14 @@ public class SmartMatchBuilder : BaseModule
         }
         else if (cycle == "O")
         {
-            string sourceFolder = Path.Combine(dataSourcePath, $"Cycle-{cycle}");
+            string sourceFolder = Path.Combine(dataSourcePath, "Cycle-O");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-O");
 
-            CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
+            CurrentTask = "Cycle-O";
+            Progress = 1;
+
+            CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
-            cancellationTokenSource = stoppingTokenSource;
             builderTask = Task.Run(() =>
             {
                 using (stoppingTokenSource.Token.Register(Thread.CurrentThread.Interrupt))
@@ -101,14 +104,46 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(dataSourcePath, "Cycle-O");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N-Using-O");
 
-            CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", "105", "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
+            CurrentTask = "Cycle-O";
+            Progress = 1;
+
+            CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
             smartMatchBuilder.UpdateStatus += UpdateStatus;
-            cancellationTokenSource = stoppingTokenSource;
             builderTask = Task.Run(() =>
             {
                 using (stoppingTokenSource.Token.Register(Thread.CurrentThread.Interrupt))
                 {
                     smartMatchBuilder.Build(false, false);
+                }
+            });
+        }
+        else if (cycle == "MASSN")
+        {
+            string sourceFolder = Path.Combine(Settings.AddressDataPath, "MASS-N");
+            string dataOutputPath = Path.Combine(Settings.OutputPath, "MASS-N");
+
+            CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
+            smartMatchBuilder.UpdateStatus += UpdateStatus;
+            builderTask = Task.Run(() =>
+            {
+                using (stoppingTokenSource.Token.Register(Thread.CurrentThread.Interrupt))
+                {
+                    smartMatchBuilder.Build(true, false);
+                }
+            });
+        }
+        else if (cycle == "MASSO")
+        {
+            string sourceFolder = Path.Combine(Settings.AddressDataPath, "MASS-O");
+            string dataOutputPath = Path.Combine(Settings.OutputPath, "MASS-O");
+
+            CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
+            smartMatchBuilder.UpdateStatus += UpdateStatus;
+            builderTask = Task.Run(() =>
+            {
+                using (stoppingTokenSource.Token.Register(Thread.CurrentThread.Interrupt))
+                {
+                    smartMatchBuilder.Build(true, false);
                 }
             });
         }
@@ -186,7 +221,7 @@ public class SmartMatchBuilder : BaseModule
         }
 
         // Will be null if Crawler never made a record for it, watch out if running standalone
-        UspsBundle bundle = context.UspsBundles.Where(x => dataYearMonth == x.DataYearMonth && cycle == x.Cycle).FirstOrDefault();
+        UspsBundle bundle = context.UspsBundles.Where(x => dataYearMonth == x.DataYearMonth && $"Cycle-{cycle}" == x.Cycle).FirstOrDefault();
         bundle.IsBuildComplete = true;
         bundle.CompileDate = Utils.CalculateDbDate();
         bundle.CompileTime = Utils.CalculateDbTime();

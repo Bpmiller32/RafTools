@@ -33,18 +33,19 @@ public class SynchronizeDb : BaseModule
 
         foreach (UspsBundle bundle in context.UspsBundles.Include("BuildFiles").ToList())
         {
+            UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
+
             if (bundle.Cycle == "Cycle-N" && (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 6))
             {
                 bundle.IsReadyForBuild = false;
             }
             else if (bundle.Cycle == "Cycle-O" && (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 4))
             {
-                UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
-
-                if (cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
-                {
-                    bundle.IsReadyForBuild = false;
-                }
+                bundle.IsReadyForBuild = false;
+            }
+            else if (bundle.Cycle == "Cycle-O" && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
+            {
+                continue;
             }
             else
             {

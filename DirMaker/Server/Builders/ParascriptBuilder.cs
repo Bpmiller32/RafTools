@@ -103,7 +103,6 @@ public class ParascriptBuilder : BaseModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }

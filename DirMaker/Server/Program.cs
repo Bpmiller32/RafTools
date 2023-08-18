@@ -63,6 +63,13 @@ WebApplication app = builder.Build();
 DatabaseContext context = app.Services.GetService<DatabaseContext>();
 context.Database.EnsureCreated();
 
+// Register server address
+IConfiguration config = app.Services.GetService<IConfiguration>();
+string serverAddress = config.GetValue<string>("ServerAddress");
+app.Urls.Add("http://localhost:5000");
+app.Urls.Add(serverAddress);
+
+
 // Register Middleware
 app.UseCors("FrontEnd");
 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -106,16 +113,16 @@ app.MapGet("/smartmatch/crawler/{moduleCommand}", (SmartMatchCrawler smartMatchC
         case "start":
             cancelTokens["SmartMatchCrawler"] = new();
             Task.Run(() => smartMatchCrawler.Start(cancelTokens["SmartMatchCrawler"].Token));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["SmartMatchCrawler"] = new();
             Task.Run(() => smartMatchCrawler.AutoStart(cancelTokens["SmartMatchCrawler"].Token));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
 
         case "stop":
             cancelTokens["SmartMatchCrawler"].Cancel();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -129,16 +136,16 @@ app.MapGet("/parascript/crawler/{moduleCommand}", (ParascriptCrawler parascriptC
         case "start":
             cancelTokens["ParascriptCrawler"] = new();
             Task.Run(() => parascriptCrawler.Start(cancelTokens["ParascriptCrawler"].Token));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["ParascriptCrawler"] = new();
             Task.Run(() => parascriptCrawler.AutoStart(cancelTokens["ParascriptCrawler"].Token));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
 
         case "stop":
             cancelTokens["ParascriptCrawler"].Cancel();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -152,16 +159,16 @@ app.MapGet("/royalmail/crawler/{moduleCommand}", (RoyalMailCrawler royalMailCraw
         case "start":
             cancelTokens["RoyalMailCrawler"] = new();
             Task.Run(() => royalMailCrawler.Start(cancelTokens["RoyalMailCrawler"].Token));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["RoyalMailCrawler"] = new();
             Task.Run(() => royalMailCrawler.AutoStart(cancelTokens["RoyalMailCrawler"].Token));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
 
         case "stop":
             cancelTokens["RoyalMailCrawler"].Cancel();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -169,7 +176,7 @@ app.MapGet("/royalmail/crawler/{moduleCommand}", (RoyalMailCrawler royalMailCraw
 });
 
 // Builder Endpoints
-app.MapGet("/smartmatch/builder/{moduleCommand}/{dataYearMonth?}/{cycle?}", (SmartMatchBuilder smartMatchBuilder, string moduleCommand, string cycle, string dataYearMonth) =>
+app.MapGet("/smartmatch/builder/{moduleCommand}/{dataYearMonth?}/{cycle?}/{expireDays?}", (SmartMatchBuilder smartMatchBuilder, string moduleCommand, string cycle, string dataYearMonth, string expireDays) =>
 {
     switch (moduleCommand)
     {
@@ -177,18 +184,24 @@ app.MapGet("/smartmatch/builder/{moduleCommand}/{dataYearMonth?}/{cycle?}", (Sma
             cancelTokens["SmartMatchBuilder"] = new();
             Utils.KillSmProcs();
             Task.Run(() => smartMatchBuilder.Start(cycle, dataYearMonth, cancelTokens["SmartMatchBuilder"]));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["SmartMatchBuilder"] = new();
             Utils.KillSmProcs();
             Task.Run(() => smartMatchBuilder.AutoStart(cancelTokens["SmartMatchBuilder"]));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
+
+        case "customstart":
+            cancelTokens["SmartMatchBuilder"] = new();
+            Utils.KillSmProcs();
+            Task.Run(() => smartMatchBuilder.Start(cycle, dataYearMonth, cancelTokens["SmartMatchBuilder"], expireDays));
+            return Results.Ok();
 
         case "stop":
             cancelTokens["SmartMatchBuilder"].Cancel();
             Utils.KillSmProcs();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -203,18 +216,18 @@ app.MapGet("/parascript/builder/{moduleCommand}/{dataYearMonth?}", (ParascriptBu
             cancelTokens["ParascriptBuilder"] = new();
             Utils.KillSmProcs();
             Task.Run(() => parascriptBuilder.Start(dataYearMonth, cancelTokens["ParascriptBuilder"].Token));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["ParascriptBuilder"] = new();
             Utils.KillSmProcs();
             Task.Run(() => parascriptBuilder.AutoStart(cancelTokens["ParascriptBuilder"].Token));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
 
         case "stop":
             cancelTokens["ParascriptBuilder"].Cancel();
             Utils.KillSmProcs();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -229,18 +242,18 @@ app.MapGet("/royalmail/builder/{moduleCommand}/{dataYearMonth?}/{key?}/{autoStar
             cancelTokens["RoyalMailBuilder"] = new();
             Utils.KillRmProcs();
             Task.Run(() => royalMailBuilder.Start(dataYearMonth, key, cancelTokens["RoyalMailBuilder"].Token));
-            return Results.Ok("Started - Normal mode");
+            return Results.Ok();
 
         case "autostart":
             cancelTokens["RoyalMailBuilder"] = new();
             Utils.KillRmProcs();
             Task.Run(() => royalMailBuilder.AutoStart(autoStartTime, cancelTokens["RoyalMailBuilder"].Token));
-            return Results.Ok("Started - Auto mode");
+            return Results.Ok();
 
         case "stop":
             cancelTokens["RoyalMailBuilder"].Cancel();
             Utils.KillRmProcs();
-            return Results.Ok("Stopped");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -254,7 +267,7 @@ app.MapGet("/dirtester/{moduleCommand}/{directoryName}", (DirTester dirTester, s
     {
         case "Start":
             Task.Run(() => dirTester.Start(directoryName));
-            return Results.Ok("Started Testing");
+            return Results.Ok();
 
         default:
             return Results.BadRequest();
@@ -279,6 +292,4 @@ app.MapGet("/debug/{moduleCommand}", (SynchronizeDb synchronizeDb, string module
     }
 });
 
-app.Urls.Add("http://localhost:5000");
-app.Urls.Add("http://192.168.0.39:5000");
 app.Run();

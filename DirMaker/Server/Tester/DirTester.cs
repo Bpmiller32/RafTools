@@ -29,25 +29,32 @@ public class DirTester : BaseModule
 
             switch (directoryName)
             {
+                case "debug":
+
+                    break;
                 case "Zip4":
+                    CurrentTask = "Zip4";
                     Zip4CheckDisc();
                     break;
                 case "SmartMatch":
+                    CurrentTask = "Cycle-O";
                     SmartMatchCheckDisc();
                     await SmartMatchInstallDirectory();
-                    // await CheckLicense();
+                    await CheckLicense();
                     // AddLicense();
                     // await InjectImages(directoryName);
                     break;
                 case "Parascript":
+                    CurrentTask = "Parascript";
                     ParascriptCheckDisc();
                     await ParascriptInstallDirectory();
                     // await InjectImages(directoryName);
                     break;
                 case "RoyalMail":
+                    CurrentTask = "RoyalMail";
                     RoyalMailCheckDisc();
                     await RoyalMailInstallDirectory();
-                    // await CheckLicense();
+                    await CheckLicense();
                     // AddLicense();
                     // await InjectImages(directoryName);
                     break;
@@ -59,7 +66,6 @@ public class DirTester : BaseModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }

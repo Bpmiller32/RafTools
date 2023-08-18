@@ -80,7 +80,6 @@ public class SmartMatchCrawler : BaseModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
-            Message = "Check logs for more details";
             logger.LogError($"{e.Message}");
         }
     }
@@ -328,13 +327,15 @@ public class SmartMatchCrawler : BaseModule
             }
             if (bundle.Cycle == "Cycle-O" && (!bundle.BuildFiles.All(x => x.OnDisk) || bundle.BuildFiles.Count < 4))
             {
-                UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
-
-                if (cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
-                {
-                    continue;
-                }
+                continue;
             }
+
+            UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
+            if (bundle.Cycle == "Cycle-O" && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
+            {
+                continue;
+            }
+
 
             bundle.IsReadyForBuild = true;
             bundle.DownloadDate = Utils.CalculateDbDate();
