@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using System.IO.Compression;
-using System.Text.RegularExpressions;
 using Server.Common;
+
+#pragma warning disable CS4014 //ignore that not awaiting Task, by design
 
 namespace Server.Tester;
 
@@ -10,56 +11,111 @@ public class DirTester : BaseModule
     private readonly ILogger<DirTester> logger;
     private readonly IConfiguration config;
 
-    private string discDrivePath = "";
-
     public DirTester(ILogger<DirTester> logger, IConfiguration config)
     {
         this.logger = logger;
         this.config = config;
     }
 
-    public async Task Start(string directoryName)
+    public async Task Start(string directoryName, string dataYearMonth)
     {
         try
         {
             logger.LogInformation("Starting Tester");
             Status = ModuleStatus.InProgress;
 
-            discDrivePath = config.GetValue<string>($"TestDrivePaths:{directoryName}");
+            Settings.DirectoryName = directoryName;
+            Settings.Validate(config);
 
             switch (directoryName)
             {
-                case "debug":
-
-                    break;
                 case "Zip4":
                     CurrentTask = "Zip4";
+
+                    Message = "Checking disc contents";
+                    Progress = 50;
                     Zip4CheckDisc();
+
                     break;
                 case "SmartMatch":
                     CurrentTask = "Cycle-O";
+
+                    Message = "Checking disc contents";
+                    Progress = 15;
                     SmartMatchCheckDisc();
+
+                    Message = "Installing directory to Argosy Post";
+                    Progress = 30;
                     await SmartMatchInstallDirectory();
-                    await CheckLicense();
-                    // AddLicense();
-                    // await InjectImages(directoryName);
+
+                    Message = "Checking directory license file";
+                    Progress = 45;
+                    if (await CheckLicense(directoryName))
+                    {
+                        Message = "Changed to known working configuration, dongle on list";
+                    }
+                    else
+                    {
+                        Message = "Unable to change to known working configuration, donglelist likely performing correctly";
+                    }
+
+                    Message = "Adding dongle to directory license file";
+                    Progress = 60;
+                    AddSmartMatchLicense(dataYearMonth);
+
+                    Message = "Injecting test images";
+                    Progress = 75;
+                    await InjectImages(directoryName);
                     break;
                 case "Parascript":
                     CurrentTask = "Parascript";
+
+                    Message = "Checking disc contents";
+                    Progress = 25;
                     ParascriptCheckDisc();
+
+                    Message = "Installing directory to Argosy Post";
+                    Progress = 50;
                     await ParascriptInstallDirectory();
+
+                    Message = "Injecting test images";
+                    Progress = 75;
                     // await InjectImages(directoryName);
                     break;
                 case "RoyalMail":
                     CurrentTask = "RoyalMail";
+
+                    Message = "Checking disc contents";
+                    Progress = 15;
                     RoyalMailCheckDisc();
+
+                    Message = "Installing directory to Argosy Post";
+                    Progress = 30;
                     await RoyalMailInstallDirectory();
-                    await CheckLicense();
-                    // AddLicense();
-                    // await InjectImages(directoryName);
+
+                    Message = "Checking directory license file";
+                    Progress = 45;
+                    if (await CheckLicense(directoryName))
+                    {
+                        Message = "Changed to known working configuration, dongle on list";
+                    }
+                    else
+                    {
+                        Message = "Unable to change to known working configuration, donglelist likely performing correctly";
+                    }
+
+                    Message = "Adding dongle to directory license file";
+                    Progress = 60;
+                    AddRoyalMailLicense(dataYearMonth);
+
+                    Message = "Injecting test images";
+                    Progress = 75;
+                    await InjectImages(directoryName);
                     break;
             }
 
+            Message = "";
+            Progress = 100;
             logger.LogInformation("Test Complete");
             Status = ModuleStatus.Ready;
         }
@@ -72,14 +128,15 @@ public class DirTester : BaseModule
 
     private async Task InjectImages(string directoryName)
     {
+        // AP warmup....
+        await Task.Delay(TimeSpan.FromSeconds(5));
         await Utils.StartService("RAFArgosyMaster");
 
         // Set config with ControlPort, wait for Recmodule to initialize after setting
-        Process controlPort = Utils.RunProc(@"C:\Users\User\Desktop\Control_Example.exe", "7 localhost 1069 " + directoryName);
-        controlPort.WaitForExit();
-        await Task.Delay(TimeSpan.FromSeconds(15));
+        ControlPort controlPort = new(logger, "127.0.0.1", 1069);
+        controlPort.RequestConfigChange(directoryName);
 
-        BackEndSockC beSockC = new("172.27.23.57");
+        BackEndSockC beSockC = new("127.0.0.1");
         CancellationTokenSource stoppingTokenSource = new();
 
         _ = Task.Run(async () =>
@@ -105,62 +162,35 @@ public class DirTester : BaseModule
         }
     }
 
-    private async Task CheckLicense()
+    private async Task<bool> CheckLicense(string directoryName)
     {
-        // Very annoying constructor instead of DateTime.Now because DateTime.Compare doesn't work as one would expect later....
-        DateTime checkTime = new(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second, 0);
+        ControlPort controlPort = new(logger, "127.0.0.1", 1069);
 
-        // Do this after creating checkTime to make sure timing is right, start the service to populate the txt, stop to release control so StreamReader can access
-        await Utils.StartService("RAFArgosyMaster");
-        await Utils.StopService("RAFArgosyMaster");
-
-        using StreamReader sr = new(@"C:\ProgramData\RAF\ArgosyPost\Log\Master_latest.txt");
-
-        bool dongleCheckPass = false;
-        Regex match = new(@"(Argosy Post Dongle )(\d\d-\d\d\d\d\d\d\d\d)");
-        string line;
-
-        while ((line = sr.ReadLine()) != null)
+        Task.Run(async () =>
         {
-            Match dongleFound = match.Match(line);
+            // AP Warmup
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            controlPort.RequestStatusAlerts();
 
-            if (dongleFound.Success)
-            {
-                string logDongleId = dongleFound.Groups[2].Value;
+            // Set to known baseline config (Silver, no product)
+            await Task.Delay(TimeSpan.FromSeconds(10));
+            controlPort.RequestConfigChange("Baseline");
 
-                if (logDongleId != config.GetValue<string>("DongleId"))
-                {
-                    throw new Exception("Dongle ID in log does not match dongle to be tested against");
-                }
-            }
+            // Set to config for testing
+            await Task.Delay(TimeSpan.FromSeconds(10));
+            controlPort.RequestConfigChange(directoryName);
+        });
 
-            if (line.Contains("SM Adaptor       Error initializing license subsystem:"))
-            {
-                int logMonth = int.Parse(line[..2]);
-                int logDay = int.Parse(line.Substring(3, 2));
-                int logYear = int.Parse(string.Concat("20", line.AsSpan(6, 2)));
-
-                int logHour = int.Parse(line.Substring(9, 2));
-                int logMinute = int.Parse(line.Substring(12, 2));
-                int logSecond = int.Parse(line.Substring(15, 2));
-
-                DateTime logTime = new(logYear, logMonth, logDay, logHour, logMinute, logSecond, 0);
-
-                int dateCompare = DateTime.Compare(logTime, checkTime);
-
-                if (dateCompare >= 0)
-                {
-                    dongleCheckPass = true;
-                    break;
-                }
-            }
+        if (await controlPort.RecieveMessage())
+        {
+            return true;
         }
-
-        if (!dongleCheckPass)
+        else
         {
-            throw new Exception("Directory did not pass LCS test");
+            return false;
         }
     }
+
 
     private void Zip4CheckDisc()
     {
@@ -173,7 +203,7 @@ public class DirTester : BaseModule
 
         foreach (string file in smFiles)
         {
-            if (!File.Exists(Path.Combine(discDrivePath, file)))
+            if (!File.Exists(Path.Combine(Settings.DiscDrivePath, file)))
             {
                 missingFiles += file + ", ";
             }
@@ -199,7 +229,7 @@ public class DirTester : BaseModule
 
         foreach (string file in smFiles)
         {
-            if (!File.Exists(Path.Combine(discDrivePath, file)))
+            if (!File.Exists(Path.Combine(Settings.DiscDrivePath, file)))
             {
                 missingFiles += file + ", ";
             }
@@ -253,21 +283,21 @@ public class DirTester : BaseModule
 
         string missingFiles = "";
 
-        if (!File.Exists(Path.Combine(discDrivePath, "DPV", dpvFile)))
+        if (!File.Exists(Path.Combine(Settings.DiscDrivePath, "DPV", dpvFile)))
         {
             missingFiles += dpvFile + ", ";
         }
-        if (!File.Exists(Path.Combine(discDrivePath, "Suite", suiteFile)))
+        if (!File.Exists(Path.Combine(Settings.DiscDrivePath, "Suite", suiteFile)))
         {
             missingFiles += suiteFile + ", ";
         }
-        if (!File.Exists(Path.Combine(discDrivePath, "Zip4", zip4File)))
+        if (!File.Exists(Path.Combine(Settings.DiscDrivePath, "Zip4", zip4File)))
         {
             missingFiles += zip4File + ", ";
         }
         foreach (string file in lacsFiles)
         {
-            if (!File.Exists(Path.Combine(discDrivePath, "LACS", file)))
+            if (!File.Exists(Path.Combine(Settings.DiscDrivePath, "LACS", file)))
             {
                 missingFiles += file + ", ";
             }
@@ -286,6 +316,7 @@ public class DirTester : BaseModule
         {
             "UK_IgnorableWordsTable.txt",
             "UK_RM_CM.lcs",
+            "UK_RM_CM.elcs",
             "UK_RM_CM.smi",
             "UK_RM_CM_Patterns.exml",
             "UK_WordMatchTable.txt",
@@ -293,13 +324,13 @@ public class DirTester : BaseModule
 
         string missingFiles = "";
 
-        if (!File.Exists(Path.Combine(discDrivePath, rmSettingsFile)))
+        if (!File.Exists(Path.Combine(Settings.DiscDrivePath, rmSettingsFile)))
         {
             missingFiles += rmSettingsFile + ", ";
         }
         foreach (string file in rmFiles)
         {
-            if (!File.Exists(Path.Combine(discDrivePath, "UK_RM_CM", file)))
+            if (!File.Exists(Path.Combine(Settings.DiscDrivePath, "UK_RM_CM", file)))
             {
                 missingFiles += file + ", ";
             }
@@ -334,100 +365,25 @@ public class DirTester : BaseModule
         Directory.CreateDirectory(Path.Combine(@"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match", "SuiteLink"));
         Directory.CreateDirectory(Path.Combine(@"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match", "Zip4"));
 
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "Zip4.zip"), Path.Combine(tempFolder, "Zip4"));
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "SUITE.zip"), Path.Combine(tempFolder, "Suite"));
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "DPV.zip"), Path.Combine(tempFolder, "DPV"));
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "LACS.zip"), Path.Combine(tempFolder, "LACS"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "Zip4.zip"), Path.Combine(tempFolder, "Zip4"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "SUITE.zip"), Path.Combine(tempFolder, "Suite"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "DPV.zip"), Path.Combine(tempFolder, "DPV"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "LACS.zip"), Path.Combine(tempFolder, "LACS"));
 
         // Copy Files to Argosy
-        List<string> dpvFiles = new()
-        {
-            "dph.hsa",
-            "dph.hsc",
-            "dph.hsf",
-            "dvdhdr01.dat",
-            "lcd",
-            "live.txt",
-            "llk.hsa",
-            "month.dat"
-        };
-        foreach (string file in dpvFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "DPV", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\DPV\" + file, true);
-        }
+        Utils.CopyFiles(Path.Combine(tempFolder, "DPV"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\DPV");
+        Utils.CopyFiles(Path.Combine(tempFolder, "LACS"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\LACSLink");
+        Utils.CopyFiles(Path.Combine(tempFolder, "Suite"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\SuiteLink");
+        Utils.CopyFiles(Path.Combine(tempFolder, "Zip4"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\Zip4");
 
-        List<string> lacsFiles = new()
-        {
-            "live.txt",
-            "llk.hs1",
-            "llk.hs2",
-            "llk.hs3",
-            "llk.hs4",
-            "llk.hs5",
-            "llk.hs6",
-            "llk.hsl",
-            "llkhdr01.dat",
-            "llk_hint.lst",
-            "llk_leftrite.txt",
-            "llk_strname.txt",
-            "llk_urbx.lst",
-            "llk_x11",
-        };
-        foreach (string file in lacsFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "LACS", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\LACSLink\" + file, true);
-        }
-
-        List<string> suiteFiles = new()
-        {
-            "lcd",
-            "live.txt",
-            "slk.dat",
-            "slkhdr01.dat",
-            "slknine.lst",
-            "slknoise.lst",
-            "slknormal.lst",
-            "slksecnums.dat",
-        };
-        foreach (string file in suiteFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "Suite", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\SuiteLink\" + file, true);
-        }
-
-        List<string> zip4Files = new()
-        {
-            "0.xtl",
-            "200.xtl",
-            "201.xtl",
-            "202.xtl",
-            "203.xtl",
-            "204.xtl",
-            "206.xtl",
-            "207.xtl",
-            "208.xtl",
-            "209.xtl",
-            "210.xtl",
-            "211.xtl",
-            "212.xtl",
-            "213.xtl",
-            "51.xtl",
-            "55.xtl",
-            "56.xtl",
-            "argosymonthly.lcs",
-            "liven2.txt",
-            "smsdkmonthly.lcs",
-            "xtl-id.txt",
-            "zip4crcs.txt",
-        };
-        foreach (string file in zip4Files)
-        {
-            File.Copy(Path.Combine(tempFolder, "Zip4", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\Zip4\" + file, true);
-        }
-
+        // Cleanup
         if (Directory.Exists(tempFolder))
         {
             Directory.Delete(tempFolder, true);
         }
+
+        // Start RAFMaster
+        await Utils.StartService("RAFArgosyMaster");
     }
 
     private async Task ParascriptInstallDirectory()
@@ -453,128 +409,25 @@ public class DirTester : BaseModule
         Directory.CreateDirectory(Path.Combine(@"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript", "SuiteLink"));
         Directory.CreateDirectory(Path.Combine(@"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript", "Zip4"));
 
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "Zip4", "Zip4.zip"), Path.Combine(tempFolder, "Zip4"));
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "Suite", "SUITE.zip"), Path.Combine(tempFolder, "Suite"));
-        ZipFile.ExtractToDirectory(Path.Combine(discDrivePath, "DPV", "DPV.zip"), Path.Combine(tempFolder, "DPV"));
-        Utils.CopyFiles(Path.Combine(discDrivePath, "LACS"), Path.Combine(tempFolder, "LACS"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "Zip4", "Zip4.zip"), Path.Combine(tempFolder, "Zip4"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "Suite", "SUITE.zip"), Path.Combine(tempFolder, "Suite"));
+        ZipFile.ExtractToDirectory(Path.Combine(Settings.DiscDrivePath, "DPV", "DPV.zip"), Path.Combine(tempFolder, "DPV"));
+        Utils.CopyFiles(Path.Combine(Settings.DiscDrivePath, "LACS"), Path.Combine(tempFolder, "LACS"));
 
         // Copy Files to Argosy
-        List<string> dpvFiles = new()
-        {
-            "dph.hsa",
-            "dph.hsc",
-            "dph.hsf",
-            "dph.hsx",
-            "fileinfo_log.txt",
-            "lcd",
-            "month.dat",
-        };
-        foreach (string file in dpvFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "DPV", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\DPV\" + file, true);
-        }
-
-        List<string> lacsFiles = new()
-        {
-            "fileinfo_log.txt",
-            "llk.hs1",
-            "llk.hs2",
-            "llk.hs3",
-            "llk.hs4",
-            "llk.hs5",
-            "llk.hs6",
-            "llk.hsa",
-            "llk.hsl",
-            "llkhdr01.dat",
-            "llk_cln.dat",
-            "llk_cln.txt",
-            "llk_crd.dat",
-            "llk_czp.dat",
-            "llk_czp.txt",
-            "llk_dsc.dat",
-            "llk_hint.lst",
-            "llk_lcd",
-            "llk_leftrite.txt",
-            "llk_lln.dat",
-            "llk_nam.dat",
-            "llk_pno.dat",
-            "llk_rv9.dat",
-            "llk_rv9.esd",
-            "llk_rv9.idx",
-            "llk_sno.dat",
-            "llk_strname.txt",
-            "llk_suf.dat",
-            "llk_urbx.lst",
-            "llk_x11",
-        };
-        foreach (string file in lacsFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "LACS", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\LACSLink\" + file, true);
-        }
-
-        List<string> suiteFiles = new()
-        {
-            "dvdhdr01.dat",
-            "fileinfo_log.txt",
-            "lcd",
-            "slk.asc",
-            "slk.ebc",
-            "slkhdr01.dat",
-            "slknine.lst",
-            "slknoise.lst",
-            "slknormal.lst",
-            "slk_lcd",
-        };
-        foreach (string file in suiteFiles)
-        {
-            File.Copy(Path.Combine(tempFolder, "Suite", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\SuiteLink\" + file, true);
-        }
-
-        List<string> zip4Files = new()
-        {
-            "ads_database.cfg",
-            "cs_city.adb",
-            "cs_city.als",
-            "cs_city.voc",
-            "cs_cs.adb",
-            "cs_csb.adb",
-            "cs_frgn.adb",
-            "cs_frgn.voc",
-            "cs_state.adb",
-            "cs_state.als",
-            "cs_state.voc",
-            "cs_zip.voc",
-            "live.txt",
-            "st2zip.arr",
-            "z4_apt.voc",
-            "z4_ns.adb",
-            "z4_pbns.voc",
-            "z4_pobox.voc",
-            "z4_rr.adb",
-            "z4_rr.als",
-            "z4_sdir.adb",
-            "z4_sdir.als",
-            "z4_sname.als",
-            "z4_ssuf1.als",
-            "z4_ssuf2.als",
-            "z4_ssuff.adb",
-            "zc2f.adb",
-            "zfn.adb",
-            "zip_info.adb",
-            "zip_move.arr",
-            "zip_patt.adb",
-            "zip_tran.adb",
-        };
-        foreach (string file in zip4Files)
-        {
-            File.Copy(Path.Combine(tempFolder, "Zip4", file), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\Zip4\" + file, true);
-        }
+        Utils.CopyFiles(Path.Combine(tempFolder, "DPV"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\DPV");
+        Utils.CopyFiles(Path.Combine(tempFolder, "LACS"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\LACSLink");
+        Utils.CopyFiles(Path.Combine(tempFolder, "Suite"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\SuiteLink");
+        Utils.CopyFiles(Path.Combine(tempFolder, "Zip4"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\AddressScript\Zip4");
 
         // Cleanup
         if (Directory.Exists(tempFolder))
         {
             Directory.Delete(tempFolder, true);
         }
+
+        // Start RAFMaster
+        await Utils.StartService("RAFArgosyMaster");
     }
 
     private async Task RoyalMailInstallDirectory()
@@ -582,6 +435,94 @@ public class DirTester : BaseModule
         // Stop RAFMaster
         await Utils.StopService("RAFArgosyMaster");
 
-        Utils.CopyFiles(discDrivePath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
+        Utils.CopyFiles(Settings.DiscDrivePath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
+
+        // Start RAFMaster
+        await Utils.StartService("RAFArgosyMaster");
+    }
+
+    private async Task AddSmartMatchLicense(string dataYearMonth)
+    {
+        // Cleanup
+        if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.txt")))
+        {
+            File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.txt"));
+        }
+        if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.elcs")))
+        {
+            File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.elcs"));
+        }
+
+        // Set dataYearMonth to year and month (day is always the 1st)
+        dataYearMonth += "01";
+
+        // Create txt version of ArgosyMonthly that includes dongle
+        string rawDongleListPath = Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.txt");
+        using (StreamWriter sw = new(rawDongleListPath, true))
+        {
+            sw.WriteLine("Date=" + dataYearMonth);
+            sw.WriteLine("Dongles:");
+            sw.WriteLine(config.GetValue<string>("DongleId"));
+        }
+
+        string encryptRepFileName = Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptREP.exe");
+        string encryptRepArgs = $"-x elcs {rawDongleListPath}";
+
+        // Remember to add EncryptREP to Windows Defender exclusion list
+        Process encryptRep = Utils.RunProc(encryptRepFileName, encryptRepArgs);
+        encryptRep.WaitForExit();
+
+        // Check that LCS file was actually created
+        if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.elcs")))
+        {
+            throw new Exception("ELCS file was not created, something likely wrong with EncryptREP");
+        }
+
+        // Overwrite old LCS, start RAFArgosyMaster
+        await Utils.StopService("RAFArgosyMaster");
+        File.Copy(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.elcs"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\Zip4\argosymonthly.elcs", true);
+    }
+
+    private async Task AddRoyalMailLicense(string dataYearMonth)
+    {
+        // Cleanup
+        if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.txt")))
+        {
+            File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.txt"));
+        }
+        if (File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.elcs")))
+        {
+            File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.elcs"));
+        }
+
+        // Set dataYearMonth to year and month (day is always the 19th)
+        dataYearMonth += "19";
+
+        // Create txt version of UK_RM_CM that includes dongle
+        string rawDongleListPath = Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.txt");
+        using (StreamWriter sw = new(rawDongleListPath, true))
+        {
+            sw.WriteLine($"Date={dataYearMonth}");
+            sw.WriteLine("Directory=UK_RM_CM");
+            sw.WriteLine("Dongles:");
+            sw.WriteLine(config.GetValue<string>("DongleId"));
+        }
+
+        string encryptRepFileName = Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptREP.exe");
+        string encryptRepArgs = $"-x elcs {rawDongleListPath}";
+
+        // Remember to add EncryptREP to Windows Defender exclusion list
+        Process encryptRep = Utils.RunProc(encryptRepFileName, encryptRepArgs);
+        encryptRep.WaitForExit();
+
+        // Check that LCS file was actually created
+        if (!File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.elcs")))
+        {
+            throw new Exception("ELCS file was not created, something likely wrong with EncryptREP");
+        }
+
+        // Overwrite old LCS, start RAFArgosyMaster
+        await Utils.StopService("RAFArgosyMaster");
+        File.Copy(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.elcs"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i\UK_RM_CM\UK_RM_CM.elcs", true);
     }
 }

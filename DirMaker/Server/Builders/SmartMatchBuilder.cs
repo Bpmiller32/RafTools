@@ -21,7 +21,7 @@ public class SmartMatchBuilder : BaseModule
         Settings.DirectoryName = "SmartMatch";
     }
 
-    public async Task AutoStart(CancellationTokenSource stoppingTokenSource)
+    public async Task AutoStart(string autoStartTime, CancellationTokenSource stoppingTokenSource)
     {
         try
         {
@@ -29,7 +29,9 @@ public class SmartMatchBuilder : BaseModule
             {
                 logger.LogInformation("Starting Builder - Auto mode");
 
+                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
                 TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+
                 Status = ModuleStatus.Standby;
                 await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingTokenSource.Token);
 
@@ -62,6 +64,9 @@ public class SmartMatchBuilder : BaseModule
         Task builderTask = Task.CompletedTask;
         cancellationTokenSource = stoppingTokenSource;
         string dataSourcePath = Path.Combine(Settings.AddressDataPath, dataYearMonth);
+
+        await Utils.StopService("MSSQLSERVER");
+        await Utils.StartService("MSSQLSERVER");
 
         if (cycle == "N")
         {

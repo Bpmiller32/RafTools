@@ -30,17 +30,13 @@ public class RoyalMailBuilder : BaseModule
     {
         try
         {
-            Settings.ExecYear = int.Parse(autoStartTime[..4]);
-            Settings.ExecMonth = int.Parse(autoStartTime.Substring(4, 2));
-            Settings.ExecDay = int.Parse(autoStartTime.Substring(6, 2));
-            Settings.ExecHour = int.Parse(autoStartTime.Substring(8, 2));
-            Settings.ExecMinute = int.Parse(autoStartTime.Substring(10, 2));
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogInformation("Starting Builder - Auto mode");
 
+                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
                 TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+
                 Status = ModuleStatus.Standby;
                 await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
 
@@ -236,7 +232,7 @@ public class RoyalMailBuilder : BaseModule
         Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, "Smi"));
 
         Utils.CopyFiles(Settings.DongleListPath, Path.Combine(Settings.WorkingPath, "Smi"));
-        Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "DirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, "Smi"));
+        Utils.CopyFiles(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "UkDirectoryCreationFiles"), Path.Combine(Settings.WorkingPath, "Smi"));
 
         // Build for one month ahead
         int dataMonthInt = int.Parse(dataYearMonth.Substring(4, 2));
@@ -284,13 +280,18 @@ public class RoyalMailBuilder : BaseModule
         File.Move(Path.Combine(Settings.WorkingPath, "Smi", "DongleTemp.txt"), Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
 
         // Encrypt new Uk dongle list, but first wrap the combined paths in quotes to get around spaced directories
-        string encryptRepFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptREP.exe"));
+        string encryptRepFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptREP.exe"));
+        // Perform for LCS
         string encryptRepArgs = "-x lcs " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
         Process encryptRep = Utils.RunProc(encryptRepFileName, encryptRepArgs);
         encryptRep.WaitForExit();
+        // Perform for ELCS
+        encryptRepArgs = "-x elcs " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM.txt"));
+        encryptRep = Utils.RunProc(encryptRepFileName, encryptRepArgs);
+        encryptRep.WaitForExit();
 
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
-        string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "EncryptPatterns.exe"));
+        string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptPatterns.exe"));
         string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + " --clickCharge";
         Process encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
         encryptPatterns.WaitForExit();
@@ -314,7 +315,7 @@ public class RoyalMailBuilder : BaseModule
         Utils.CopyFiles(Path.Combine(dataSourcePath, "ALIAS"), Path.Combine(Settings.WorkingPath, "Db"));
 
         // Start ConvertPafData tool, listen for output
-        string convertPafDataFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "ConvertPafData.exe"));
+        string convertPafDataFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "UkBuildTools", "ConvertPafData.exe"));
         string convertPafDataArgs = "--pafPath " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Db")) + " --lastPafFileNum 15";
         Process convertPafData = Utils.RunProc(convertPafDataFileName, convertPafDataArgs);
 
@@ -406,7 +407,7 @@ public class RoyalMailBuilder : BaseModule
             File.Copy(Path.Combine(Settings.WorkingPath, "Smi", file), Path.Combine(Settings.WorkingPath, version, file), true);
         }
 
-        string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", version, "DirectoryDataCompiler.exe"));
+        string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "UkBuildTools", version, "DirectoryDataCompiler.exe"));
         string directoryDataCompilerArgs = "--definition " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM.xml")) + " --patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml")) + " --password M0ntyPyth0n --licensed";
         Process directoryDataCompiler = Utils.RunProc(directoryDataCompilerFileName, directoryDataCompilerArgs);
 

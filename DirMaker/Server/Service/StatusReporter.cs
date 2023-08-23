@@ -2,6 +2,7 @@ using System.Text.Json;
 using Server.Builders;
 using Server.Common;
 using Server.Crawlers;
+using Server.Tester;
 
 namespace Server.Service;
 
@@ -12,7 +13,7 @@ public class StatusReporter
     private readonly Dictionary<string, BaseModule> modules = new();
     private readonly Dictionary<string, string> dbBuilds = new();
 
-    public StatusReporter(DatabaseContext context, SmartMatchCrawler smartMatchCrawler, SmartMatchBuilder smartMatchBuilder, ParascriptCrawler parascriptCrawler, ParascriptBuilder parascriptBuilder, RoyalMailCrawler royalMailCrawler, RoyalMailBuilder royalMailBuilder)
+    public StatusReporter(DatabaseContext context, SmartMatchCrawler smartMatchCrawler, SmartMatchBuilder smartMatchBuilder, ParascriptCrawler parascriptCrawler, ParascriptBuilder parascriptBuilder, RoyalMailCrawler royalMailCrawler, RoyalMailBuilder royalMailBuilder, DirTester dirTester)
     {
         this.context = context;
 
@@ -24,6 +25,8 @@ public class StatusReporter
 
         modules.Add("royalMailCrawler", royalMailCrawler);
         modules.Add("royalMailBuilder", royalMailBuilder);
+
+        modules.Add("dirTester", dirTester);
 
 
         dbBuilds.Add("smNReadytoBuild", string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList()));
@@ -85,7 +88,8 @@ public class StatusReporter
                 {
                     modules["smartMatchBuilder"].Status,
                     modules["smartMatchBuilder"].Progress,
-                    modules["smartMatchBuilder"].Message
+                    modules["smartMatchBuilder"].Message,
+                    modules["smartMatchBuilder"].CurrentTask
                 },
 
                 IsReadyForBuildN = dbBuilds["smNReadytoBuild"],
@@ -123,11 +127,18 @@ public class StatusReporter
                 {
                     modules["royalMailBuilder"].Status,
                     modules["royalMailBuilder"].Progress,
-                    modules["royalMailBuilder"].Message
+                    modules["royalMailBuilder"].Message,
                 },
 
                 IsReadyForBuild = dbBuilds["rmReadytoBuild"],
                 IsBuildComplete = dbBuilds["rmBuildComplete"]
+            },
+            DirTester = new
+            {
+                modules["dirTester"].Status,
+                modules["dirTester"].Progress,
+                modules["dirTester"].Message,
+                modules["dirTester"].CurrentTask
             }
         };
 

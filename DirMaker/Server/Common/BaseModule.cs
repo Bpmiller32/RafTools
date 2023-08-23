@@ -6,6 +6,7 @@ public class BaseModule
     public int Progress { get; set; }
     public string CurrentTask { get; set; } = "";
     public string Message { get; set; } = "";
+
     public bool SendDbUpdate { get; set; }
     protected ModuleSettings Settings { get; set; } = new();
 }

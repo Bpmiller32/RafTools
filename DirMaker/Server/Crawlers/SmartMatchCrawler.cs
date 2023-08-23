@@ -21,14 +21,17 @@ public class SmartMatchCrawler : BaseModule
         Settings.DirectoryName = "SmartMatch";
     }
 
-    public async Task AutoStart(CancellationToken stoppingToken)
+    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
     {
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogInformation("Starting Crawler - Auto mode");
+
+                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
                 TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+
                 Status = ModuleStatus.Standby;
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 
@@ -331,7 +334,7 @@ public class SmartMatchCrawler : BaseModule
             }
 
             UspsBundle cycleNEquivalent = context.UspsBundles.Where(x => x.DataYearMonth == bundle.DataYearMonth && x.Cycle == "Cycle-N").Include("BuildFiles").FirstOrDefault();
-            if (bundle.Cycle == "Cycle-O" && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
+            if (bundle.Cycle == "Cycle-O" && !cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zip4natl.tar") && !cycleNEquivalent.BuildFiles.Any(x => x.FileName == "zipmovenatl.tar"))
             {
                 continue;
             }

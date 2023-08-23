@@ -254,29 +254,29 @@ public static class Utils
         }
     }
 
-    public static int ConvertIntBytes(byte[] byteArray)
+    public static int ConvertIntBytes(byte[] bytes)
     {
-        Array.Reverse(byteArray);
-        uint value = BitConverter.ToUInt32(byteArray);
+        Array.Reverse(bytes);
+        uint value = BitConverter.ToUInt32(bytes);
 
         return Convert.ToInt32(value);
     }
 
-    public static string ConvertStringBytes(byte[] byteArray)
+    public static string ConvertStringBytes(byte[] bytes)
     {
-        Array.Reverse(byteArray);
-        return Encoding.UTF8.GetString(byteArray);
+        Array.Reverse(bytes);
+        return Encoding.UTF8.GetString(bytes);
     }
 
-    public static bool ConvertBoolBytes(byte[] byteArray)
+    public static bool ConvertBoolBytes(byte[] bytes)
     {
-        Array.Reverse(byteArray);
-        return BitConverter.ToBoolean(byteArray);
+        Array.Reverse(bytes);
+        return BitConverter.ToBoolean(bytes);
     }
 
-    public static BitArray ConvertBitBytes(byte[] byteArray)
+    public static BitArray ConvertBitBytes(byte[] bytes)
     {
-        Array.Reverse(byteArray);
-        return new(byteArray);
+        Array.Reverse(bytes);
+        return new(bytes);
     }
 }

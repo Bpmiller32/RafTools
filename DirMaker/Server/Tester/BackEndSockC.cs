@@ -10,14 +10,14 @@ public class BackEndSockC
     public int ImageCount { get; set; }
     public int FinalCount { get; set; }
 
-    private readonly Socket client;
+    private readonly Socket socket;
 
     public BackEndSockC(string ipAddress)
     {
         IPEndPoint endPoint = new(IPAddress.Parse(ipAddress), 3011);
-        client = new(SocketType.Stream, ProtocolType.Tcp);
+        socket = new(SocketType.Stream, ProtocolType.Tcp);
 
-        client.Connect(endPoint);
+        socket.Connect(endPoint);
     }
 
     public async Task ExecuteAsync(CancellationTokenSource stoppingTokenSource)
@@ -30,12 +30,12 @@ public class BackEndSockC
             {
                 // Pull first 4 bytes to determine message length
                 byte[] lengthBytes = new byte[4];
-                await client.ReceiveAsync(lengthBytes, SocketFlags.None, stoppingToken);
+                await socket.ReceiveAsync(lengthBytes, SocketFlags.None, stoppingToken);
                 int messageLength = Utils.ConvertIntBytes(lengthBytes);
 
                 // Define new buffer based on message size
                 byte[] messageBytes = new byte[messageLength];
-                await client.ReceiveAsync(messageBytes, SocketFlags.None, stoppingToken);
+                await socket.ReceiveAsync(messageBytes, SocketFlags.None, stoppingToken);
                 int messageType = Utils.ConvertIntBytes(messageBytes[5..9]);
 
                 if (messageType == 4001)
@@ -50,7 +50,7 @@ public class BackEndSockC
         }
         catch
         {
-            client.Close();
+            socket.Close();
         }
     }
 

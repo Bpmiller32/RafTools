@@ -23,14 +23,17 @@ public class RoyalMailCrawler : BaseModule
         Settings.DirectoryName = "RoyalMail";
     }
 
-    public async Task AutoStart(CancellationToken stoppingToken)
+    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
     {
         try
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 logger.LogInformation("Starting Crawler - Auto mode");
+
+                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
                 TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+
                 Status = ModuleStatus.Standby;
                 await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
 

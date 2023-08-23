@@ -7,7 +7,9 @@ public class ModuleSettings
     public string AddressDataPath { get; set; }
     public string WorkingPath { get; set; }
     public string OutputPath { get; set; }
+
     public string DongleListPath { get; set; }
+    public string DiscDrivePath { get; set; }
 
     public string UserName { get; set; }
     public string Password { get; set; }
@@ -22,6 +24,7 @@ public class ModuleSettings
     public void Validate(IConfiguration config)
     {
         // Path checks
+        // Input
         if (string.IsNullOrEmpty(config.GetValue<string>($"{DirectoryName}:AddressDataPath")))
         {
             AddressDataPath = Path.Combine(Directory.GetCurrentDirectory(), "Downloads", DirectoryName);
@@ -30,15 +33,17 @@ public class ModuleSettings
         {
             AddressDataPath = Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:AddressDataPath"));
         }
+        // Temp path for working files
         if (string.IsNullOrEmpty(config.GetValue<string>($"{DirectoryName}:WorkingPath")))
         {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Working", DirectoryName));
-            WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), "Working", DirectoryName);
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Temp", DirectoryName));
+            WorkingPath = Path.Combine(Directory.GetCurrentDirectory(), "Temp", DirectoryName);
         }
         else
         {
             WorkingPath = Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:WorkingPath"));
         }
+        // Output
         if (string.IsNullOrEmpty(config.GetValue<string>($"{DirectoryName}:OutputPath")))
         {
             Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Output", DirectoryName));
@@ -46,8 +51,9 @@ public class ModuleSettings
         }
         else
         {
-            OutputPath = Path.Combine(Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:OutputPath")));
+            OutputPath = Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:OutputPath"));
         }
+        // Dongle lists checked out from Subversion
         if (string.IsNullOrEmpty(config.GetValue<string>("DongleListPath")))
         {
             Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "DongleListPath"));
@@ -55,7 +61,16 @@ public class ModuleSettings
         }
         else
         {
-            DongleListPath = Path.Combine(Path.GetFullPath(config.GetValue<string>("DongleListPath")));
+            DongleListPath = Path.GetFullPath(config.GetValue<string>("DongleListPath"));
+        }
+        // DVD drive path exists and is valid
+        if (string.IsNullOrEmpty(config.GetValue<string>($"{DirectoryName}:TestDrivePath")))
+        {
+            throw new Exception($"Test drive path for {DirectoryName} is missing in appsettings");
+        }
+        else
+        {
+            DiscDrivePath = Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:TestDrivePath"));
         }
 
         // Check that day hasn't passed, display next month
@@ -96,5 +111,16 @@ public class ModuleSettings
         }
 
         return waitTime;
+    }
+
+    public static ModuleSettings SetAutoWaitTime(ILogger logger, ModuleSettings settings, string autoStartTime)
+    {
+        settings.ExecYear = int.Parse(autoStartTime[..4]);
+        settings.ExecMonth = int.Parse(autoStartTime.Substring(4, 2));
+        settings.ExecDay = int.Parse(autoStartTime.Substring(6, 2));
+        settings.ExecHour = int.Parse(autoStartTime.Substring(8, 2));
+        settings.ExecMinute = int.Parse(autoStartTime.Substring(10, 2));
+
+        return settings;
     }
 }

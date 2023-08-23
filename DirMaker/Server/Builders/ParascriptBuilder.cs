@@ -23,7 +23,7 @@ public class ParascriptBuilder : BaseModule
         Settings.DirectoryName = "Parascript";
     }
 
-    public async Task AutoStart(CancellationToken stoppingToken)
+    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
     {
         try
         {
@@ -31,7 +31,9 @@ public class ParascriptBuilder : BaseModule
             {
                 logger.LogInformation("Starting Builder - Auto mode");
 
+                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
                 TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
+
                 Status = ModuleStatus.Standby;
                 await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
 
@@ -179,7 +181,7 @@ public class ParascriptBuilder : BaseModule
                 ZipFile.ExtractToDirectory(Path.Combine(dataSourcePath, "DPVandLACS", "DPVfull", $"ads_dpv_09_{dataYearMonth.Substring(4, 2)}{dataYearMonth.Substring(2, 2)}.exe"), Path.Combine(Settings.WorkingPath, "dpv"));
                 File.Create(Path.Combine(Settings.WorkingPath, "dpv", "live.txt")).Close();
 
-                Process proc = Utils.RunProc(Path.Combine(Directory.GetCurrentDirectory(), "BuildUtils", "PDBIntegrity.exe"), Path.Combine(Settings.WorkingPath, "dpv", "fileinfo_log.txt"));
+                Process proc = Utils.RunProc(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "PDBIntegrity.exe"), Path.Combine(Settings.WorkingPath, "dpv", "fileinfo_log.txt"));
 
                 using StreamReader sr = proc.StandardOutput;
                 string procOutput = sr.ReadToEnd();
