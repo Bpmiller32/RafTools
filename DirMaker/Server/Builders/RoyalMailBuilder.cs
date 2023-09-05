@@ -291,13 +291,18 @@ public class RoyalMailBuilder : BaseModule
         encryptRep.WaitForExit();
 
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
+        // Perform for LCS
         string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptPatterns.exe"));
-        string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + " --clickCharge";
+        string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_4.0.xml")) + " --clickCharge";
         Process encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
+        encryptPatterns.WaitForExit();
+        // Perform for ELCS
+        encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_5.0.xml")) + " --clickCharge";
+        encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
         encryptPatterns.WaitForExit();
 
         // If this file wasn't created then EncryptPatterns silently failed, likeliest cause is missing a redistributable
-        if (!File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.exml")))
+        if (!File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_4.0.exml")) || !File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_5.0.exml")))
         {
             throw new Exception("Missing C++ 2010 x86 redistributable, EncryptPatterns and DirectoryDataCompiler 1.9 won't work. Also check that SQL CE is installed for 1.9");
         }
@@ -350,8 +355,9 @@ public class RoyalMailBuilder : BaseModule
     {
         List<Task> tasks = new()
         {
-            Task.Run(() => CompileRunner("3.0"), stoppingToken),
-            Task.Run(() => CompileRunner("1.9"), stoppingToken)
+            Task.Run(() => CompileRunner("5.0"), stoppingToken),
+            Task.Run(() => CompileRunner("4.0"), stoppingToken),
+            // Task.Run(() => CompileRunner("1.9"), stoppingToken)
         };
 
         await Task.WhenAll(tasks);
@@ -361,8 +367,9 @@ public class RoyalMailBuilder : BaseModule
     {
         List<Task> tasks = new()
         {
-            Task.Run(() => OutputRunner("3.0"), stoppingToken),
-            Task.Run(() => OutputRunner("1.9"), stoppingToken)
+            Task.Run(() => OutputRunner("5.0"), stoppingToken),
+            Task.Run(() => OutputRunner("4.0"), stoppingToken),
+            // Task.Run(() => OutputRunner("1.9"), stoppingToken)
         };
 
         await Task.WhenAll(tasks);
@@ -402,9 +409,20 @@ public class RoyalMailBuilder : BaseModule
     {
         Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, version));
 
-        foreach (string file in new List<string> { "UK_RM_CM.xml", "UK_RM_CM_Patterns.xml", "UK_RM_CM_Patterns.exml", "UK_RM_CM_Settings.xml", "UK_RM_CM.lcs", "BFPO.txt", "UK.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "UK_IgnorableWordsTable.txt", "UK_WordMatchTable.txt" })
+        foreach (string file in new List<string> { "UK_RM_CM.xml", "UK_RM_CM_Patterns_4.0.xml", "UK_RM_CM_Patterns_4.0.exml", "UK_RM_CM_Patterns_5.0.xml", "UK_RM_CM_Patterns_5.0.exml", "UK_RM_CM_Settings.xml", "UK_RM_CM.lcs", "UK_RM_CM.elcs", "BFPO.txt", "UK.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "UK_IgnorableWordsTable.txt", "UK_WordMatchTable.txt" })
         {
             File.Copy(Path.Combine(Settings.WorkingPath, "Smi", file), Path.Combine(Settings.WorkingPath, version, file), true);
+        }
+
+        if (version == "4.0" || version == "3.0")
+        {
+            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_4.0.xml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml"), true);
+            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_4.0.exml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.exml"), true);
+        }
+        if (version == "5.0")
+        {
+            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_5.0.xml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml"), true);
+            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_5.0.exml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.exml"), true);
         }
 
         string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "UkBuildTools", version, "DirectoryDataCompiler.exe"));
@@ -443,10 +461,11 @@ public class RoyalMailBuilder : BaseModule
     {
         Directory.CreateDirectory(Path.Combine(dataOutputPath, version, "UK_RM_CM"));
 
-        foreach (string file in new List<string> { "UK_IgnorableWordsTable.txt", "UK_RM_CM_Patterns.exml", "UK_WordMatchTable.txt", "UK_RM_CM.lcs", "UK_RM_CM.smi" })
+        foreach (string file in new List<string> { "UK_IgnorableWordsTable.txt", "UK_RM_CM_Patterns.exml", "UK_WordMatchTable.txt", "UK_RM_CM.lcs", "UK_RM_CM.elcs", "UK_RM_CM.smi" })
         {
             File.Copy(Path.Combine(Settings.WorkingPath, version, file), Path.Combine(dataOutputPath, version, "UK_RM_CM", file), true);
         }
+
         File.Copy(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Settings.xml"), Path.Combine(dataOutputPath, version, "UK_RM_CM_Settings.xml"), true);
     }
 }
