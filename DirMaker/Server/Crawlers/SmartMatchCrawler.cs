@@ -63,13 +63,13 @@ public class SmartMatchCrawler : BaseModule
             await PullFiles(stoppingToken);
 
             Message = "Veifying files against database";
-            CheckFiles(stoppingToken);
+            await CheckFiles(stoppingToken);
 
             Message = "Downloading new files";
             await DownloadFiles(stoppingToken);
 
             Message = "Checking if directories are ready to build";
-            CheckBuildReady(stoppingToken);
+            await CheckBuildReady(stoppingToken);
 
             Message = "";
             logger.LogInformation("Finished Crawling");
@@ -186,7 +186,7 @@ public class SmartMatchCrawler : BaseModule
         }
     }
 
-    private void CheckFiles(CancellationToken stoppingToken)
+    private async Task CheckFiles(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -236,7 +236,7 @@ public class SmartMatchCrawler : BaseModule
                 existingBundle.BuildFiles.Add(file);
             }
 
-            context.SaveChanges();
+            await context.SaveChangesAsync();
         }
     }
 
@@ -315,7 +315,7 @@ public class SmartMatchCrawler : BaseModule
         }
     }
 
-    private void CheckBuildReady(CancellationToken stoppingToken)
+    private async Task CheckBuildReady(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -346,7 +346,7 @@ public class SmartMatchCrawler : BaseModule
             bundle.FileCount = bundle.BuildFiles.Count;
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear} {bundle.Cycle}");
-            context.SaveChanges();
+            await context.SaveChangesAsync();
             SendDbUpdate = true;
         }
     }
@@ -366,7 +366,7 @@ public class SmartMatchCrawler : BaseModule
             file.OnDisk = true;
             file.DateDownloaded = DateTime.Now;
             context.UspsFiles.Update(file);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
             return;
         }
 
