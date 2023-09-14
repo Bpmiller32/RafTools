@@ -13,5 +13,17 @@
             "cwd": "${workspaceFolder}/Server",
             "stopAtEntry": false,
         },
+        {
+            "name": ".NET Core Launch (web mock)",
+            "logging": {"moduleLoad": false},
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "buildMock",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/MockServer/bin/Debug/net7.0/MockServer.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/MockServer",
+            "stopAtEntry": false,
+        },
     ]
 }

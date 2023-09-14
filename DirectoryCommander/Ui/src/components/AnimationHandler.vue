@@ -211,7 +211,8 @@ animations.NavFadeInEnter = (el, done) => {
     targets: el,
     duration: 5000,
     // borderBottomColor: ["rgba(79, 70, 229, 0)", "rgba(79, 70, 229, 0.99999)"],
-    borderBottomColor: ["rgb(209 213 219)", "rgb(79 70 229)"],
+    // borderBottomColor: ["rgba(209 213 219 0)", "rgba(79 70 229 1)"],
+    borderBottomColor: ["rgba(209,213,219,0)", "rgba(0,0,0,1)"],
     complete: done,
   });
 };

@@ -13,5 +13,17 @@
             ],
             "problemMatcher": "$msCompile"
         },
+        {
+            "label": "buildMock",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/MockServer/MockServer.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
     ]
 }
