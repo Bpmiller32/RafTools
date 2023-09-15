@@ -4,7 +4,7 @@ import { useGlobalState } from "./store";
 import NavBar from "./components/NavBar";
 
 const state = useGlobalState();
-state.beConnection.value = useEventSource("https://localhost:7205/status");
+state.beConnection.value = useEventSource("http://localhost:5000/status");
 </script>
 
 <template>

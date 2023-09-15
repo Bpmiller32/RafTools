@@ -7,7 +7,12 @@ import {
   ChevronDoubleRightIcon,
   RefreshIcon,
 } from "@heroicons/vue/outline";
-import { Disclosure, DisclosureButton, DisclosurePanel } from "@headlessui/vue";
+import {
+  Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
+  Switch,
+} from "@headlessui/vue";
 import anime from "animejs/lib/anime.es.js";
 import matwLogoSmall from "../assets/matwLogoSmall.png";
 
@@ -17,41 +22,8 @@ export default defineComponent({
     status: Object as PropType<BackEndObject>,
   },
   setup(props) {
-    const cardState = {
-      Ready: 0,
-      Standby: 1,
-      InProgress: 2,
-      Error: 3,
-    };
-
-    let renderedOnce = false;
-    const editButtonRef = ref();
-
-    let isPanelOpen: boolean;
-    let ClosePanel: () => void;
-
     // Interactive
-    function ClickEditButton() {
-      if (props.status?.Status != 0) {
-        ClosePanel();
-        return;
-      }
-
-      let rotationDirection = [];
-
-      if (isPanelOpen) {
-        rotationDirection = [90, 0];
-      } else {
-        rotationDirection = [0, 90];
-      }
-
-      anime({
-        targets: editButtonRef.value,
-        rotate: rotationDirection,
-        duration: 500,
-        easing: "easeInOutSine",
-      });
-    }
+    function ClickDownloadButton() {}
 
     // Organization
     function DirectoryName() {
@@ -97,127 +69,80 @@ export default defineComponent({
       }
 
       return (
-        <Transition
-          appear
-          key={Number(props.status?.Status + "1")}
-          enterFromClass="opacity-0"
-          enterToClass="opacity-100"
-          enterActiveClass="duration-[500ms]"
+        <div
+          class={{
+            "ml-3 px-2 py-0.5 text-xs font-medium rounded-full": true,
+            "text-green-800 bg-green-100": props.status?.Status == 0,
+            "text-yellow-800 bg-yellow-100": props.status?.Status == 2,
+            "text-red-800 bg-red-100": props.status?.Status == 3,
+          }}
         >
-          <div
-            class={{
-              "ml-3 px-2 py-0.5 text-xs font-medium rounded-full": true,
-              "text-green-800 bg-green-100": props.status?.Status == 0,
-              "text-yellow-800 bg-yellow-100": props.status?.Status == 2,
-              "text-red-800 bg-red-100": props.status?.Status == 3,
-            }}
-          >
-            {statusLabel}
-          </div>
-        </Transition>
+          {statusLabel}
+        </div>
       );
     }
 
     function StatusIcon() {
       return (
-        <Transition
-          appear
-          key={Number(props.status?.Status + "2")}
-          enterFromClass="opacity-0"
-          enterToClass="opacity-100"
-          enterActiveClass="duration-[500ms]"
+        <div
+          class={{
+            "h-5 w-5 ml-1": true,
+            "text-green-500": props.status?.Status == 0,
+            "text-yellow-500": props.status?.Status == 2,
+            "text-red-500": props.status?.Status == 3,
+          }}
         >
-          <div
-            class={{
-              "h-5 w-5 ml-1": true,
-              "text-green-500": props.status?.Status == 0,
-              "text-yellow-500": props.status?.Status == 2,
-              "text-red-500": props.status?.Status == 3,
-            }}
-          >
-            {(() => {
-              switch (props.status?.Status) {
-                case 0:
-                  return <StatusOnlineIcon />;
-                case 1:
-                  return <ArrowCircleDownIcon />;
-                case 2:
-                  return <ArrowCircleDownIcon />;
-                case 3:
-                  return <ExclamationCircleIcon />;
-              }
-            })()}
-          </div>
-        </Transition>
+          {(() => {
+            switch (props.status?.Status) {
+              case 0:
+                return <StatusOnlineIcon />;
+              case 1:
+                return <ArrowCircleDownIcon />;
+              case 2:
+                return <ArrowCircleDownIcon />;
+              case 3:
+                return <ExclamationCircleIcon />;
+            }
+          })()}
+        </div>
       );
     }
 
     function AutoSwitch() {
       return (
-        <input
-          type="checkbox"
-          class="flex items-center ml-2 h-4 w-4 focus:ring-indigo-500 border-gray-300 rounded disabled:bg-gray-400"
-        />
+        <Switch
+          // v-model="enabled"
+          class="group relative inline-flex h-5 w-10 flex-shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2"
+        >
+          <span class="pointer-events-none absolute h-full w-full rounded-md bg-white" />
+          <span class="[enabled ? 'bg-indigo-600' : 'bg-gray-200', 'pointer-events-none absolute mx-auto h-4 w-9 rounded-full transition-colors duration-200 ease-in-out']" />
+          <span class="[enabled ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full border border-gray-200 bg-white shadow ring-0 transition-transform duration-200 ease-in-out']" />
+        </Switch>
+
+        // <input
+        //   type="checkbox"
+        //   class="flex items-center ml-2 h-4 w-4 focus:ring-indigo-500 border-gray-300 rounded disabled:bg-gray-400"
+        // />
       );
     }
 
     function EditButton() {
       return (
-        <Transition
-          appear
-          // key={Number(props.status?.Status + "0")}
-          onEnter={(el: Element, done: () => void) => {
-            if (props.status?.Status == 0) {
-              // ButtonFill
-              anime({
-                targets: el,
-                keyframes: [
-                  { duration: 0, backgroundColor: "rgb(107 114 128)" },
-                  {
-                    duration: 500,
-                    color: ["rgb(255 255 255)", "rgb(67 56 202)"],
-                    backgroundSize: ["0% 0%", "150% 150%"],
-                    easing: "easeInOutQuad",
-                  },
-                ],
-              });
-            } else {
-              // ButtonDrain
-              anime({
-                targets: el,
-                duration: 300,
-                color: ["rgb(67 56 202)", "rgb(255 255 255)"],
-                backgroundSize: ["150% 150%", "0% 0%"],
-                easing: "easeInOutQuad",
-              });
-            }
-
-            done();
+        <DisclosureButton
+          as="button"
+          disabled={props.status?.Status == 0 ? false : true}
+          class={{
+            "bg-gray-500 text-white cursor-not-allowed":
+              props.status?.Status != 0,
+            "bg-indigo-100  text-indigo-700 hover:bg-indigo-200":
+              props.status?.Status == 0,
+            "flex items-center mx-5 my-4 px-2 py-2 max-h-8 border border-transparent text-sm leading-4 font-medium rounded-md focus:outline-none":
+              true,
           }}
         >
-          <DisclosureButton
-            as="button"
-            disabled={props.status?.Status == 0 ? false : true}
-            class={{
-              "bg-gray-500 text-white bg-[length:0%,0%] cursor-not-allowed":
-                props.status?.Status != 0,
-              "bg-[length:0%,0%] bg-indigo-200  text-indigo-700 hover:bg-indigo-100":
-                (props.status?.Status == 0) == true && isPanelOpen,
-              "bg-[length:0%,0%] bg-indigo-100  text-indigo-700 hover:bg-indigo-200":
-                (props.status?.Status == 0) == true && !isPanelOpen,
-              "flex items-center mx-5 my-4 px-2 py-2 max-h-8 bg-gradient-to-r from-indigo-100 to-indigo-100 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md focus:outline-none":
-                true,
-            }}
-          >
-            <div class="flex items-center" onClick={() => ClickEditButton()}>
-              <ChevronDoubleRightIcon
-                ref={editButtonRef}
-                class="h-5 w-5 mr-1"
-              />
-              <p>Edit AutoCrawl</p>
-            </div>
-          </DisclosureButton>
-        </Transition>
+          <ChevronDoubleRightIcon class="h-5 w-5 mr-1" />
+          <p class="shrink-0">Edit AutoCrawl</p>
+        </DisclosureButton>
       );
     }
 
@@ -262,12 +187,16 @@ export default defineComponent({
       return (
         <button
           type="button"
+          disabled={props.status?.Status == 0 ? false : true}
           class={{
-            "flex shrink-0 items-center my-4 pl-8 pr-2 py-2 max-h-8 bg-gradient-to-r from-indigo-600 to-indigo-600 bg-no-repeat bg-center border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500":
+            "bg-gray-500 cursor-not-allowed": props.status?.Status != 0,
+            "bg-indigo-600 hover:bg-indigo-700": props.status?.Status == 0,
+            "flex items-center mx-10 my-4 px-2 py-2 max-h-8 border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
               true,
           }}
         >
-          Download
+          <RefreshIcon class="shrink-0 h-5 w-5 text-white z-10" />
+          <p class="ml-1">Download</p>
         </button>
       );
     }
@@ -296,26 +225,15 @@ export default defineComponent({
           as="div"
           class="flex justify-between divide-x divide-gray-200"
         >
-          {({ open, close }: { open: boolean; close: () => void }) => {
-            // Assign render props to component variables
-            isPanelOpen = open;
-            ClosePanel = close;
-
-            return (
-              <>
-                <div class="flex flex-1 justify-center">
-                  <div>
-                    {EditButton()}
-                    {EditPanel()}
-                  </div>
-                </div>
-                <div class="flex flex-1 justify-center items-center -space-x-7">
-                  <RefreshIcon class="shrink-0 h-5 w-5 text-white z-10" />
-                  {DownloadButton()}
-                </div>
-              </>
-            );
-          }}
+          <div class="flex flex-1 justify-center">
+            <div>
+              {EditButton()}
+              {EditPanel()}
+            </div>
+          </div>
+          <div class="flex flex-1 justify-center items-center -space-x-7">
+            {DownloadButton()}
+          </div>
         </Disclosure>
       </div>
     );

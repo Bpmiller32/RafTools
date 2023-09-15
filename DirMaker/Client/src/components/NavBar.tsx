@@ -92,7 +92,7 @@ export default defineComponent({
             >
               <PopoverPanel
                 as="nav"
-                class="block sm:hidden space-y-1 border-t-2 overflow-hidden focus:outline-none"
+                class="block sm:hidden space-y-1 overflow-hidden focus:outline-none"
               >
                 {NavLinkMobile("Download")}
                 {NavLinkMobile("Build")}
