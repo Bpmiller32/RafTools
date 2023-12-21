@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System.Globalization;
+﻿using System.Globalization;
 using CsvHelper;
 using EmailReader.App;
 using MailKit;
@@ -53,12 +52,12 @@ using (var client = new ImapClient())
             {
                 // Not unique
                 unique = false;
-            }            
+            }
         }
 
         if (unique == true)
         {
-            SupportCase newCase = new SupportCase()
+            SupportCase newCase = new()
             {
                 DateRecieved = email.Date,
                 Sender = email.From.Mailboxes.ToList()[0].Address,
@@ -68,7 +67,7 @@ using (var client = new ImapClient())
         }
         else
         {
-            SupportCase newCase = new SupportCase()
+            SupportCase newCase = new()
             {
                 DateRecieved = email.Date,
                 Sender = email.From.Mailboxes.ToList()[0].Address,
@@ -80,16 +79,15 @@ using (var client = new ImapClient())
 
     using (var writer = new StreamWriter(@"C:\Users\billy\Desktop\" + partner + year + @".csv"))
     {
-        using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-        {
-            var totalEmailCorrespondence = new {text = "TotalEmailCorrespondence", totalCorrespondence = uids.Count};
-            csv.WriteRecord(totalEmailCorrespondence);
-            csv.NextRecord();
-            csv.WriteRecords(supportCases);
-            csv.NextRecord();
-            csv.NextRecord();
-            csv.WriteRecords(possibleDupCases);
-        }
+        using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+        var totalEmailCorrespondence = new { text = "TotalEmailCorrespondence", totalCorrespondence = uids.Count };
+        csv.WriteRecord(totalEmailCorrespondence);
+        csv.NextRecord();
+        csv.WriteRecords(supportCases);
+        csv.NextRecord();
+        csv.NextRecord();
+        csv.WriteRecords(possibleDupCases);
     }
 
     client.Disconnect(true);
