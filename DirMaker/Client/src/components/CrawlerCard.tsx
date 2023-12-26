@@ -1,4 +1,4 @@
-import { PropType, Transition, defineComponent, ref, watch } from "vue";
+import { PropType, Transition, defineComponent, ref } from "vue";
 import BackEndObject from "../interfaces/BackEndObject";
 import {
   StatusOnlineIcon,
@@ -13,7 +13,6 @@ import {
   DisclosurePanel,
   Switch,
 } from "@headlessui/vue";
-import anime from "animejs/lib/anime.es.js";
 import matwLogoSmall from "../assets/matwLogoSmall.png";
 
 export default defineComponent({
@@ -25,9 +24,18 @@ export default defineComponent({
     // Interactive
     function ClickDownloadButton() {}
 
+    const testDirectoryName = ref();
+    setTimeout(() => {
+      testDirectoryName.value.classList.add("text-blue-500");
+    }, 5000);
+
     // Organization
     function DirectoryName() {
-      return <p class="text-gray-900 text-sm font-medium">{props.name}</p>;
+      return (
+        <p ref={testDirectoryName} class="text-gray-900 text-sm font-medium">
+          {props.name}
+        </p>
+      );
     }
 
     function DirectoryImage() {
@@ -202,7 +210,7 @@ export default defineComponent({
     }
 
     return () => (
-      <div class="overflow-hidden select-none min-w-[23rem] max-w-[23rem] min-h-[12rem]  bg-white rounded-lg shadow divide-y divide-gray-200">
+      <div class="overflow-hidden select-none min-w-[23rem] max-w-[23rem] min-h-[12rem] bg-white rounded-lg shadow divide-y divide-gray-200">
         <div class="flex items-center justify-between p-6">
           <div>
             <div class="flex items-center">
