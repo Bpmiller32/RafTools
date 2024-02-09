@@ -10,7 +10,7 @@ public class ParascriptCrawler : BaseModule
     private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
-    private readonly List<ParaFile> tempFiles = new();
+    private readonly List<ParaFile> tempFiles = [];
 
     public ParascriptCrawler(ILogger<ParascriptCrawler> logger, IConfiguration config, DatabaseContext context)
     {
@@ -19,35 +19,6 @@ public class ParascriptCrawler : BaseModule
         this.context = context;
 
         Settings.DirectoryName = "Parascript";
-    }
-
-    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
-    {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Crawler - Auto mode");
-
-                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
-                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
-
-                Status = ModuleStatus.Standby;
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-
-                await Start(stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(2));
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug($"{e.Message}");
-        }
-        catch (Exception e)
-        {
-            Status = ModuleStatus.Error;
-            logger.LogError($"{e.Message}");
-        }
     }
 
     public async Task Start(CancellationToken stoppingToken)
@@ -63,13 +34,13 @@ public class ParascriptCrawler : BaseModule
             await PullFiles(stoppingToken);
 
             Message = "Veifying files against database";
-            CheckFiles(stoppingToken);
+            await CheckFiles(stoppingToken);
 
             Message = "Downloading new files";
             await DownloadFiles(stoppingToken);
 
             Message = "Checking if directories are ready to build";
-            CheckBuildReady(stoppingToken);
+            await CheckBuildReady(stoppingToken);
 
             Message = "";
             logger.LogInformation("Finished Crawling");
@@ -115,15 +86,15 @@ public class ParascriptCrawler : BaseModule
             await page.GoToAsync("https://parascript.sharefile.com/share/view/s80765117d4441b88");
 
             // Arrived a download portal page
-            await page.WaitForSelectorAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.gridHeader_ubbr06 > label > label > span > span");
+            await page.WaitForSelectorAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div:nth-child(6) > div.css-1c7oem8 > div > div > div.css-1tepa3u-downloadButton");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             // Click the ads tag to see inside file
-            await page.ClickAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.grid_1joc06t > div:nth-child(1) > div.metadataSlot_1kvnsfa > div > span.name_eol401");
+            await page.ClickAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div.css-j6kh1a-container > div > div.css-gdj0k4 > div:nth-child(1) > div.css-10qplry > div > span.css-12qdfos");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             // Arrived at 2nd page
-            await page.WaitForSelectorAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.grid_1joc06t > div:nth-child(1) > div.metadataSlot_1kvnsfa > div > span.name_eol401");
+            await page.WaitForSelectorAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div.css-j6kh1a-container > div > div.css-gdj0k4 > div:nth-child(1)");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             HtmlAgilityPack.HtmlDocument doc = new();
@@ -157,7 +128,7 @@ public class ParascriptCrawler : BaseModule
         }
     }
 
-    private void CheckFiles(CancellationToken stoppingToken)
+    private async Task CheckFiles(CancellationToken stoppingToken)
     {
         // Cancellation requested or PullFile failed
         if (stoppingToken.IsCancellationRequested)
@@ -207,7 +178,7 @@ public class ParascriptCrawler : BaseModule
                 existingBundle.BuildFiles.Add(file);
             }
 
-            context.SaveChanges();
+            await context.SaveChangesAsync(stoppingToken);
         }
     }
 
@@ -246,15 +217,15 @@ public class ParascriptCrawler : BaseModule
             await page.GoToAsync("https://parascript.sharefile.com/share/view/s80765117d4441b88");
 
             // Arrived a download portal page
-            await page.WaitForSelectorAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.gridHeader_ubbr06 > label > label > span > span");
+            await page.WaitForSelectorAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div:nth-child(6) > div.css-1c7oem8 > div > div > div.css-1tepa3u-downloadButton");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             // Click the select all checkbox
-            await page.ClickAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div.container_cdvlrd > div > div.gridHeader_ubbr06 > label > label > span > span");
+            await page.ClickAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div.css-j6kh1a-container > div > div.css-rc5hz0 > label > label > span > span");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             // Click the download button
-            await page.ClickAsync("#applicationHost > div.shell_19a1hjv > div > div.downloadPage_1gtget5 > div:nth-child(6) > div.footer_1pnvz17 > div > div > div.downloadButton_4mfu3n > button > div");
+            await page.ClickAsync("#applicationHost > div.css-13bog6r-shell > div > div.css-gikrl6-downloadPage > div:nth-child(6) > div.css-1c7oem8 > div > div > div.css-1tepa3u-downloadButton");
             await Task.Delay(TimeSpan.FromSeconds(3), stoppingToken);
 
             logger.LogInformation("Currently downloading: Parascript files");
@@ -267,7 +238,7 @@ public class ParascriptCrawler : BaseModule
         }
     }
 
-    private void CheckBuildReady(CancellationToken stoppingToken)
+    private async Task CheckBuildReady(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -287,7 +258,7 @@ public class ParascriptCrawler : BaseModule
             bundle.FileCount = bundle.BuildFiles.Count;
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
-            context.SaveChanges();
+            await context.SaveChangesAsync(stoppingToken);
             SendDbUpdate = true;
         }
     }
@@ -309,7 +280,7 @@ public class ParascriptCrawler : BaseModule
             file.OnDisk = true;
             file.DateDownloaded = DateTime.Now;
             context.ParaFiles.Update(file);
-            context.SaveChanges();
+            await context.SaveChangesAsync(stoppingToken);
             return;
         }
 

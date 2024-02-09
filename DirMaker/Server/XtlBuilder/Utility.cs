@@ -19,6 +19,8 @@ using log4net;
 
 using SharpSvn;
 
+#pragma warning disable CS0618 // Type or member is obsolete
+
 namespace Com.Raf.Utility
 {
     public class Crc32

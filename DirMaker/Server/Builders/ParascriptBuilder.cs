@@ -23,39 +23,6 @@ public class ParascriptBuilder : BaseModule
         Settings.DirectoryName = "Parascript";
     }
 
-    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
-    {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Builder - Auto mode");
-
-                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
-                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
-
-                Status = ModuleStatus.Standby;
-                await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
-
-                foreach (ParaBundle bundle in context.ParaBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
-                {
-                    await Start(bundle.DataYearMonth, stoppingToken);
-                    // Edge case where end of the month, no bundles to process, this loop executes in < 1 second and potentially calulates next waitTime too early
-                    await Task.Delay(TimeSpan.FromSeconds(2));
-                }
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug($"{e.Message}");
-        }
-        catch (Exception e)
-        {
-            Status = ModuleStatus.Error;
-            logger.LogError($"{e.Message}");
-        }
-    }
-
     public async Task Start(string dataYearMonth, CancellationToken stoppingToken)
     {
         try
@@ -90,7 +57,7 @@ public class ParascriptBuilder : BaseModule
 
             Message = "Updating packaged directories";
             Progress = 99;
-            CheckBuildComplete(stoppingToken);
+            await CheckBuildComplete(stoppingToken);
 
             Message = "";
             Progress = 100;
@@ -155,8 +122,8 @@ public class ParascriptBuilder : BaseModule
             return;
         }
 
-        List<Task> buildTasks = new()
-        {
+        List<Task> buildTasks =
+        [
             // Zip
             Task.Run(() =>
             {
@@ -191,7 +158,7 @@ public class ParascriptBuilder : BaseModule
                     throw new Exception("Database files are NOT consistent");
                 }
             }, stoppingToken)
-        };
+        ];
 
         await Task.WhenAll(buildTasks);
     }
@@ -203,8 +170,8 @@ public class ParascriptBuilder : BaseModule
             return;
         }
 
-        List<Task> buildTasks = new()
-        {
+        List<Task> buildTasks =
+        [
             // Zip
             Task.Run(() =>
             {
@@ -232,12 +199,12 @@ public class ParascriptBuilder : BaseModule
                     File.Copy(file, Path.Combine(Path.Combine(dataOutputPath, "LACS"), Path.GetFileName(file)));
                 }
             }, stoppingToken),
-        };
+        ];
 
         await Task.WhenAll(buildTasks);
     }
 
-    private void CheckBuildComplete(CancellationToken stoppingToken)
+    private async Task CheckBuildComplete(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -250,7 +217,7 @@ public class ParascriptBuilder : BaseModule
         bundle.CompileDate = Utils.CalculateDbDate();
         bundle.CompileTime = Utils.CalculateDbTime();
 
-        context.SaveChanges();
+        await context.SaveChangesAsync(stoppingToken);
         SendDbUpdate = true;
     }
 }

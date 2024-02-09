@@ -8,7 +8,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Server/bin/Debug/net7.0-windows/Server.dll",
+            "program": "${workspaceFolder}/Server/bin/Debug/net8.0-windows/Server.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Server",
             "stopAtEntry": false,
@@ -20,7 +20,7 @@
             "request": "launch",
             "preLaunchTask": "buildMock",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/MockServer/bin/Debug/net7.0/MockServer.dll",
+            "program": "${workspaceFolder}/MockServer/bin/Debug/net8.0/MockServer.dll",
             "args": [],
             "cwd": "${workspaceFolder}/MockServer",
             "stopAtEntry": false,

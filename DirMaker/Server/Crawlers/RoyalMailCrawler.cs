@@ -23,35 +23,6 @@ public class RoyalMailCrawler : BaseModule
         Settings.DirectoryName = "RoyalMail";
     }
 
-    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
-    {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Crawler - Auto mode");
-
-                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
-                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
-
-                Status = ModuleStatus.Standby;
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-
-                await Start(stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(2));
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug($"{e.Message}");
-        }
-        catch (Exception e)
-        {
-            Status = ModuleStatus.Error;
-            logger.LogError($"{e.Message}");
-        }
-    }
-
     public async Task Start(CancellationToken stoppingToken)
     {
         try
@@ -65,13 +36,13 @@ public class RoyalMailCrawler : BaseModule
             PullFile(stoppingToken);
 
             Message = "Veifying files against database";
-            CheckFile(stoppingToken);
+            await CheckFile(stoppingToken);
 
             Message = "Downloading new files";
             await DownloadFile(stoppingToken);
 
             Message = "Checking if directories are ready to build";
-            CheckBuildReady(stoppingToken);
+            await CheckBuildReady(stoppingToken);
 
             Message = "";
             logger.LogInformation("Finished Crawling");
@@ -122,7 +93,7 @@ public class RoyalMailCrawler : BaseModule
         }
     }
 
-    public void CheckFile(CancellationToken stoppingToken)
+    public async Task CheckFile(CancellationToken stoppingToken)
     {
         // Cancellation requested or PullFile failed
         if (stoppingToken.IsCancellationRequested)
@@ -170,7 +141,7 @@ public class RoyalMailCrawler : BaseModule
             existingBundle.BuildFiles.Add(tempFile);
         }
 
-        context.SaveChanges();
+        await context.SaveChangesAsync(stoppingToken);
     }
 
     public async Task DownloadFile(CancellationToken stoppingToken)
@@ -207,10 +178,10 @@ public class RoyalMailCrawler : BaseModule
         tempFile.OnDisk = true;
         tempFile.DateDownloaded = DateTime.Now;
         context.RoyalFiles.Update(tempFile);
-        context.SaveChanges();
+        await context.SaveChangesAsync(stoppingToken);
     }
 
-    public void CheckBuildReady(CancellationToken stoppingToken)
+    public async Task CheckBuildReady(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -230,7 +201,7 @@ public class RoyalMailCrawler : BaseModule
             bundle.FileCount = bundle.BuildFiles.Count;
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
-            context.SaveChanges();
+            await context.SaveChangesAsync(stoppingToken);
             SendDbUpdate = true;
         }
     }

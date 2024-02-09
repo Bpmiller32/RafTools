@@ -194,10 +194,10 @@ public class DirTester : BaseModule
 
     private void Zip4CheckDisc()
     {
-        List<string> smFiles = new()
-        {
+        List<string> smFiles =
+        [
             "Zip4.zip"
-        };
+        ];
 
         string missingFiles = "";
 
@@ -217,13 +217,13 @@ public class DirTester : BaseModule
 
     private void SmartMatchCheckDisc()
     {
-        List<string> smFiles = new()
-        {
+        List<string> smFiles =
+        [
             "DPV.zip",
             "LACS.zip",
             "SUITE.zip",
             "Zip4.zip"
-        };
+        ];
 
         string missingFiles = "";
 
@@ -246,8 +246,8 @@ public class DirTester : BaseModule
         const string dpvFile = "DPV.zip";
         const string suiteFile = "SUITE.zip";
         const string zip4File = "Zip4.zip";
-        List<string> lacsFiles = new()
-        {
+        List<string> lacsFiles =
+        [
             "fileinfo_log.txt",
             "live.txt",
             "llk.hs1",
@@ -279,7 +279,7 @@ public class DirTester : BaseModule
             "llk_suf.dat",
             "llk_urbx.lst",
             "llk_x11"
-        };
+        ];
 
         string missingFiles = "";
 
@@ -312,15 +312,15 @@ public class DirTester : BaseModule
     private void RoyalMailCheckDisc()
     {
         const string rmSettingsFile = "UK_RM_CM_Settings.xml";
-        List<string> rmFiles = new()
-        {
+        List<string> rmFiles =
+        [
             "UK_IgnorableWordsTable.txt",
             "UK_RM_CM.lcs",
             "UK_RM_CM.elcs",
             "UK_RM_CM.smi",
             "UK_RM_CM_Patterns.exml",
             "UK_WordMatchTable.txt",
-        };
+        ];
 
         string missingFiles = "";
 

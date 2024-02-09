@@ -14,13 +14,6 @@ public class ModuleSettings
     public string UserName { get; set; }
     public string Password { get; set; }
 
-    public int ExecYear { get; set; } = DateTime.Now.Year;
-    public int ExecMonth { get; set; } = DateTime.Now.Month;
-    public int ExecDay { get; set; } = DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month);
-    public int ExecHour { get; set; } = 15;
-    public int ExecMinute { get; set; } = 15;
-    public int ExecSecond { get; set; } = 15;
-
     public void Validate(IConfiguration config)
     {
         // Path checks
@@ -73,12 +66,6 @@ public class ModuleSettings
             DiscDrivePath = Path.GetFullPath(config.GetValue<string>($"{DirectoryName}:TestDrivePath"));
         }
 
-        // Check that day hasn't passed, display next month
-        if (ExecDay < DateTime.Now.Day)
-        {
-            ExecMonth = DateTime.Now.AddMonths(1).Month;
-        }
-
         // Login checks
         if (DirectoryName == "SmartMatch" || DirectoryName == "RoyalMail")
         {
@@ -92,35 +79,5 @@ public class ModuleSettings
                 Password = config.GetValue<string>($"{DirectoryName}:Login:Pass");
             }
         }
-    }
-
-    public static TimeSpan CalculateWaitTime(ILogger logger, ModuleSettings settings)
-    {
-        DateTime execTime = new(DateTime.Now.Year, DateTime.Now.Month, settings.ExecDay, settings.ExecHour, settings.ExecMinute, settings.ExecSecond);
-        DateTime endOfMonth = new(DateTime.Now.Year, DateTime.Now.Month, DateTime.DaysInMonth(DateTime.Now.Year, DateTime.Now.Month), 23, 59, 59);
-        TimeSpan waitTime = execTime - DateTime.Now;
-
-        if (waitTime.TotalSeconds <= 0)
-        {
-            waitTime = endOfMonth - DateTime.Now + TimeSpan.FromSeconds(5);
-            logger.LogInformation($"Pass completed, starting sleep until: {endOfMonth}");
-        }
-        else
-        {
-            logger.LogInformation($"Waiting for pass, starting sleep until: {execTime}");
-        }
-
-        return waitTime;
-    }
-
-    public static ModuleSettings SetAutoWaitTime(ILogger logger, ModuleSettings settings, string autoStartTime)
-    {
-        settings.ExecYear = int.Parse(autoStartTime[..4]);
-        settings.ExecMonth = int.Parse(autoStartTime.Substring(4, 2));
-        settings.ExecDay = int.Parse(autoStartTime.Substring(6, 2));
-        settings.ExecHour = int.Parse(autoStartTime.Substring(8, 2));
-        settings.ExecMinute = int.Parse(autoStartTime.Substring(10, 2));
-
-        return settings;
     }
 }

@@ -10,7 +10,7 @@ public class SmartMatchCrawler : BaseModule
     private readonly IConfiguration config;
     private readonly DatabaseContext context;
 
-    private readonly List<UspsFile> tempFiles = new();
+    private readonly List<UspsFile> tempFiles = [];
 
     public SmartMatchCrawler(ILogger<SmartMatchCrawler> logger, IConfiguration config, DatabaseContext context)
     {
@@ -19,35 +19,6 @@ public class SmartMatchCrawler : BaseModule
         this.context = context;
 
         Settings.DirectoryName = "SmartMatch";
-    }
-
-    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
-    {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Crawler - Auto mode");
-
-                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
-                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
-
-                Status = ModuleStatus.Standby;
-                await Task.Delay(TimeSpan.FromHours(waitTime.TotalHours), stoppingToken);
-
-                await Start(stoppingToken);
-                await Task.Delay(TimeSpan.FromSeconds(2));
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug($"{e.Message}");
-        }
-        catch (Exception e)
-        {
-            Status = ModuleStatus.Error;
-            logger.LogError($"{e.Message}");
-        }
     }
 
     public async Task Start(CancellationToken stoppingToken)
@@ -236,13 +207,13 @@ public class SmartMatchCrawler : BaseModule
                 existingBundle.BuildFiles.Add(file);
             }
 
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(stoppingToken);
         }
     }
 
     private async Task DownloadFiles(CancellationToken stoppingToken)
     {
-        List<UspsFile> offDisk = context.UspsFiles.Where(x => !x.OnDisk).ToList();
+        List<UspsFile> offDisk = [.. context.UspsFiles.Where(x => !x.OnDisk)];
 
         // If all files are downloaded, no need to kick open new browser
         if (offDisk.Count == 0 || stoppingToken.IsCancellationRequested)
@@ -346,7 +317,7 @@ public class SmartMatchCrawler : BaseModule
             bundle.FileCount = bundle.BuildFiles.Count;
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear} {bundle.Cycle}");
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(stoppingToken);
             SendDbUpdate = true;
         }
     }
@@ -366,7 +337,7 @@ public class SmartMatchCrawler : BaseModule
             file.OnDisk = true;
             file.DateDownloaded = DateTime.Now;
             context.UspsFiles.Update(file);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(stoppingToken);
             return;
         }
 

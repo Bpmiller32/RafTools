@@ -21,19 +21,19 @@ public class ControlPort
 
     public void RequestDirectoryInfo()
     {
-        byte[] socketMessage = new byte[42] { 0, 0, 0, 38, 65, 80, 67, 84, 76, 65, 0, 0, 19, 154, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1 };
+        byte[] socketMessage = [0, 0, 0, 38, 65, 80, 67, 84, 76, 65, 0, 0, 19, 154, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 1];
         socket.Send(socketMessage);
     }
 
     public void RequestStatusAlerts()
     {
-        byte[] socketMessage = new byte[42] { 0, 0, 0, 38, 65, 80, 67, 84, 76, 65, 0, 0, 19, 155, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 3, 153, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 50 };
+        byte[] socketMessage = [0, 0, 0, 38, 65, 80, 67, 84, 76, 65, 0, 0, 19, 155, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 3, 153, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0, 50];
         socket.Send(socketMessage);
     }
 
     public void RequestConfigChange(string configName)
     {
-        byte[] headerBytes = new byte[38] { 0, 0, 0, 0, 65, 80, 67, 84, 76, 65, 0, 0, 19, 165, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 17, 213, 0, 0, 0, 1, 0, 0, 0, 0 };
+        byte[] headerBytes = [0, 0, 0, 0, 65, 80, 67, 84, 76, 65, 0, 0, 19, 165, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 17, 213, 0, 0, 0, 1, 0, 0, 0, 0];
         byte[] configBytes = Encoding.ASCII.GetBytes(configName);
 
         byte[] socketMessage = new byte[headerBytes.Length + configBytes.Length];

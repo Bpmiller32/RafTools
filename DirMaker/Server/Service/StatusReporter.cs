@@ -10,13 +10,14 @@ public class StatusReporter
 {
     private readonly DatabaseContext context;
 
-    private readonly Dictionary<string, BaseModule> modules = new();
-    private readonly Dictionary<string, string> dbBuilds = new();
+    private readonly Dictionary<string, BaseModule> modules = [];
+    private readonly Dictionary<string, string> dbBuilds = [];
 
     public StatusReporter(DatabaseContext context, SmartMatchCrawler smartMatchCrawler, SmartMatchBuilder smartMatchBuilder, ParascriptCrawler parascriptCrawler, ParascriptBuilder parascriptBuilder, RoyalMailCrawler royalMailCrawler, RoyalMailBuilder royalMailBuilder, DirTester dirTester)
     {
         this.context = context;
 
+        // Add all modules to a dictionary for looping later
         modules.Add("smartMatchCrawler", smartMatchCrawler);
         modules.Add("smartMatchBuilder", smartMatchBuilder);
 
@@ -29,6 +30,7 @@ public class StatusReporter
         modules.Add("dirTester", dirTester);
 
 
+        // Initial population of db values
         dbBuilds.Add("smNReadytoBuild", string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList()));
         dbBuilds.Add("smNBuildComplete", string.Join("|", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList()));
         dbBuilds.Add("smOReadytoBuild", string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-O").Select(x => x.DataYearMonth).ToList()));
@@ -74,6 +76,7 @@ public class StatusReporter
             module.Value.SendDbUpdate = false;
         }
 
+        // Create the JSON object for sending
         var jsonObject = new
         {
             SmartMatch = new
@@ -143,8 +146,5 @@ public class StatusReporter
         };
 
         return JsonSerializer.Serialize(jsonObject);
-
-        // Store all settings?
-        // return Report;
     }
 }

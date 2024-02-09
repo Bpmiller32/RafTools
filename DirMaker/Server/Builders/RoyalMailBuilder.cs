@@ -26,39 +26,6 @@ public class RoyalMailBuilder : BaseModule
         Settings.DirectoryName = "RoyalMail";
     }
 
-    public async Task AutoStart(string autoStartTime, CancellationToken stoppingToken)
-    {
-        try
-        {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                logger.LogInformation("Starting Builder - Auto mode");
-
-                Settings = ModuleSettings.SetAutoWaitTime(logger, Settings, autoStartTime);
-                TimeSpan waitTime = ModuleSettings.CalculateWaitTime(logger, Settings);
-
-                Status = ModuleStatus.Standby;
-                await Task.Delay(TimeSpan.FromSeconds(waitTime.TotalSeconds), stoppingToken);
-
-                foreach (ParaBundle bundle in context.ParaBundles.Where(x => x.IsReadyForBuild && !x.IsBuildComplete).ToList())
-                {
-                    PafKey pafKey = context.PafKeys.Where(x => x.DataMonth == bundle.DataMonth && x.DataYear == bundle.DataYear).FirstOrDefault();
-                    await Start(bundle.DataYearMonth, pafKey.Value, stoppingToken);
-                    await Task.Delay(TimeSpan.FromSeconds(2));
-                }
-            }
-        }
-        catch (TaskCanceledException e)
-        {
-            logger.LogDebug($"{e.Message}");
-        }
-        catch (Exception e)
-        {
-            Status = ModuleStatus.Error;
-            logger.LogError($"{e.Message}");
-        }
-    }
-
     public async Task Start(string dataYearMonth, string key, CancellationToken stoppingToken)
     {
         try
@@ -73,7 +40,7 @@ public class RoyalMailBuilder : BaseModule
 
             Message = "Verifying PAF Key";
             Progress = 0;
-            CheckKey(key, stoppingToken);
+            await CheckKey(key, stoppingToken);
 
             Message = "Extracing files from PAF executable download";
             Progress = 1;
@@ -105,7 +72,7 @@ public class RoyalMailBuilder : BaseModule
 
             Message = "Updating packaged directories";
             Progress = 99;
-            CheckBuildComplete(stoppingToken);
+            await CheckBuildComplete(stoppingToken);
 
             Message = "";
             Progress = 100;
@@ -124,7 +91,7 @@ public class RoyalMailBuilder : BaseModule
         }
     }
 
-    private void CheckKey(string royalKey, CancellationToken stoppingToken)
+    private async Task CheckKey(string royalKey, CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -144,7 +111,7 @@ public class RoyalMailBuilder : BaseModule
         {
             logger.LogInformation("Unique PafKey added: {DataMonth}/{DataYear}", filteredKey.DataMonth, filteredKey.DataYear);
             context.PafKeys.Add(filteredKey);
-            context.SaveChanges();
+            await context.SaveChangesAsync(stoppingToken);
         }
     }
 
@@ -293,16 +260,12 @@ public class RoyalMailBuilder : BaseModule
         // Encrypt patterns, but first wrap the combined paths in quotes to get around spaced directories
         // Perform for LCS
         string encryptPatternsFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "EncryptPatterns.exe"));
-        string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_4.0.xml")) + " --clickCharge";
+        string encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.xml")) + " --clickCharge";
         Process encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
-        encryptPatterns.WaitForExit();
-        // Perform for ELCS
-        encryptPatternsArgs = "--patterns " + Utils.WrapQuotes(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_5.0.xml")) + " --clickCharge";
-        encryptPatterns = Utils.RunProc(encryptPatternsFileName, encryptPatternsArgs);
         encryptPatterns.WaitForExit();
 
         // If this file wasn't created then EncryptPatterns silently failed, likeliest cause is missing a redistributable
-        if (!File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_4.0.exml")) || !File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns_5.0.exml")))
+        if (!File.Exists(Path.Combine(Settings.WorkingPath, "Smi", "UK_RM_CM_Patterns.exml")))
         {
             throw new Exception("Missing C++ 2010 x86 redistributable, EncryptPatterns and DirectoryDataCompiler 1.9 won't work. Also check that SQL CE is installed for 1.9");
         }
@@ -353,29 +316,27 @@ public class RoyalMailBuilder : BaseModule
 
     private async Task Compile(CancellationToken stoppingToken)
     {
-        List<Task> tasks = new()
-        {
-            Task.Run(() => CompileRunner("5.0"), stoppingToken),
-            Task.Run(() => CompileRunner("4.0"), stoppingToken),
+        List<Task> tasks =
+        [
+            Task.Run(() => CompileRunner("3.0"), stoppingToken),
             // Task.Run(() => CompileRunner("1.9"), stoppingToken)
-        };
+        ];
 
         await Task.WhenAll(tasks);
     }
 
     private async Task Output(CancellationToken stoppingToken)
     {
-        List<Task> tasks = new()
-        {
-            Task.Run(() => OutputRunner("5.0"), stoppingToken),
-            Task.Run(() => OutputRunner("4.0"), stoppingToken),
+        List<Task> tasks =
+        [
+            Task.Run(() => OutputRunner("3.0"), stoppingToken),
             // Task.Run(() => OutputRunner("1.9"), stoppingToken)
-        };
+        ];
 
         await Task.WhenAll(tasks);
     }
 
-    private void CheckBuildComplete(CancellationToken stoppingToken)
+    private async Task CheckBuildComplete(CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
@@ -388,7 +349,7 @@ public class RoyalMailBuilder : BaseModule
         bundle.CompileDate = Utils.CalculateDbDate();
         bundle.CompileTime = Utils.CalculateDbTime();
 
-        context.SaveChanges();
+        await context.SaveChangesAsync(stoppingToken);
         SendDbUpdate = true;
     }
 
@@ -409,20 +370,9 @@ public class RoyalMailBuilder : BaseModule
     {
         Directory.CreateDirectory(Path.Combine(Settings.WorkingPath, version));
 
-        foreach (string file in new List<string> { "UK_RM_CM.xml", "UK_RM_CM_Patterns_4.0.xml", "UK_RM_CM_Patterns_4.0.exml", "UK_RM_CM_Patterns_5.0.xml", "UK_RM_CM_Patterns_5.0.exml", "UK_RM_CM_Settings.xml", "UK_RM_CM.lcs", "UK_RM_CM.elcs", "BFPO.txt", "UK.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "UK_IgnorableWordsTable.txt", "UK_WordMatchTable.txt" })
+        foreach (string file in new List<string> { "UK_RM_CM.xml", "UK_RM_CM_Patterns.xml", "UK_RM_CM_Patterns.exml", "UK_RM_CM_Settings.xml", "UK_RM_CM.lcs", "UK_RM_CM.elcs", "BFPO.txt", "UK.txt", "Country.txt", "County.txt", "PostTown.txt", "StreetDescriptor.txt", "StreetName.txt", "PoBoxName.txt", "SubBuildingDesignator.txt", "OrganizationName.txt", "Country_Alias.txt", "UK_IgnorableWordsTable.txt", "UK_WordMatchTable.txt" })
         {
             File.Copy(Path.Combine(Settings.WorkingPath, "Smi", file), Path.Combine(Settings.WorkingPath, version, file), true);
-        }
-
-        if (version == "4.0" || version == "3.0")
-        {
-            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_4.0.xml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml"), true);
-            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_4.0.exml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.exml"), true);
-        }
-        if (version == "5.0")
-        {
-            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_5.0.xml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.xml"), true);
-            File.Move(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns_5.0.exml"), Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Patterns.exml"), true);
         }
 
         string directoryDataCompilerFileName = Utils.WrapQuotes(Path.Combine(Directory.GetCurrentDirectory(), "Tools", "UkBuildTools", version, "DirectoryDataCompiler.exe"));
@@ -467,5 +417,14 @@ public class RoyalMailBuilder : BaseModule
         }
 
         File.Copy(Path.Combine(Settings.WorkingPath, version, "UK_RM_CM_Settings.xml"), Path.Combine(dataOutputPath, version, "UK_RM_CM_Settings.xml"), true);
+
+        if (version == "1.9")
+        {
+            File.Delete(Path.Combine(dataOutputPath, version, "UK_RM_CM", "UK_RM_CM.elcs"));
+        }
+        if (version == "3.0")
+        {
+            File.Delete(Path.Combine(dataOutputPath, version, "UK_RM_CM", "UK_RM_CM.lcs"));
+        }
     }
 }

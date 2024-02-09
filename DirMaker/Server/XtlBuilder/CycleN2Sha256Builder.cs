@@ -826,7 +826,6 @@ namespace Com.Raf.Xtl.Build
                 }
                 else
                 {
-                    LogAndUpdateUser("Could not check out dongle lists", Logging.LogLevel.Error);
                 }
             }
             catch (Exception ex)
