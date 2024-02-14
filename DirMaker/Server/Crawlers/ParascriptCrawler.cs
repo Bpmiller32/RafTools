@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PuppeteerSharp;
-using Server.Common;
+using DataObjects;
 
 namespace Server.Crawlers;
 

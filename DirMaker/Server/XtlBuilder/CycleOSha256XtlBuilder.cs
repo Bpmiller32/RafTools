@@ -16,7 +16,8 @@ using ICSharpCode.SharpZipLib.Tar;
 using ICSharpCode.SharpZipLib.Zip;
 
 using log4net;
-using Server.Common;
+
+using Server;
 
 namespace Com.Raf.Xtl.Build
 {

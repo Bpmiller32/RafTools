@@ -6,10 +6,11 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Templates;
 using Server.Builders;
-using Server.Common;
+using DataObjects;
 using Server.Crawlers;
-using Server.Service;
+using Server.ServerMessages;
 using Server.Tester;
+using Server;
 
 string applicationName = "DirMaker";
 using var mutex = new Mutex(false, applicationName);
@@ -49,7 +50,6 @@ builder.Services.AddSwaggerGen(options =>
         Version = "version 1.0.0",
         Title = "RAF DirMaker",
         Description = "An Asp.Net Core Web API for gathering, building, and testing Argosy Post directories",
-        TermsOfService = new Uri("https://example.com/terms"),
         Contact = new OpenApiContact
         {
             Name = "Contact Billy",
@@ -189,12 +189,10 @@ app.MapPost("/smartmatch/builder", (SmartMatchBuilder smartMatchBuilder, SmartMa
         case "start":
             cancelTokens["SmartMatchBuilder"] = new();
             Utils.KillSmProcs();
-            Task.Run(() => smartMatchBuilder.Start(serverMessage.Cycle, serverMessage.DataYearMonth, cancelTokens["SmartMatchBuilder"]));
-            return Results.Ok();
-
-        case "customstart":
-            cancelTokens["SmartMatchBuilder"] = new();
-            Utils.KillSmProcs();
+            if (string.IsNullOrEmpty(serverMessage.ExpireDays))
+            {
+                serverMessage.ExpireDays = "105";
+            }
             Task.Run(() => smartMatchBuilder.Start(serverMessage.Cycle, serverMessage.DataYearMonth, cancelTokens["SmartMatchBuilder"], serverMessage.ExpireDays));
             return Results.Ok();
 

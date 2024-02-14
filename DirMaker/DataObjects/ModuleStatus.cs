@@ -1,9 +1,8 @@
-namespace Server.Common;
+namespace DataObjects;
 
 public enum ModuleStatus
 {
     Ready,
-    Standby,
     InProgress,
     Error,
 }

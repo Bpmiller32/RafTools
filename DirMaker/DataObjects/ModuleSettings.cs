@@ -1,4 +1,6 @@
-namespace Server.Common;
+﻿using Microsoft.Extensions.Configuration;
+
+namespace DataObjects;
 
 public class ModuleSettings
 {

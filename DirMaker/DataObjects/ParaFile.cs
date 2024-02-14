@@ -1,4 +1,4 @@
-namespace Server.Common;
+namespace DataObjects;
 
 public class ParaFile : BaseFile
 {

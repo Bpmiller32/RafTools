@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Server.Common;
+namespace DataObjects;
 
 public class DatabaseContext : DbContext
 {

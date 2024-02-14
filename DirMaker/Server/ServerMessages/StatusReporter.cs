@@ -1,10 +1,10 @@
 using System.Text.Json;
 using Server.Builders;
-using Server.Common;
+using DataObjects;
 using Server.Crawlers;
 using Server.Tester;
 
-namespace Server.Service;
+namespace Server.ServerMessages;
 
 public class StatusReporter
 {

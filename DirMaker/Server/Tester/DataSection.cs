@@ -1,5 +1,3 @@
-using Server.Common;
-
 namespace Server.Tester;
 
 public class DataSection

@@ -1,4 +1,4 @@
-﻿namespace Server.Service;
+﻿namespace Server.ServerMessages;
 
 public class CrawlerMessage
 {

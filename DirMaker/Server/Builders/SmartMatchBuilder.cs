@@ -1,6 +1,6 @@
 using Com.Raf.Utility;
 using Com.Raf.Xtl.Build;
-using Server.Common;
+using DataObjects;
 
 namespace Server.Builders;
 
@@ -21,7 +21,7 @@ public class SmartMatchBuilder : BaseModule
         Settings.DirectoryName = "SmartMatch";
     }
 
-    public async Task Start(string cycle, string dataYearMonth, CancellationTokenSource stoppingTokenSource, string expireDays = "105")
+    public async Task Start(string cycle, string dataYearMonth, CancellationTokenSource stoppingTokenSource, string expireDays)
     {
         logger.LogInformation("Starting Builder");
         Status = ModuleStatus.InProgress;

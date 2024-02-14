@@ -1,9 +1,9 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Diagnostics;
 using System.ServiceProcess;
 using System.Text;
 
-namespace Server.Common;
+namespace Server;
 
 public static class Utils
 {

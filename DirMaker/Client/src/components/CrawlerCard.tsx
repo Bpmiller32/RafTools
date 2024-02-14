@@ -24,20 +24,6 @@ export default defineComponent({
     // Interactive
     function ClickDownloadButton() {}
 
-    const testDirectoryName = ref();
-    setTimeout(() => {
-      testDirectoryName.value.classList.add("text-blue-500");
-    }, 5000);
-
-    // Organization
-    function DirectoryName() {
-      return (
-        <p ref={testDirectoryName} class="text-gray-900 text-sm font-medium">
-          {props.name}
-        </p>
-      );
-    }
-
     function DirectoryImage() {
       switch (props.name) {
         case "SmartMatch":
@@ -59,35 +45,28 @@ export default defineComponent({
     }
 
     function StatusLabel() {
-      let statusLabel;
-
       switch (props.status?.Status) {
         case 0:
-          statusLabel = "Ready";
-          break;
-        case 1:
-          statusLabel = "Standby";
-          break;
-        case 2:
-          statusLabel = "In Progress";
-          break;
-        case 3:
-          statusLabel = "Error";
-          break;
-      }
+          return (
+            <div class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-green-800 bg-green-100">
+              Ready
+            </div>
+          );
 
-      return (
-        <div
-          class={{
-            "ml-3 px-2 py-0.5 text-xs font-medium rounded-full": true,
-            "text-green-800 bg-green-100": props.status?.Status == 0,
-            "text-yellow-800 bg-yellow-100": props.status?.Status == 2,
-            "text-red-800 bg-red-100": props.status?.Status == 3,
-          }}
-        >
-          {statusLabel}
-        </div>
-      );
+        case 1:
+          return (
+            <div class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
+              Ready
+            </div>
+          );
+
+        case 2:
+          return (
+            <div class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-red-800 bg-red-100">
+              Ready
+            </div>
+          );
+      }
     }
 
     function StatusIcon() {
@@ -214,7 +193,7 @@ export default defineComponent({
         <div class="flex items-center justify-between p-6">
           <div>
             <div class="flex items-center">
-              {DirectoryName()}
+              <p class="text-gray-900 text-sm font-medium">{props.name}</p>
               {StatusLabel()}
               {StatusIcon()}
             </div>

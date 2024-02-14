@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using FlaUI.UIA2;
 using FlaUI.Core.AutomationElements;
-using Server.Common;
+using DataObjects;
 using System.Xml;
 using System.Diagnostics;
 
