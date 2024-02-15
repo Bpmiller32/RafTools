@@ -1,36 +1,64 @@
 using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.OpenApi.Models;
 
-var builder = WebApplication.CreateBuilder(args);
+string applicationName = "DirMaker";
+using var mutex = new Mutex(false, applicationName);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Single instance of application check
+bool isAnotherInstanceOpen = !mutex.WaitOne(TimeSpan.Zero);
+if (isAnotherInstanceOpen)
+{
+    throw new Exception("Only one instance of the application allowed");
+}
 
-builder.Services.AddSingleton<StatusReporter>();
+// Set exe directory to current directory, important when doing Windows services otherwise runs out of System32
+Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // CORS
 builder.Services.AddCors(options => options.AddPolicy("FrontEnd", pb => pb.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Swagger configuration
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "version 1.0.0",
+        Title = "RAF DirMaker",
+        Description = "An Asp.Net Core Web API for gathering, building, and testing Argosy Post directories",
+        Contact = new OpenApiContact
+        {
+            Name = "Contact Billy",
+            Url = new Uri("https://bpmiller.com")
+        },
+    });
+});
 
+// Crawlers, Builders, Testers registration
+builder.Services.AddSingleton<StatusReporter>();
+
+// Build Application
+WebApplication app = builder.Build();
+
+// Register server address
+app.Urls.Add("http://localhost:5000");
+app.Urls.Add("http://192.168.0.39:5000");
+
+// Register Swagger
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// Register Middleware
 app.UseCors("FrontEnd");
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-
-app.UseHttpsRedirection();
-
+// Toggle
 app.MapGet("/toggle", (StatusReporter statusReporter) =>
 {
     statusReporter.ToggleStatus();
@@ -40,7 +68,7 @@ app.MapGet("/toggle", (StatusReporter statusReporter) =>
 // Status
 app.MapGet("/status", async (HttpContext context, StatusReporter statusReporter) =>
 {
-    context.Response.Headers.Add("Content-Type", "text/event-stream");
+    context.Response.Headers.Append("Content-Type", "text/event-stream");
 
     for (var i = 0; true; i++)
     {
@@ -54,8 +82,3 @@ app.MapGet("/status", async (HttpContext context, StatusReporter statusReporter)
 });
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

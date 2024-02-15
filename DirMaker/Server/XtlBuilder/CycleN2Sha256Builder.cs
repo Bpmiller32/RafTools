@@ -782,7 +782,7 @@ namespace Com.Raf.Xtl.Build
                 }
 
                 Directory.CreateDirectory(dongleListsFolder);
-                Utils.CopyFiles(@"C:\DongleLists", dongleListsFolder);
+                Utils.CopyFiles("./DongleLists", dongleListsFolder);
 
                 // https://scm.raf.com/repo/ArgosyPost/trunk/Code/data/ (ArgosyDefault.txt)
                 // https://scm.raf.com/repo/APC/trunk/Code/SMLicense/ (SmSdkMonthly.txt)

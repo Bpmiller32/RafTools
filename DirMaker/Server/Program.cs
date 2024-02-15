@@ -189,7 +189,7 @@ app.MapPost("/smartmatch/builder", (SmartMatchBuilder smartMatchBuilder, SmartMa
         case "start":
             cancelTokens["SmartMatchBuilder"] = new();
             Utils.KillSmProcs();
-            if (string.IsNullOrEmpty(serverMessage.ExpireDays))
+            if (string.IsNullOrEmpty(serverMessage.ExpireDays) || serverMessage.ExpireDays == "string")
             {
                 serverMessage.ExpireDays = "105";
             }
@@ -212,13 +212,13 @@ app.MapPost("/parascript/builder", (ParascriptBuilder parascriptBuilder, Parascr
     {
         case "start":
             cancelTokens["ParascriptBuilder"] = new();
-            Utils.KillSmProcs();
+            Utils.KillPsProcs();
             Task.Run(() => parascriptBuilder.Start(serverMessage.DataYearMonth, cancelTokens["ParascriptBuilder"].Token));
             return Results.Ok();
 
         case "stop":
             cancelTokens["ParascriptBuilder"].Cancel();
-            Utils.KillSmProcs();
+            Utils.KillPsProcs();
             return Results.Ok();
 
         default:
