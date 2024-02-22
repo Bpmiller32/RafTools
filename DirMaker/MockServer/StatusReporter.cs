@@ -11,10 +11,13 @@ public class StatusReporter
         {
             Status = ModuleStatus.Ready,
         });
-        // modules.Add("smartMatchBuilder", smartMatchBuilder);
+        modules.Add("smartMatchBuilder", new BaseModule()
+        {
+            Status = ModuleStatus.Ready,
+        });
 
-        dbBuilds.Add("smNReadytoBuild", string.Join("|", "202308|202309"));
-        dbBuilds.Add("smNBuildComplete", string.Join("|", "202308"));
+        // dbBuilds.Add("smNReadytoBuild", string.Join("|", "202308|202309"));
+        // dbBuilds.Add("smNBuildComplete", string.Join("|", "202308"));
         dbBuilds.Add("smOReadytoBuild", string.Join("|", "202308|202309"));
         dbBuilds.Add("smOBuildComplete", string.Join("|", ""));
     }
@@ -58,8 +61,8 @@ public class StatusReporter
                     modules["smartMatchCrawler"].Message
                 },
 
-                IsReadyForBuildN = dbBuilds["smNReadytoBuild"],
-                IsBuildCompleteN = dbBuilds["smNBuildComplete"],
+                // IsReadyForBuildN = dbBuilds["smNReadytoBuild"],
+                // IsBuildCompleteN = dbBuilds["smNBuildComplete"],
                 IsReadyForBuildO = dbBuilds["smOReadytoBuild"],
                 IsBuildCompleteO = dbBuilds["smOBuildComplete"]
             },
