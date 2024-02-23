@@ -65,6 +65,20 @@ app.MapGet("/toggle", (StatusReporter statusReporter) =>
     return "Toggled Status";
 });
 
+// AddDirectory
+app.MapGet("/addDirectory", (StatusReporter statusReporter) =>
+{
+    statusReporter.AddDirectory();
+    return "Added Directory";
+});
+
+// ResetDirectory
+app.MapGet("/resetDirectory", (StatusReporter statusReporter) =>
+{
+    statusReporter.ResetDirectory();
+    return "Reset Directory";
+});
+
 // Status
 app.MapGet("/status", async (HttpContext context, StatusReporter statusReporter) =>
 {

@@ -7,12 +7,13 @@ import {
   watch,
 } from "vue";
 import anime from "animejs/lib/anime.es.js";
-import BackEndObject from "../interfaces/BackEndObject";
+import BackEndModule from "../interfaces/BackEndModule";
 import {
   StatusOnlineIcon,
   ArrowCircleDownIcon,
   ExclamationCircleIcon,
   RefreshIcon,
+  XCircleIcon,
 } from "@heroicons/vue/outline";
 import ErrorLogo from "../assets/ErrorLogo.png";
 import SmartMatchLogo from "../assets/SmartMatchLogo.png";
@@ -22,10 +23,12 @@ import RoyalMailLogo from "../assets/RoyalMailLogo.png";
 export default defineComponent({
   props: {
     name: String,
-    status: Object as PropType<BackEndObject>,
+    module: Object as PropType<BackEndModule>,
   },
   setup(props) {
-    // Mounting and watchers setup
+    // Animation refs setup
+    let mountedOnce = false;
+
     const refreshIconRef = ref();
     const downloadButtonRef = ref();
 
@@ -33,7 +36,10 @@ export default defineComponent({
     let downloadButtonFillAnimation: anime.AnimeInstance;
     let downloadButtonDrainAnimation: anime.AnimeInstance;
 
+    // Mounting and watchers setup
     onMounted(() => {
+      mountedOnce = true;
+
       refreshIconAnimation = anime({
         targets: refreshIconRef.value,
         rotate: "-=2turn",
@@ -60,11 +66,11 @@ export default defineComponent({
         autoplay: false,
       });
 
-      if (props.status?.Status == 1) {
+      if (props.module?.Status == 1) {
         refreshIconAnimation.play();
         downloadButtonRef.value.style.width = "8rem";
         downloadButtonRef.value.style.backgroundSize = "0% 0%";
-      } else if (props.status?.Status == 1) {
+      } else if (props.module?.Status == 1) {
         downloadButtonRef.value.style.width = "8rem";
         downloadButtonRef.value.style.backgroundSize = "0% 0%";
       } else {
@@ -73,9 +79,9 @@ export default defineComponent({
     });
 
     watch(
-      () => props.status?.Status,
+      () => props.module?.Status,
       () => {
-        if (props.status?.Status == 1) {
+        if (props.module?.Status == 1) {
           refreshIconAnimation.play();
           downloadButtonDrainAnimation.play();
         } else {
@@ -88,10 +94,32 @@ export default defineComponent({
     // Events
     function CrawlButtonClicked() {
       // Do nothing if Crawler is not in a ready state
-      if (props.status?.Status != 0) {
+      if (props.module?.Status != 0) {
         return;
       }
 
+      // // PROD
+      // // Define the request options
+      // const requestOptions = {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     moduleCommand: "start",
+      //   }),
+      // };
+
+      // // Send the request using the Fetch API
+      // fetch("http://192.168.0.39:5000/smartmatch/crawler", requestOptions).then(
+      //   (response) => {
+      //     if (!response.ok) {
+      //       throw new Error("Network response was not ok");
+      //     }
+      //   }
+      // );
+
+      // TEST
       // Define the request options
       const requestOptions = {
         method: "GET",
@@ -110,13 +138,54 @@ export default defineComponent({
       );
     }
 
+    function CancelButtonClicked() {
+      // TEST
+      // Define the request options
+      const requestOptions = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+
+      // Send the request using the Fetch API
+      fetch("http://192.168.0.39:5000/toggle", requestOptions).then(
+        (response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+        }
+      );
+
+      // // PROD
+      // // Define the request options
+      // const requestOptions = {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     moduleCommand: "stop",
+      //   }),
+      // };
+
+      // // Send the request using the Fetch API
+      // fetch("http://192.168.0.39:5000/smartmatch/crawler", requestOptions).then(
+      //   (response) => {
+      //     if (!response.ok) {
+      //       throw new Error("Network response was not ok");
+      //     }
+      //   }
+      // );
+    }
+
     // Subcomponents
     function StatusLabel() {
       // Needed to make one element different from the others so that the Vue transition system does not resuse the div
       // If all elements have the key then the divs are again identical and reuseable
       const statusLabelKey = 0;
 
-      switch (props.status?.Status) {
+      switch (props.module?.Status) {
         case 0:
           return (
             <Transition
@@ -165,7 +234,7 @@ export default defineComponent({
     }
 
     function StatusIcon() {
-      switch (props.status?.Status) {
+      switch (props.module?.Status) {
         case 0:
           return (
             <Transition
@@ -230,10 +299,10 @@ export default defineComponent({
           ref={downloadButtonRef}
           onClick={CrawlButtonClicked}
           type="button"
-          disabled={props.status?.Status == 0 ? false : true}
+          disabled={props.module?.Status == 0 ? false : true}
           class={{
-            "cursor-not-allowed ": props.status?.Status != 0,
-            "flex items-center mx-10 my-4 px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
+            "cursor-not-allowed ": props.module?.Status != 0,
+            "flex items-center my-4 px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
               true,
           }}
         >
@@ -246,10 +315,47 @@ export default defineComponent({
       );
     }
 
+    function CancelButton() {
+      const cancelButtonKey = 0;
+
+      if (props.module?.Status == 1) {
+        return (
+          <Transition
+            mode="out-in"
+            appear={mountedOnce}
+            enterFromClass="opacity-0 translate-y-[0.5rem]"
+            enterToClass="opacity-100"
+            enterActiveClass="duration-[1000ms]"
+          >
+            <XCircleIcon
+              key={cancelButtonKey}
+              onClick={CancelButtonClicked}
+              class="cursor-pointer mr-16 h-6 w-6 text-red-500"
+            ></XCircleIcon>
+          </Transition>
+        );
+      } else {
+        return (
+          <Transition
+            mode="out-in"
+            appear={mountedOnce}
+            enterFromClass="opacity-100"
+            enterToClass="opacity-0"
+            enterActiveClass="duration-[500ms]"
+          >
+            <XCircleIcon
+              onClick={CancelButtonClicked}
+              class="mr-16 h-6 w-6 text-red-500 opacity-100 text-opacity-0"
+            ></XCircleIcon>
+          </Transition>
+        );
+      }
+    }
+
     function DownloadButtonTextHelper() {
       const downloadButtonKey = 0;
 
-      switch (props.status?.Status) {
+      switch (props.module?.Status) {
         case 0:
           return (
             <Transition
@@ -301,8 +407,10 @@ export default defineComponent({
           {DirectoryImage()}
         </div>
 
-        <div class="flex min-h-[5rem] justify-center items-center">
+        <div class="flex min-h-[5rem] justify-between items-center">
+          <div class="ml-16 w-6 h-6"></div>
           {DownloadButton()}
+          {CancelButton()}
         </div>
       </div>
     );

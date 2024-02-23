@@ -13,13 +13,14 @@ const state = useGlobalState();
       <CrawlerCard
         id="TestIdForCrawlerCard"
         name="SmartMatch"
-        :status="JSON.parse(state.beConnection.value.data).SmartMatch.Crawler"
+        :module="JSON.parse(state.beConnection.value.data).SmartMatch.Crawler"
       />
       <CrawlerList
         class="mt-6"
         name="SmartMatch"
-        :directories="
-          JSON.parse(state.beConnection.value.data).SmartMatch.IsReadyForBuildO
+        :directorylist="
+          JSON.parse(state.beConnection.value.data).SmartMatch.Crawler
+            .ReadyToBuild
         "
       />
     </div>

@@ -1,17 +1,55 @@
-import { defineComponent, ref } from "vue";
+import {
+  PropType,
+  defineComponent,
+  onMounted,
+  ref,
+  watch,
+  Transition,
+  TransitionGroup,
+} from "vue";
+import BackEndDbObject from "../interfaces/BackEndDbObject";
 import ErrorLogo from "../assets/ErrorLogo.png";
 import SmartMatchLogo from "../assets/usa.png";
 import ParascriptLogo from "../assets/hw.png";
 import RoyalMailLogo from "../assets/uk.png";
 
+import JanuaryLogo from "../assets/january.png";
+import FebruaryLogo from "../assets/february.png";
+import MarchLogo from "../assets/march.png";
+import AprilLogo from "../assets/april.png";
+import MayLogo from "../assets/may.png";
+import JuneLogo from "../assets/june.png";
+import JulyLogo from "../assets/july.png";
+import AugustLogo from "../assets/august.png";
+import SeptemberLogo from "../assets/september.png";
+import OctoberLogo from "../assets/october.png";
+import NovemberLogo from "../assets/november.png";
+import DecemberLogo from "../assets/december.png";
+
+import ListDirectory from "../interfaces/ListDirectory";
+import { DocumentDownloadIcon } from "@heroicons/vue/outline";
+
 export default defineComponent({
   props: {
     name: String,
-    directories: String,
+    directorylist: Object as PropType<BackEndDbObject>,
   },
   setup(props) {
+    // Mounting and watchers setup
+    onMounted(() => {
+      directoriesState.value.FormatData();
+    });
+
+    watch(
+      () => props.directorylist?.DataYearMonth,
+      () => {
+        directoriesState.value.FormatData();
+      }
+    );
+
+    // DirectoryState object
     const directoriesState = ref({
-      directories: [],
+      directories: [] as ListDirectory[],
       monthNames: new Map([
         ["01", "January"],
         ["02", "February"],
@@ -27,82 +65,64 @@ export default defineComponent({
         ["12", "December"],
       ]),
       icons: new Map([
-        ["01", new URL("../assets/january.png", import.meta.url).href],
-        ["02", new URL("../assets/february.png", import.meta.url).href],
-        ["03", new URL("../assets/march.png", import.meta.url).href],
-        ["04", new URL("../assets/april.png", import.meta.url).href],
-        ["05", new URL("../assets/may.png", import.meta.url).href],
-        ["06", new URL("../assets/june.png", import.meta.url).href],
-        ["07", new URL("../assets/july.png", import.meta.url).href],
-        ["08", new URL("../assets/august.png", import.meta.url).href],
-        ["09", new URL("../assets/september.png", import.meta.url).href],
-        ["10", new URL("../assets/october.png", import.meta.url).href],
-        ["11", new URL("../assets/november.png", import.meta.url).href],
-        ["12", new URL("../assets/december.png", import.meta.url).href],
+        ["01", JanuaryLogo],
+        ["02", FebruaryLogo],
+        ["03", MarchLogo],
+        ["04", AprilLogo],
+        ["05", MayLogo],
+        ["06", JuneLogo],
+        ["07", JulyLogo],
+        ["08", AugustLogo],
+        ["09", SeptemberLogo],
+        ["10", OctoberLogo],
+        ["11", NovemberLogo],
+        ["12", DecemberLogo],
       ]),
       FormatData: () => {
         directoriesState.value.directories = [];
         const today = new Date();
         const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        const separatedDirectories = props.directories?.split("|");
+        const dataYearMonths = props.directorylist?.DataYearMonth?.split("|");
+        const filecounts = props.directorylist?.FileCount?.split("|");
+        const downloaddates = props.directorylist?.DownloadDate?.split("|");
+        const downloadtimes = props.directorylist?.DownloadTime?.split("|");
 
-        separatedDirectories?.forEach((directory, index) => {
+        // Format directories into objects
+        dataYearMonths?.forEach((directory, index) => {
           const monthNum = directory.substring(4, 6);
           const yearNum = directory.substring(0, 4);
-          let isNew = false;
 
-          const name =
-            directoriesState.value.monthNames.get(monthNum) + " " + yearNum;
-          const icon = directoriesState.value.icons.get(monthNum);
+          // Check if directory is new, set flag
+          let isNew = false;
+          const dateString = downloaddates![index].split("/");
+          const dirDate = new Date(
+            parseInt(dateString[2]),
+            parseInt(dateString[0]) - 1,
+            parseInt(dateString[1])
+          );
+          if (dirDate >= thisMonth) {
+            isNew = true;
+          }
+
+          const dir: ListDirectory = {
+            name:
+              directoriesState.value.monthNames.get(monthNum) + " " + yearNum,
+            icon: directoriesState.value.icons.get(monthNum),
+            fileCount: filecounts![index],
+            downloadDate: downloaddates![index],
+            downloadTime: downloadtimes![index],
+            isNew: isNew,
+          };
+          directoriesState.value.directories.push(dir);
         });
 
-        // for (
-        //   let index = 0;
-        //   index < store.crawlers[props.dirType].AvailableBuilds.length;
-        //   index++
-        // ) {
-        //   const monthNum = store.crawlers[props.dirType].AvailableBuilds[
-        //     index
-        //   ].Name.substring(4, 6);
-        //   const yearNum = store.crawlers[props.dirType].AvailableBuilds[
-        //     index
-        //   ].Name.substring(0, 4);
-        //   let isNew = false;
-
-        //   const name =
-        //     directoriesState.value.monthNames.get(monthNum) + " " + yearNum;
-        //   const icon = directoriesState.value.icons.get(monthNum);
-
-        //   const dateString =
-        //     store.crawlers[props.dirType].AvailableBuilds[index].Date.split(
-        //       "/"
-        //     );
-        //   const dirDate = new Date(
-        //     dateString[2],
-        //     dateString[0] - 1,
-        //     parseInt(dateString[1])
-        //   );
-
-        //   if (dirDate >= thisMonth) {
-        //     isNew = true;
-        //   }
-
-        //   const dir = {
-        //     name: name,
-        //     fileCount:
-        //       store.crawlers[props.dirType].AvailableBuilds[index].FileCount,
-        //     date: store.crawlers[props.dirType].AvailableBuilds[index].Date,
-        //     time: store.crawlers[props.dirType].AvailableBuilds[index].Time,
-        //     icon: icon,
-        //     isNew: isNew,
-        //   };
-
-        //   directoriesState.value.directories.push(dir);
-        // }
+        // Easy formatting fix
+        directoriesState.value.directories.reverse();
       },
     });
 
+    // Subcomponents
     function DirectoryImage() {
       switch (props.name) {
         case "SmartMatch":
@@ -117,7 +137,43 @@ export default defineComponent({
       }
     }
 
-    function DirectoryList() {}
+    function DirectoryList() {
+      return (
+        <TransitionGroup
+          appear
+          enterFromClass="opacity-0 translate-y-[0.5rem]"
+          enterToClass="opacity-100"
+          enterActiveClass="duration-[1000ms]"
+        >
+          {directoriesState.value.directories.map((directory) => (
+            <li class="px-3 py-3 flex">
+              <img class="h-10 w-10 rounded-full" src={directory.icon} />
+              <div class="flex items-center ml-3">
+                <div>
+                  <div class="flex items-center">
+                    <p class="text-sm font-medium text-gray-900">
+                      {directory.name} ({directory.fileCount} files)
+                    </p>
+                    <DocumentDownloadIcon class="ml-2 h-5 w-5" />
+                    {directory.isNew ? (
+                      <span class="inline-flex items-center ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        New
+                      </span>
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+                  <p class="text-sm text-gray-500">
+                    Downloaded {directory.downloadDate} @{" "}
+                    {directory.downloadTime}
+                  </p>
+                </div>
+              </div>
+            </li>
+          ))}
+        </TransitionGroup>
+      );
+    }
 
     // Render function
     return () => (
