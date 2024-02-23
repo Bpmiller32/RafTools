@@ -11,7 +11,9 @@ public class StatusReporter
     private readonly DatabaseContext context;
 
     private readonly Dictionary<string, BaseModule> modules = [];
-    private readonly Dictionary<string, string> dbBuilds = [];
+    private readonly Dictionary<string, IQueryable<UspsBundle>> smBuilds = [];
+    private readonly Dictionary<string, IQueryable<ParaBundle>> psBuilds = [];
+    private readonly Dictionary<string, IQueryable<RoyalBundle>> rmBuilds = [];
 
     public StatusReporter(DatabaseContext context, SmartMatchCrawler smartMatchCrawler, SmartMatchBuilder smartMatchBuilder, ParascriptCrawler parascriptCrawler, ParascriptBuilder parascriptBuilder, RoyalMailCrawler royalMailCrawler, RoyalMailBuilder royalMailBuilder, DirTester dirTester)
     {
@@ -31,16 +33,14 @@ public class StatusReporter
 
 
         // Initial population of db values
-        dbBuilds.Add("smNReadytoBuild", string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList()));
-        dbBuilds.Add("smNBuildComplete", string.Join("|", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList()));
-        dbBuilds.Add("smOReadytoBuild", string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-O").Select(x => x.DataYearMonth).ToList()));
-        dbBuilds.Add("smOBuildComplete", string.Join("|", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-O").Select(x => x.DataYearMonth).ToList()));
+        smBuilds.Add("readyToBuild", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-O"));
+        smBuilds.Add("buildComplete", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-O"));
 
-        dbBuilds.Add("psReadytoBuild", string.Join("|", context.ParaBundles.Where(x => x.IsReadyForBuild == true).Select(x => x.DataYearMonth).ToList()));
-        dbBuilds.Add("psBuildComplete", string.Join("|", context.ParaBundles.Where(x => x.IsBuildComplete == true).Select(x => x.DataYearMonth).ToList()));
+        psBuilds.Add("readyToBuild", context.ParaBundles.Where(x => x.IsReadyForBuild == true));
+        psBuilds.Add("buildComplete", context.ParaBundles.Where(x => x.IsBuildComplete == true));
 
-        dbBuilds.Add("rmReadytoBuild", string.Join("|", context.RoyalBundles.Where(x => x.IsReadyForBuild == true).Select(x => x.DataYearMonth).ToList()));
-        dbBuilds.Add("rmBuildComplete", string.Join("|", context.RoyalBundles.Where(x => x.IsBuildComplete == true).Select(x => x.DataYearMonth).ToList()));
+        rmBuilds.Add("readyToBuild", context.RoyalBundles.Where(x => x.IsReadyForBuild == true));
+        rmBuilds.Add("buildComplete", context.RoyalBundles.Where(x => x.IsBuildComplete == true));
     }
 
     public string UpdateReport()
@@ -55,21 +55,18 @@ public class StatusReporter
 
             if (module.Key.Contains("smartMatch"))
             {
-                dbBuilds["smNReadytoBuild"] = string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList());
-                dbBuilds["smNBuildComplete"] = string.Join("|", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-N").Select(x => x.DataYearMonth).ToList());
-
-                dbBuilds["smOReadytoBuild"] = string.Join("|", context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-O").Select(x => x.DataYearMonth).ToList());
-                dbBuilds["smOBuildComplete"] = string.Join("|", context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-O").Select(x => x.DataYearMonth).ToList());
+                smBuilds["readytoBuild"] = context.UspsBundles.Where(x => x.IsReadyForBuild == true && x.Cycle == "Cycle-O");
+                smBuilds["buildComplete"] = context.UspsBundles.Where(x => x.IsBuildComplete == true && x.Cycle == "Cycle-O");
             }
             else if (module.Key.Contains("parascript"))
             {
-                dbBuilds["psReadytoBuild"] = string.Join("|", context.ParaBundles.Where(x => x.IsReadyForBuild == true).Select(x => x.DataYearMonth).ToList());
-                dbBuilds["psBuildComplete"] = string.Join("|", context.ParaBundles.Where(x => x.IsBuildComplete == true).Select(x => x.DataYearMonth).ToList());
+                psBuilds["readytoBuild"] = context.ParaBundles.Where(x => x.IsReadyForBuild == true);
+                psBuilds["buildComplete"] = context.ParaBundles.Where(x => x.IsBuildComplete == true);
             }
             else if (module.Key.Contains("royalMail"))
             {
-                dbBuilds["psReadytoBuild"] = string.Join("|", context.ParaBundles.Where(x => x.IsReadyForBuild == true).Select(x => x.DataYearMonth).ToList());
-                dbBuilds["psBuildComplete"] = string.Join("|", context.ParaBundles.Where(x => x.IsBuildComplete == true).Select(x => x.DataYearMonth).ToList());
+                rmBuilds["readytoBuild"] = context.RoyalBundles.Where(x => x.IsReadyForBuild == true);
+                rmBuilds["buildComplete"] = context.RoyalBundles.Where(x => x.IsBuildComplete == true);
             }
 
             // Turn off the flag
@@ -85,20 +82,21 @@ public class StatusReporter
                 {
                     modules["smartMatchCrawler"].Status,
                     modules["smartMatchCrawler"].Progress,
-                    modules["smartMatchCrawler"].Message
+                    modules["smartMatchCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = string.Join("|", smBuilds["readyToBuild"].Select(x => x.DataYearMonth).ToList()),
+                        FileCount = string.Join("|", smBuilds["readyToBuild"].Select(x => x.FileCount).ToList()),
+                        DownloadDate = string.Join("|", smBuilds["readyToBuild"].Select(x => x.DownloadDate).ToList()),
+                        DownloadTime = string.Join("|", smBuilds["readyToBuild"].Select(x => x.DownloadTime).ToList()),
+                    }
                 },
                 Builder = new
                 {
                     modules["smartMatchBuilder"].Status,
                     modules["smartMatchBuilder"].Progress,
                     modules["smartMatchBuilder"].Message,
-                    modules["smartMatchBuilder"].CurrentTask
                 },
-
-                IsReadyForBuildN = dbBuilds["smNReadytoBuild"],
-                IsBuildCompleteN = dbBuilds["smNBuildComplete"],
-                IsReadyForBuildO = dbBuilds["smOReadytoBuild"],
-                IsBuildCompleteO = dbBuilds["smOBuildComplete"]
             },
             Parascript = new
             {
@@ -106,7 +104,14 @@ public class StatusReporter
                 {
                     modules["parascriptCrawler"].Status,
                     modules["parascriptCrawler"].Progress,
-                    modules["parascriptCrawler"].Message
+                    modules["parascriptCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = string.Join("|", psBuilds["readyToBuild"].Select(x => x.DataYearMonth).ToList()),
+                        FileCount = string.Join("|", psBuilds["readyToBuild"].Select(x => x.FileCount).ToList()),
+                        DownloadDate = string.Join("|", psBuilds["readyToBuild"].Select(x => x.DownloadDate).ToList()),
+                        DownloadTime = string.Join("|", psBuilds["readyToBuild"].Select(x => x.DownloadTime).ToList()),
+                    }
                 },
                 Builder = new
                 {
@@ -114,9 +119,6 @@ public class StatusReporter
                     modules["parascriptBuilder"].Progress,
                     modules["parascriptBuilder"].Message
                 },
-
-                IsReadyForBuild = dbBuilds["psReadytoBuild"],
-                IsBuildComplete = dbBuilds["psBuildComplete"]
             },
             RoyalMail = new
             {
@@ -124,7 +126,14 @@ public class StatusReporter
                 {
                     modules["royalMailCrawler"].Status,
                     modules["royalMailCrawler"].Progress,
-                    modules["royalMailCrawler"].Message
+                    modules["royalMailCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = string.Join("|", rmBuilds["readyToBuild"].Select(x => x.DataYearMonth).ToList()),
+                        FileCount = string.Join("|", rmBuilds["readyToBuild"].Select(x => x.FileCount).ToList()),
+                        DownloadDate = string.Join("|", rmBuilds["readyToBuild"].Select(x => x.DownloadDate).ToList()),
+                        DownloadTime = string.Join("|", rmBuilds["readyToBuild"].Select(x => x.DownloadTime).ToList()),
+                    }
                 },
                 Builder = new
                 {
@@ -132,9 +141,6 @@ public class StatusReporter
                     modules["royalMailBuilder"].Progress,
                     modules["royalMailBuilder"].Message,
                 },
-
-                IsReadyForBuild = dbBuilds["rmReadytoBuild"],
-                IsBuildComplete = dbBuilds["rmBuildComplete"]
             },
             DirTester = new
             {

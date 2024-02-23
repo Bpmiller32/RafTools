@@ -41,7 +41,6 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(dataSourcePath, "Cycle-N");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N");
 
-            CurrentTask = "Cycle-N";
             Progress = 1;
 
             CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
@@ -59,7 +58,6 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(dataSourcePath, "Cycle-O");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-O");
 
-            CurrentTask = "Cycle-O";
             Progress = 1;
 
             CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
@@ -77,7 +75,6 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(dataSourcePath, "Cycle-O");
             string dataOutputPath = Path.Combine(Settings.OutputPath, dataYearMonth, "Cycle-N-Using-O");
 
-            CurrentTask = "Cycle-O-to-N";
             Progress = 1;
 
             CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
@@ -95,7 +92,6 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(Settings.AddressDataPath, "MASS-N");
             string dataOutputPath = Path.Combine(Settings.OutputPath, "MASS-N");
 
-            CurrentTask = "MASSN";
             Progress = 1;
 
             CycleN2Sha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");
@@ -113,7 +109,6 @@ public class SmartMatchBuilder : BaseModule
             string sourceFolder = Path.Combine(Settings.AddressDataPath, "MASS-O");
             string dataOutputPath = Path.Combine(Settings.OutputPath, "MASS-O");
 
-            CurrentTask = "MASSO";
             Progress = 1;
 
             CycleOSha256XtlBuilder smartMatchBuilder = new(dataYearMonth.Substring(2, 4) + "1", sourceFolder, dataOutputPath, Settings.AddressDataPath, "user", "password", expireDays, "14 15 16 19 20 21 22 23 24 25 26 27 28 29 30 31", "TestFile.Placeholder");

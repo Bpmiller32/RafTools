@@ -3,7 +3,6 @@ using System.Text.Json;
 public class StatusReporter
 {
     private readonly Dictionary<string, BaseModule> modules = new();
-    private readonly Dictionary<string, string> dbBuilds = new();
 
     public StatusReporter()
     {
@@ -15,11 +14,6 @@ public class StatusReporter
         {
             Status = ModuleStatus.Ready,
         });
-
-        // dbBuilds.Add("smNReadytoBuild", string.Join("|", "202308|202309"));
-        // dbBuilds.Add("smNBuildComplete", string.Join("|", "202308"));
-        dbBuilds.Add("smOReadytoBuild", string.Join("|", "202308|202309"));
-        dbBuilds.Add("smOBuildComplete", string.Join("|", ""));
     }
 
     public void ToggleStatus()
@@ -39,17 +33,7 @@ public class StatusReporter
 
     public string UpdateReport()
     {
-        // Update db's only if nessasary, otherwise use stored values
-        foreach (var module in modules)
-        {
-            if (!module.Value.SendDbUpdate)
-            {
-                continue;
-            }
-            // Turn off the flag
-            module.Value.SendDbUpdate = false;
-        }
-
+        // Construct JSON object to send to client
         var jsonObject = new
         {
             SmartMatch = new
@@ -58,13 +42,15 @@ public class StatusReporter
                 {
                     modules["smartMatchCrawler"].Status,
                     modules["smartMatchCrawler"].Progress,
-                    modules["smartMatchCrawler"].Message
+                    modules["smartMatchCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = "202312|202401|202402",
+                        FileCount = "4|4|4",
+                        DownloadDate = "2/14/2024|2/15/2024|2/16/2024",
+                        DownloadTime = "3:45 pm|4:45 pm|5:45 pm",
+                    }
                 },
-
-                // IsReadyForBuildN = dbBuilds["smNReadytoBuild"],
-                // IsBuildCompleteN = dbBuilds["smNBuildComplete"],
-                IsReadyForBuildO = dbBuilds["smOReadytoBuild"],
-                IsBuildCompleteO = dbBuilds["smOBuildComplete"]
             },
         };
 
