@@ -26,7 +26,9 @@ export default defineComponent({
     module: Object as PropType<BackEndModule>,
   },
   setup(props) {
-    // Animation refs setup
+    /* -------------------------------------------------------------------------- */
+    /*                            Animation refs setup                            */
+    /* -------------------------------------------------------------------------- */
     const refreshIconRef = ref();
     let refreshIconAnimation: anime.AnimeInstance;
 
@@ -38,7 +40,9 @@ export default defineComponent({
     let cancelButtonEnterAnimation: anime.AnimeInstance;
     let cancelButtonLeaveAnimation: anime.AnimeInstance;
 
-    // Mounting and watchers setup
+    /* -------------------------------------------------------------------------- */
+    /*                         Mounting and watchers setup                        */
+    /* -------------------------------------------------------------------------- */
     onMounted(() => {
       refreshIconAnimation = anime({
         targets: refreshIconRef.value,
@@ -113,9 +117,11 @@ export default defineComponent({
       }
     );
 
-    // Events
+    /* -------------------------------------------------------------------------- */
+    /*                                   Events                                   */
+    /* -------------------------------------------------------------------------- */
     function CrawlButtonClicked() {
-      // Do nothing if Crawler is not in a ready state
+      // Do nothing if Crawler is not in the ready state
       if (props.module?.Status != 0) {
         return;
       }
@@ -162,7 +168,7 @@ export default defineComponent({
     }
 
     function CancelButtonClicked() {
-      // Do nothing if Crawler is not in an in progress state
+      // Do nothing if Crawler is not in the in progress state
       if (props.module?.Status != 1) {
         return;
       }
@@ -186,7 +192,9 @@ export default defineComponent({
       );
     }
 
-    // Subcomponents
+    /* -------------------------------------------------------------------------- */
+    /*                                Subcomponents                               */
+    /* -------------------------------------------------------------------------- */
     function StatusLabel() {
       return (
         <TransitionGroup
@@ -347,7 +355,9 @@ export default defineComponent({
       );
     }
 
-    // Render function
+    /* -------------------------------------------------------------------------- */
+    /*                               Render function                              */
+    /* -------------------------------------------------------------------------- */
     return () => (
       <div class="overflow-hidden select-none min-w-[23rem] max-w-[23rem] min-h-[12rem] bg-white rounded-lg shadow divide-y divide-gray-200">
         <div class="flex items-center justify-between p-6">
@@ -358,8 +368,6 @@ export default defineComponent({
           </div>
           {DirectoryImage()}
         </div>
-
-        {/* <div class="flex min-h-[5rem] justify-between items-center"> */}
         <div class="min-h-[5rem] grid grid-cols-3 grid-rows-1 items-center">
           <div />
           {DownloadButton()}

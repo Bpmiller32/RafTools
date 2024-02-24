@@ -27,6 +27,7 @@ import DecemberLogo from "../assets/december.png";
 
 import ListDirectory from "../interfaces/ListDirectory";
 import { DocumentDownloadIcon } from "@heroicons/vue/outline";
+import anime from "animejs/lib/anime.es.js";
 
 export default defineComponent({
   props: {
@@ -34,19 +35,9 @@ export default defineComponent({
     directorylist: Object as PropType<BackEndDbObject>,
   },
   setup(props) {
-    // Mounting and watchers setup
-    onMounted(() => {
-      directoriesState.value.FormatData();
-    });
-
-    watch(
-      () => props.directorylist?.DataYearMonth,
-      () => {
-        directoriesState.value.FormatData();
-      }
-    );
-
-    // DirectoryState object
+    /* -------------------------------------------------------------------------- */
+    /*                            DirectoryState object                           */
+    /* -------------------------------------------------------------------------- */
     const directoriesState = ref({
       directories: [] as ListDirectory[],
       monthNames: new Map([
@@ -82,10 +73,13 @@ export default defineComponent({
         const today = new Date();
         const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        const dataYearMonths = props.directorylist?.DataYearMonth?.split("|");
-        const filecounts = props.directorylist?.FileCount?.split("|");
-        const downloaddates = props.directorylist?.DownloadDate?.split("|");
-        const downloadtimes = props.directorylist?.DownloadTime?.split("|");
+        const dataYearMonths =
+          props.directorylist?.DataYearMonth?.split("|").reverse();
+        const filecounts = props.directorylist?.FileCount?.split("|").reverse();
+        const downloaddates =
+          props.directorylist?.DownloadDate?.split("|").reverse();
+        const downloadtimes =
+          props.directorylist?.DownloadTime?.split("|").reverse();
 
         // Format directories into objects
         dataYearMonths?.forEach((directory, index) => {
@@ -115,13 +109,44 @@ export default defineComponent({
           };
           directoriesState.value.directories.push(dir);
         });
-
-        // Easy formatting fix
-        directoriesState.value.directories.reverse();
       },
     });
 
-    // Subcomponents
+    /* -------------------------------------------------------------------------- */
+    /*                               Animation setup                              */
+    /* -------------------------------------------------------------------------- */
+    function ListItemEnterAnimation(el: any, done: Function) {
+      console.log("element: ", el);
+      console.log("dataset-index: ", el.dataset.index);
+      anime({
+        targets: el,
+        duration: 5000,
+        delay: el.dataset.index * 500,
+        opacity: [0, 0.99999],
+        complete: () => {
+          el.removeAttribute("style");
+          done?.();
+        },
+      });
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                         Mounting and watchers setup                        */
+    /* -------------------------------------------------------------------------- */
+    onMounted(() => {
+      directoriesState.value.FormatData();
+    });
+
+    watch(
+      () => props.directorylist?.DataYearMonth,
+      () => {
+        directoriesState.value.FormatData();
+      }
+    );
+
+    /* -------------------------------------------------------------------------- */
+    /*                                Subcomponents                               */
+    /* -------------------------------------------------------------------------- */
     function DirectoryImage() {
       switch (props.name) {
         case "SmartMatch":
@@ -138,14 +163,9 @@ export default defineComponent({
 
     function DirectoryList() {
       return (
-        <TransitionGroup
-          appear
-          enterFromClass="opacity-0 translate-y-[0.5rem]"
-          enterToClass="opacity-100"
-          enterActiveClass="duration-[1000ms]"
-        >
-          {directoriesState.value.directories.map((directory) => (
-            <li class="px-3 py-3 flex">
+        <TransitionGroup appear css={false} onEnter={ListItemEnterAnimation}>
+          {directoriesState.value.directories.map((directory, index) => (
+            <li key={index} data-index={index} class="px-3 py-3 flex">
               <img class="h-10 w-10 rounded-full" src={directory.icon} />
               <div class="flex items-center ml-3">
                 <div>
@@ -174,7 +194,9 @@ export default defineComponent({
       );
     }
 
-    // Render function
+    /* -------------------------------------------------------------------------- */
+    /*                               Render function                              */
+    /* -------------------------------------------------------------------------- */
     return () => (
       <div class="select-none bg-white pb-4 rounded-lg shadow max-w-sm min-w-[10rem]">
         <div class="flex justify-between items-center px-6 py-4 border-b-[1px] border-gray-400">
