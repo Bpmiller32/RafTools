@@ -19,20 +19,80 @@ public class StatusReporter
         {
             Status = ModuleStatus.Ready,
         });
+
+        modules.Add("parascriptCrawler", new BaseModule()
+        {
+            Status = ModuleStatus.Ready,
+        });
+        modules.Add("parascriptBuilder", new BaseModule()
+        {
+            Status = ModuleStatus.Ready,
+        });
+
+        modules.Add("royalMailCrawler", new BaseModule()
+        {
+            Status = ModuleStatus.Ready,
+        });
+        modules.Add("royalMailBuilder", new BaseModule()
+        {
+            Status = ModuleStatus.Ready,
+        });
     }
 
     public void ToggleStatus()
     {
+        // SmartMatch
         if (modules["smartMatchCrawler"].Status == ModuleStatus.InProgress)
         {
             modules["smartMatchCrawler"].Status = ModuleStatus.Ready;
-            return;
         }
-
-        if (modules["smartMatchCrawler"].Status == ModuleStatus.Ready)
+        else
         {
             modules["smartMatchCrawler"].Status = ModuleStatus.InProgress;
-            return;
+        }
+        if (modules["smartMatchBuilder"].Status == ModuleStatus.InProgress)
+        {
+            modules["smartMatchBuilder"].Status = ModuleStatus.Ready;
+        }
+        else
+        {
+            modules["smartMatchBuilder"].Status = ModuleStatus.InProgress;
+        }
+
+        // Parascript
+        if (modules["parascriptCrawler"].Status == ModuleStatus.InProgress)
+        {
+            modules["parascriptCrawler"].Status = ModuleStatus.Ready;
+        }
+        else
+        {
+            modules["parascriptCrawler"].Status = ModuleStatus.InProgress;
+        }
+        if (modules["parascriptBuilder"].Status == ModuleStatus.InProgress)
+        {
+            modules["parascriptBuilder"].Status = ModuleStatus.Ready;
+        }
+        else
+        {
+            modules["parascriptBuilder"].Status = ModuleStatus.InProgress;
+        }
+
+        // RoyalMail
+        if (modules["royalMailCrawler"].Status == ModuleStatus.InProgress)
+        {
+            modules["royalMailCrawler"].Status = ModuleStatus.Ready;
+        }
+        else
+        {
+            modules["royalMailCrawler"].Status = ModuleStatus.InProgress;
+        }
+        if (modules["royalMailBuilder"].Status == ModuleStatus.InProgress)
+        {
+            modules["royalMailBuilder"].Status = ModuleStatus.Ready;
+        }
+        else
+        {
+            modules["royalMailBuilder"].Status = ModuleStatus.InProgress;
         }
     }
 
@@ -66,6 +126,77 @@ public class StatusReporter
                     modules["smartMatchCrawler"].Progress,
                     modules["smartMatchCrawler"].Message,
                     ReadyToBuild = new
+                    {
+                        DataYearMonth = testDataYearMonth,
+                        FileCount = testFileCount,
+                        DownloadDate = testDownloadDate,
+                        DownloadTime = testDownloadTime,
+                    }
+                },
+                Builder = new
+                {
+                    modules["parascriptBuilder"].Status,
+                    modules["parascriptBuilder"].Progress,
+                    modules["parascriptBuilder"].Message,
+                    BuildComplete = new
+                    {
+                        DataYearMonth = testDataYearMonth,
+                        FileCount = testFileCount,
+                        DownloadDate = testDownloadDate,
+                        DownloadTime = testDownloadTime,
+                    }
+                },
+            },
+            Parascript = new
+            {
+                Crawler = new
+                {
+                    modules["parascriptCrawler"].Status,
+                    modules["parascriptCrawler"].Progress,
+                    modules["parascriptCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = testDataYearMonth,
+                        FileCount = testFileCount,
+                        DownloadDate = testDownloadDate,
+                        DownloadTime = testDownloadTime,
+                    }
+                },
+                Builder = new
+                {
+                    modules["parascriptBuilder"].Status,
+                    modules["parascriptBuilder"].Progress,
+                    modules["parascriptBuilder"].Message,
+                    BuildComplete = new
+                    {
+                        DataYearMonth = testDataYearMonth,
+                        FileCount = testFileCount,
+                        DownloadDate = testDownloadDate,
+                        DownloadTime = testDownloadTime,
+                    }
+                },
+            },
+            RoyalMail = new
+            {
+                Crawler = new
+                {
+                    modules["royalMailCrawler"].Status,
+                    modules["royalMailCrawler"].Progress,
+                    modules["royalMailCrawler"].Message,
+                    ReadyToBuild = new
+                    {
+                        DataYearMonth = testDataYearMonth,
+                        FileCount = testFileCount,
+                        DownloadDate = testDownloadDate,
+                        DownloadTime = testDownloadTime,
+                    }
+                },
+                Builder = new
+                {
+                    modules["royalMailBuilder"].Status,
+                    modules["royalMailBuilder"].Progress,
+                    modules["royalMailBuilder"].Message,
+                    BuildComplete = new
                     {
                         DataYearMonth = testDataYearMonth,
                         FileCount = testFileCount,

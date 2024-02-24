@@ -1,4 +1,4 @@
-export default interface BackEndDbObject {
+export default interface BackEndDbEntry {
   DataYearMonth: String;
   FileCount: String;
   DownloadDate: String;

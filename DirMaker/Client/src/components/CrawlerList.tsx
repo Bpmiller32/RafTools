@@ -6,7 +6,12 @@ import {
   watch,
   TransitionGroup,
 } from "vue";
-import BackEndDbObject from "../interfaces/BackEndDbObject";
+import ListDirectory from "../interfaces/ListDirectory";
+import anime from "animejs/lib/anime.es.js";
+
+import { DocumentDownloadIcon } from "@heroicons/vue/outline";
+
+import BackEndDbEntry from "../interfaces/BackEndDbEntry";
 import ErrorLogo from "../assets/ErrorLogo.png";
 import SmartMatchLogo from "../assets/usa.png";
 import ParascriptLogo from "../assets/hw.png";
@@ -25,14 +30,10 @@ import OctoberLogo from "../assets/october.png";
 import NovemberLogo from "../assets/november.png";
 import DecemberLogo from "../assets/december.png";
 
-import ListDirectory from "../interfaces/ListDirectory";
-import { DocumentDownloadIcon } from "@heroicons/vue/outline";
-import anime from "animejs/lib/anime.es.js";
-
 export default defineComponent({
   props: {
     name: String,
-    directorylist: Object as PropType<BackEndDbObject>,
+    directorylist: Object as PropType<BackEndDbEntry>,
   },
   setup(props) {
     /* -------------------------------------------------------------------------- */
@@ -116,8 +117,6 @@ export default defineComponent({
     /*                               Animation setup                              */
     /* -------------------------------------------------------------------------- */
     function ListItemEnterAnimation(el: any, done: Function) {
-      console.log("element: ", el);
-      console.log("dataset-index: ", el.dataset.index);
       anime({
         targets: el,
         duration: 5000,

@@ -8,7 +8,7 @@ const state = useGlobalState();
 
 <template>
   <div v-if="state.beConnection.value.data == null">loading....</div>
-  <div v-else class="p-6 flex space-x-10 flex-wrap">
+  <div v-else class="ml-6 mt-6 flex gap-10 flex-wrap">
     <div>
       <CrawlerCard
         name="SmartMatch"
@@ -23,7 +23,35 @@ const state = useGlobalState();
         "
       />
     </div>
-    <!-- <CrawlerCard name="Parascript"></CrawlerCard>
-    <CrawlerCard name="RoyalMail"></CrawlerCard> -->
+
+    <div>
+      <CrawlerCard
+        name="Parascript"
+        :module="JSON.parse(state.beConnection.value.data).Parascript.Crawler"
+      />
+      <CrawlerList
+        class="mt-6"
+        name="Parascript"
+        :directorylist="
+          JSON.parse(state.beConnection.value.data).Parascript.Crawler
+            .ReadyToBuild
+        "
+      />
+    </div>
+
+    <div>
+      <CrawlerCard
+        name="RoyalMail"
+        :module="JSON.parse(state.beConnection.value.data).RoyalMail.Crawler"
+      />
+      <CrawlerList
+        class="mt-6"
+        name="RoyalMail"
+        :directorylist="
+          JSON.parse(state.beConnection.value.data).RoyalMail.Crawler
+            .ReadyToBuild
+        "
+      />
+    </div>
   </div>
 </template>

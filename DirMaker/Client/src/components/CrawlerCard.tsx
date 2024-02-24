@@ -6,8 +6,9 @@ import {
   ref,
   watch,
 } from "vue";
-import anime from "animejs/lib/anime.es.js";
 import BackEndModule from "../interfaces/BackEndModule";
+import anime from "animejs/lib/anime.es.js";
+
 import {
   StatusOnlineIcon,
   ArrowCircleDownIcon,
@@ -15,6 +16,7 @@ import {
   RefreshIcon,
   XCircleIcon,
 } from "@heroicons/vue/outline";
+
 import ErrorLogo from "../assets/ErrorLogo.png";
 import SmartMatchLogo from "../assets/SmartMatchLogo.png";
 import ParascriptLogo from "../assets/ParascriptLogo.png";

@@ -1,8 +1,8 @@
-import BackEndDbObject from "./BackEndDbObject";
+import BackEndDbEntry from "./BackEndDbEntry";
 
 export default interface BackEndModule {
   Status: Number;
   Progress: Number;
   Message: String;
-  ReadyToBuild: BackEndDbObject;
+  ReadyToBuild: BackEndDbEntry;
 }
