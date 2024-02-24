@@ -4,7 +4,6 @@ import {
   onMounted,
   ref,
   watch,
-  Transition,
   TransitionGroup,
 } from "vue";
 import BackEndDbObject from "../interfaces/BackEndDbObject";

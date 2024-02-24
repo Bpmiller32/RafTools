@@ -1,6 +1,6 @@
 import {
   PropType,
-  Transition,
+  TransitionGroup,
   defineComponent,
   onMounted,
   ref,
@@ -27,19 +27,19 @@ export default defineComponent({
   },
   setup(props) {
     // Animation refs setup
-    let mountedOnce = false;
-
     const refreshIconRef = ref();
-    const downloadButtonRef = ref();
-
     let refreshIconAnimation: anime.AnimeInstance;
+
+    const downloadButtonRef = ref();
     let downloadButtonFillAnimation: anime.AnimeInstance;
     let downloadButtonDrainAnimation: anime.AnimeInstance;
 
+    const cancelButtonRef = ref();
+    let cancelButtonEnterAnimation: anime.AnimeInstance;
+    let cancelButtonLeaveAnimation: anime.AnimeInstance;
+
     // Mounting and watchers setup
     onMounted(() => {
-      mountedOnce = true;
-
       refreshIconAnimation = anime({
         targets: refreshIconRef.value,
         rotate: "-=2turn",
@@ -66,27 +66,49 @@ export default defineComponent({
         autoplay: false,
       });
 
+      cancelButtonEnterAnimation = anime({
+        targets: cancelButtonRef.value,
+        duration: 500,
+        translateY: ["0.5rem", "0rem"],
+        opacity: ["0", "0.9999"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      cancelButtonLeaveAnimation = anime({
+        targets: cancelButtonRef.value,
+        duration: 500,
+        translateY: ["0rem", "0.5rem"],
+        opacity: ["0.9999", "0"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      // First draw/mount tweaks
       if (props.module?.Status == 1) {
         refreshIconAnimation.play();
-        downloadButtonRef.value.style.width = "8rem";
-        downloadButtonRef.value.style.backgroundSize = "0% 0%";
-      } else if (props.module?.Status == 1) {
+
         downloadButtonRef.value.style.width = "8rem";
         downloadButtonRef.value.style.backgroundSize = "0% 0%";
       } else {
         refreshIconAnimation.pause();
+
+        cancelButtonRef.value.style.opacity = "0";
       }
     });
 
+    // Watch if status of the module changes
     watch(
       () => props.module?.Status,
       () => {
         if (props.module?.Status == 1) {
           refreshIconAnimation.play();
           downloadButtonDrainAnimation.play();
+          cancelButtonEnterAnimation.play();
         } else {
           refreshIconAnimation.pause();
           downloadButtonFillAnimation.play();
+          cancelButtonLeaveAnimation.play();
         }
       }
     );
@@ -111,13 +133,14 @@ export default defineComponent({
       // };
 
       // // Send the request using the Fetch API
-      // fetch("http://192.168.0.39:5000/smartmatch/crawler", requestOptions).then(
-      //   (response) => {
-      //     if (!response.ok) {
-      //       throw new Error("Network response was not ok");
-      //     }
+      // fetch(
+      //   "http://192.168.0.39:5000/" + props.name + "/crawler",
+      //   requestOptions
+      // ).then((response) => {
+      //   if (!response.ok) {
+      //     throw new Error("Network response was not ok");
       //   }
-      // );
+      // });
 
       // TEST
       // Define the request options
@@ -139,6 +162,11 @@ export default defineComponent({
     }
 
     function CancelButtonClicked() {
+      // Do nothing if Crawler is not in an in progress state
+      if (props.module?.Status != 1) {
+        return;
+      }
+
       // TEST
       // Define the request options
       const requestOptions = {
@@ -156,121 +184,89 @@ export default defineComponent({
           }
         }
       );
-
-      // // PROD
-      // // Define the request options
-      // const requestOptions = {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     moduleCommand: "stop",
-      //   }),
-      // };
-
-      // // Send the request using the Fetch API
-      // fetch("http://192.168.0.39:5000/smartmatch/crawler", requestOptions).then(
-      //   (response) => {
-      //     if (!response.ok) {
-      //       throw new Error("Network response was not ok");
-      //     }
-      //   }
-      // );
     }
 
     // Subcomponents
     function StatusLabel() {
-      // Needed to make one element different from the others so that the Vue transition system does not resuse the div
-      // If all elements have the key then the divs are again identical and reuseable
-      const statusLabelKey = 0;
+      return (
+        <TransitionGroup
+          enterFromClass="opacity-0 translate-y-[-0.25rem]"
+          enterToClass="opacity-100"
+          enterActiveClass="duration-[300ms]"
+        >
+          {() => {
+            switch (props.module?.Status) {
+              case 0:
+                return (
+                  <div
+                    key="0"
+                    class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-green-800 bg-green-100"
+                  >
+                    Ready
+                  </div>
+                );
 
-      switch (props.module?.Status) {
-        case 0:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.25rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[300ms]"
-            >
-              <div
-                key={statusLabelKey}
-                class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-green-800 bg-green-100"
-              >
-                Ready
-              </div>
-            </Transition>
-          );
+              case 1:
+                return (
+                  <div
+                    key="1"
+                    class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100"
+                  >
+                    In Progress
+                  </div>
+                );
 
-        case 1:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.25rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[300ms]"
-            >
-              <div class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-yellow-800 bg-yellow-100">
-                In Progress
-              </div>
-            </Transition>
-          );
-
-        case 2:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.25rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[300ms]"
-            >
-              <div class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-red-800 bg-red-100">
-                Error
-              </div>
-            </Transition>
-          );
-      }
+              default:
+                return (
+                  <div
+                    key="default"
+                    class="ml-3 px-2 py-0.5 text-xs font-medium rounded-full text-red-800 bg-red-100"
+                  >
+                    Error
+                  </div>
+                );
+            }
+          }}
+        </TransitionGroup>
+      );
     }
 
     function StatusIcon() {
-      switch (props.module?.Status) {
-        case 0:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.5rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[500ms]"
-            >
-              <StatusOnlineIcon class="h-5 w-5 ml-1 text-green-500" />;
-            </Transition>
-          );
+      return (
+        <TransitionGroup
+          enterFromClass="opacity-0 translate-y-[-0.5rem]"
+          enterToClass="opacity-100"
+          enterActiveClass="duration-[500ms]"
+        >
+          {() => {
+            switch (props.module?.Status) {
+              case 0:
+                return (
+                  <StatusOnlineIcon
+                    key="0"
+                    class="h-5 w-5 ml-1 text-green-500"
+                  />
+                );
 
-        case 1:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.5rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[500ms]"
-            >
-              <ArrowCircleDownIcon class="h-5 w-5 ml-1 text-yellow-500" />;
-            </Transition>
-          );
+              case 1:
+                return (
+                  <ArrowCircleDownIcon
+                    key="1"
+                    class="h-5 w-5 ml-1 text-yellow-500"
+                  />
+                );
 
-        case 2:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0 translate-y-[-0.5rem]"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[500ms]"
-            >
-              <ExclamationCircleIcon class="h-5 w-5 ml-1 text-red-500" />;
-            </Transition>
-          );
-      }
+              default:
+                return (
+                  <ExclamationCircleIcon
+                    key="default"
+                    class="h-5 w-5 ml-1 text-red-500"
+                  />
+                );
+            }
+          }}
+        </TransitionGroup>
+      );
     }
 
     function DirectoryImage() {
@@ -302,7 +298,7 @@ export default defineComponent({
           disabled={props.module?.Status == 0 ? false : true}
           class={{
             "cursor-not-allowed ": props.module?.Status != 0,
-            "flex items-center my-4 px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
+            "justify-self-center flex items-center px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
               true,
           }}
         >
@@ -310,89 +306,45 @@ export default defineComponent({
             ref={refreshIconRef}
             class="shrink-0 h-5 w-5 text-white z-10"
           />
-          {DownloadButtonTextHelper()}
+          <TransitionGroup
+            enterFromClass="opacity-0"
+            enterToClass="opacity-100"
+            enterActiveClass="duration-[1500ms]"
+          >
+            {() => {
+              switch (props.module?.Status) {
+                case 0:
+                  return (
+                    <p key="0" class="ml-1">
+                      Download
+                    </p>
+                  );
+
+                default:
+                  return (
+                    <p key="default" class="ml-1">
+                      Downloading
+                    </p>
+                  );
+              }
+            }}
+          </TransitionGroup>
         </button>
       );
     }
 
     function CancelButton() {
-      const cancelButtonKey = 0;
-
-      if (props.module?.Status == 1) {
-        return (
-          <Transition
-            mode="out-in"
-            appear={mountedOnce}
-            enterFromClass="opacity-0 translate-y-[0.5rem]"
-            enterToClass="opacity-100"
-            enterActiveClass="duration-[1000ms]"
-          >
-            <XCircleIcon
-              key={cancelButtonKey}
-              onClick={CancelButtonClicked}
-              class="cursor-pointer mr-16 h-6 w-6 text-red-500"
-            ></XCircleIcon>
-          </Transition>
-        );
-      } else {
-        return (
-          <Transition
-            mode="out-in"
-            appear={mountedOnce}
-            enterFromClass="opacity-100"
-            enterToClass="opacity-0"
-            enterActiveClass="duration-[500ms]"
-          >
-            <XCircleIcon
-              onClick={CancelButtonClicked}
-              class="mr-16 h-6 w-6 text-red-500 opacity-100 text-opacity-0"
-            ></XCircleIcon>
-          </Transition>
-        );
-      }
-    }
-
-    function DownloadButtonTextHelper() {
-      const downloadButtonKey = 0;
-
-      switch (props.module?.Status) {
-        case 0:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[1500ms]"
-            >
-              <p key={downloadButtonKey} class="ml-1">
-                Download
-              </p>
-              ;
-            </Transition>
-          );
-        case 1:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[1500ms]"
-            >
-              <p class="ml-1">Downloading</p>;
-            </Transition>
-          );
-        case 2:
-          return (
-            <Transition
-              mode="out-in"
-              enterFromClass="opacity-0"
-              enterToClass="opacity-100"
-              enterActiveClass="duration-[1500ms]"
-            >
-              <p class="ml-1">Downloading</p>;
-            </Transition>
-          );
-      }
+      return (
+        <XCircleIcon
+          ref={cancelButtonRef}
+          onClick={CancelButtonClicked}
+          class={{
+            "select-none": props.module?.Status == 0,
+            "cursor-pointer": props.module?.Status == 1,
+            "mx-8 h-6 w-6 text-red-500": true,
+          }}
+        />
+      );
     }
 
     // Render function
@@ -407,8 +359,9 @@ export default defineComponent({
           {DirectoryImage()}
         </div>
 
-        <div class="flex min-h-[5rem] justify-between items-center">
-          <div class="ml-16 w-6 h-6"></div>
+        {/* <div class="flex min-h-[5rem] justify-between items-center"> */}
+        <div class="min-h-[5rem] grid grid-cols-3 grid-rows-1 items-center">
+          <div />
           {DownloadButton()}
           {CancelButton()}
         </div>

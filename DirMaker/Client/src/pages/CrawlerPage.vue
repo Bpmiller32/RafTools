@@ -11,7 +11,6 @@ const state = useGlobalState();
   <div v-else class="p-6 flex space-x-10 flex-wrap">
     <div>
       <CrawlerCard
-        id="TestIdForCrawlerCard"
         name="SmartMatch"
         :module="JSON.parse(state.beConnection.value.data).SmartMatch.Crawler"
       />
