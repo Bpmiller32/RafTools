@@ -71,6 +71,7 @@ export default defineComponent({
       ]),
       FormatData: () => {
         directoriesState.value.directories = [];
+
         const today = new Date();
         const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -178,7 +179,7 @@ export default defineComponent({
                         New
                       </span>
                     ) : (
-                      <></>
+                      <div></div>
                     )}
                   </div>
                   <p class="text-sm text-gray-500">

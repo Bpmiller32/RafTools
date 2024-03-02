@@ -147,7 +147,6 @@ public class StatusReporter
                 modules["dirTester"].Status,
                 modules["dirTester"].Progress,
                 modules["dirTester"].Message,
-                modules["dirTester"].CurrentTask
             }
         };
 

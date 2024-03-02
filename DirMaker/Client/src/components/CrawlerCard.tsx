@@ -160,7 +160,7 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.0.39:5000/toggle", requestOptions).then(
+      fetch("http://192.168.50.40:5000/toggle", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -185,7 +185,7 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.0.39:5000/toggle", requestOptions).then(
+      fetch("http://192.168.50.40:5000/toggle", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");

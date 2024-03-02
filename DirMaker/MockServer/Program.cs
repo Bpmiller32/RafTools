@@ -44,8 +44,11 @@ builder.Services.AddSingleton<StatusReporter>();
 WebApplication app = builder.Build();
 
 // Register server address
+IConfiguration config = app.Services.GetService<IConfiguration>();
+string serverAddress = config.GetValue<string>("ServerAddress");
 app.Urls.Add("http://localhost:5000");
-app.Urls.Add("http://192.168.0.39:5000");
+app.Urls.Add(serverAddress);
+
 
 // Register Swagger
 app.UseSwagger();

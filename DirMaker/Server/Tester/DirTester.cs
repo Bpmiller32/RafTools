@@ -30,7 +30,7 @@ public class DirTester : BaseModule
             switch (directoryName)
             {
                 case "Zip4":
-                    CurrentTask = "Zip4";
+                    // CurrentTask = "Zip4";
 
                     Message = "Checking disc contents";
                     Progress = 50;
@@ -38,7 +38,7 @@ public class DirTester : BaseModule
 
                     break;
                 case "SmartMatch":
-                    CurrentTask = "Cycle-O";
+                    // CurrentTask = "Cycle-O";
 
                     Message = "Checking disc contents";
                     Progress = 15;
@@ -68,7 +68,7 @@ public class DirTester : BaseModule
                     await InjectImages(directoryName);
                     break;
                 case "Parascript":
-                    CurrentTask = "Parascript";
+                    // CurrentTask = "Parascript";
 
                     Message = "Checking disc contents";
                     Progress = 25;
@@ -83,7 +83,7 @@ public class DirTester : BaseModule
                     // await InjectImages(directoryName);
                     break;
                 case "RoyalMail":
-                    CurrentTask = "RoyalMail";
+                    // CurrentTask = "RoyalMail";
 
                     Message = "Checking disc contents";
                     Progress = 15;
