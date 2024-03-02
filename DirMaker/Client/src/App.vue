@@ -4,7 +4,8 @@ import { useGlobalState } from "./store";
 import NavBar from "./components/NavBar";
 
 const state = useGlobalState();
-state.beConnection.value = useEventSource("http://192.168.50.40:5000/status");
+state.beUrl.value = import.meta.env.VITE_API_URL;
+state.beConnection.value = useEventSource(state.beUrl.value + "/status");
 </script>
 
 <template>

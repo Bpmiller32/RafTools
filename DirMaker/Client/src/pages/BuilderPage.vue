@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useGlobalState } from "../store";
 import ParascriptBuilderCard from "../components/ParascriptBuilderCard";
+import RoyalMailBuilderCard from "../components/RoyalMailBuilderCard";
 
 const state = useGlobalState();
 </script>
@@ -14,6 +15,14 @@ const state = useGlobalState();
       "
       :buildermodule="
         JSON.parse(state.beConnection.value.data).Parascript.Builder
+      "
+    />
+    <RoyalMailBuilderCard
+      :crawlermodule="
+        JSON.parse(state.beConnection.value.data).RoyalMail.Crawler
+      "
+      :buildermodule="
+        JSON.parse(state.beConnection.value.data).RoyalMail.Builder
       "
     />
   </div>

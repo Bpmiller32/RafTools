@@ -6,6 +6,7 @@ import {
   ref,
   watch,
 } from "vue";
+
 import BackEndModule from "../interfaces/BackEndModule";
 import anime from "animejs/lib/anime.es.js";
 
@@ -21,6 +22,7 @@ import ErrorLogo from "../assets/ErrorLogo.png";
 import SmartMatchLogo from "../assets/SmartMatchLogo.png";
 import ParascriptLogo from "../assets/ParascriptLogo.png";
 import RoyalMailLogo from "../assets/RoyalMailLogo.png";
+import { useGlobalState } from "../store";
 
 export default defineComponent({
   props: {
@@ -28,6 +30,11 @@ export default defineComponent({
     module: Object as PropType<BackEndModule>,
   },
   setup(props) {
+    /* -------------------------------------------------------------------------- */
+    /*                                    State                                   */
+    /* -------------------------------------------------------------------------- */
+    const state = useGlobalState();
+
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */
     /* -------------------------------------------------------------------------- */
@@ -168,45 +175,27 @@ export default defineComponent({
         return;
       }
 
-      // // PROD
-      // // Define the request options
-      // const requestOptions = {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     moduleCommand: "start",
-      //   }),
-      // };
-
-      // // Send the request using the Fetch API
-      // fetch(
-      //   "http://192.168.0.39:5000/" + props.name + "/crawler",
-      //   requestOptions
-      // ).then((response) => {
-      //   if (!response.ok) {
-      //     throw new Error("Network response was not ok");
-      //   }
-      // });
-
-      // TEST
+      // PROD
       // Define the request options
       const requestOptions = {
-        method: "GET",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          moduleCommand: "start",
+        }),
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
-        (response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
+      fetch(
+        state.beUrl.value + "/" + props.name + "/crawler",
+        requestOptions
+      ).then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
         }
-      );
+      });
     }
 
     function CancelButtonClicked() {
@@ -215,23 +204,26 @@ export default defineComponent({
         return;
       }
 
-      // TEST
       // Define the request options
       const requestOptions = {
-        method: "GET",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          moduleCommand: "stop",
+        }),
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
-        (response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
+      fetch(
+        state.beUrl.value + "/" + props.name + "/crawler",
+        requestOptions
+      ).then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
         }
-      );
+      });
     }
 
     /* -------------------------------------------------------------------------- */
