@@ -103,11 +103,13 @@ export default defineComponent({
           const dir: ListDirectory = {
             name:
               directoriesState.value.monthNames.get(monthNum) + " " + yearNum,
+            fullName: directory,
             icon: directoriesState.value.icons.get(monthNum),
             fileCount: filecounts![index],
             downloadDate: downloaddates![index],
             downloadTime: downloadtimes![index],
             isNew: isNew,
+            isBuilt: false,
           };
           directoriesState.value.directories.push(dir);
         });

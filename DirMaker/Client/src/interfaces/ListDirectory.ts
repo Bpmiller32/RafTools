@@ -13,6 +13,7 @@ import DecemberLogo from "../assets/december.png";
 
 export default interface ListDirectory {
   name: String;
+  fullName: String;
   icon:
     | typeof JanuaryLogo
     | typeof FebruaryLogo
@@ -31,4 +32,5 @@ export default interface ListDirectory {
   downloadDate: String;
   downloadTime: String;
   isNew: Boolean;
+  isBuilt: Boolean;
 }

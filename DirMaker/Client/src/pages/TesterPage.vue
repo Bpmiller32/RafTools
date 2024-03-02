@@ -1,3 +1,3 @@
 <template>
-  <div>Tester Page</div>
+  <div>Tester Page - under construction</div>
 </template>

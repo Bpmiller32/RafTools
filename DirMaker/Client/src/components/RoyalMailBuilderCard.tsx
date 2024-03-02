@@ -17,7 +17,7 @@ import {
   CheckIcon,
   XCircleIcon,
 } from "@heroicons/vue/outline";
-import ParascriptLogo from "../assets/ParascriptLogo.png";
+import RoyalMailLogo from "../assets/RoyalMailLogo.png";
 import {
   Listbox,
   ListboxButton,
@@ -94,6 +94,7 @@ export default defineComponent({
     });
 
     const selectedDirectory = ref();
+    const pafKey = ref();
     const directoriesAvailable = ref();
 
     /* -------------------------------------------------------------------------- */
@@ -265,6 +266,8 @@ export default defineComponent({
         return;
       }
 
+      pafKey.value.replace(/[^a-zA-Z0-9]/g, "");
+
       // PROD
       // Define the request options
       const requestOptions = {
@@ -275,11 +278,12 @@ export default defineComponent({
         body: JSON.stringify({
           moduleCommand: "start",
           dataYearMonth: selectedDirectory.value.fullName,
+          royalMailKey: pafKey.value,
         }),
       };
 
       // Send the request using the Fetch API
-      fetch(state.beUrl.value + "/parascript/builder", requestOptions).then(
+      fetch(state.beUrl.value + "/royalmail/builder", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -294,8 +298,6 @@ export default defineComponent({
         return;
       }
 
-      // PROD
-      // Define the request options
       const requestOptions = {
         method: "POST",
         headers: {
@@ -307,7 +309,7 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch(state.beUrl.value + "/parascript/builder", requestOptions).then(
+      fetch(state.beUrl.value + "/royalmail/builder", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -603,12 +605,12 @@ export default defineComponent({
       <div class="select-none min-w-[18rem] max-w-[18rem] h-fit bg-white rounded-lg shadow divide-y divide-gray-200">
         <div class="p-6">
           <div class="flex justify-center">
-            <img class="w-20 h-20 border rounded-full" src={ParascriptLogo} />
+            <img class="w-20 h-20 border rounded-full" src={RoyalMailLogo} />
           </div>
 
           <div class="flex mt-4 items-center shrink-0">
             <p class="text-gray-900 text-sm font-medium ml-12 py-2">
-              Parascript
+              RoyalMail
             </p>
             {StatusLabel()}
             {StatusIcon()}
@@ -625,6 +627,26 @@ export default defineComponent({
                 {ListBoxOptions()}
               </div>
             </Listbox>
+          </div>
+
+          <div class="mt-6">
+            <div v-model={selectedDirectory.value}>
+              <div class="mt-2 text-sm font-medium text-gray-900">
+                Enter PAF Decryption Key
+              </div>
+
+              <input
+                //@ts-ignore
+                disabled={
+                  props.buildermodule?.Status != 0 ||
+                  !directoriesAvailable.value
+                }
+                v-model={pafKey.value}
+                type="text"
+                class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+                placeholder="XXX/XXX/XXX/XXX/XXX/XXX/XXX/XXX"
+              />
+            </div>
           </div>
         </div>
         <div class="flex justify-center">
