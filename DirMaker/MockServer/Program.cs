@@ -62,10 +62,15 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 // Toggle
-app.MapGet("/toggle", (StatusReporter statusReporter) =>
+app.MapGet("/toggleStatus", (StatusReporter statusReporter) =>
 {
     statusReporter.ToggleStatus();
     return "Toggled Status";
+});
+app.MapGet("/ToggleProgress", (StatusReporter statusReporter) =>
+{
+    statusReporter.ToggleProgress();
+    return "Toggled Progress";
 });
 
 // AddDirectory

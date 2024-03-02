@@ -45,9 +45,9 @@ public class StatusReporter
 
     public string UpdateReport()
     {
-        // Update db's only if nessasary, otherwise use stored values
         foreach (var module in modules)
         {
+            // Update db's only if nessasary, otherwise use stored values
             if (!module.Value.SendDbUpdate)
             {
                 continue;
@@ -96,6 +96,10 @@ public class StatusReporter
                     modules["smartMatchBuilder"].Status,
                     modules["smartMatchBuilder"].Progress,
                     modules["smartMatchBuilder"].Message,
+                    BuildComplete = new
+                    {
+                        DataYearMonth = string.Join("|", smBuilds["buildComplete"].Select(x => x.DataYearMonth).ToList()),
+                    }
                 },
             },
             Parascript = new
@@ -117,7 +121,11 @@ public class StatusReporter
                 {
                     modules["parascriptBuilder"].Status,
                     modules["parascriptBuilder"].Progress,
-                    modules["parascriptBuilder"].Message
+                    modules["parascriptBuilder"].Message,
+                    BuildComplete = new
+                    {
+                        DataYearMonth = string.Join("|", psBuilds["buildComplete"].Select(x => x.DataYearMonth).ToList()),
+                    }
                 },
             },
             RoyalMail = new
@@ -140,6 +148,10 @@ public class StatusReporter
                     modules["royalMailBuilder"].Status,
                     modules["royalMailBuilder"].Progress,
                     modules["royalMailBuilder"].Message,
+                    BuildComplete = new
+                    {
+                        DataYearMonth = string.Join("|", rmBuilds["buildComplete"].Select(x => x.DataYearMonth).ToList()),
+                    }
                 },
             },
             DirTester = new

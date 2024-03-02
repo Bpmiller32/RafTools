@@ -168,6 +168,7 @@ public class RoyalMailCrawler : BaseModule
         }
 
         Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth));
+        Utils.Cleanup(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth), stoppingToken);
 
         using FileStream file = File.Create(Path.Combine(Settings.AddressDataPath, tempFile.DataYearMonth, "SetupRM.exe"));
         file.Write(fileData, 0, fileData.Length);
@@ -196,9 +197,15 @@ public class RoyalMailCrawler : BaseModule
             }
 
             bundle.IsReadyForBuild = true;
-            bundle.DownloadDate = Utils.CalculateDbDate();
-            bundle.DownloadTime = Utils.CalculateDbTime();
             bundle.FileCount = bundle.BuildFiles.Count;
+            if (string.IsNullOrEmpty(bundle.DownloadDate))
+            {
+                bundle.DownloadDate = Utils.CalculateDbDate();
+            }
+            if (string.IsNullOrEmpty(bundle.DownloadTime))
+            {
+                bundle.DownloadTime = Utils.CalculateDbTime();
+            }
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             await context.SaveChangesAsync(stoppingToken);

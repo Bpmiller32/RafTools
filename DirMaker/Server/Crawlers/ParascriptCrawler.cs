@@ -253,9 +253,15 @@ public class ParascriptCrawler : BaseModule
             }
 
             bundle.IsReadyForBuild = true;
-            bundle.DownloadDate = Utils.CalculateDbDate();
-            bundle.DownloadTime = Utils.CalculateDbTime();
             bundle.FileCount = bundle.BuildFiles.Count;
+            if (string.IsNullOrEmpty(bundle.DownloadDate))
+            {
+                bundle.DownloadDate = Utils.CalculateDbDate();
+            }
+            if (string.IsNullOrEmpty(bundle.DownloadTime))
+            {
+                bundle.DownloadTime = Utils.CalculateDbTime();
+            }
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             await context.SaveChangesAsync(stoppingToken);

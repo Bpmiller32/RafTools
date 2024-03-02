@@ -42,7 +42,7 @@ public class RoyalMailBuilder : BaseModule
             Progress = 0;
             await CheckKey(key, stoppingToken);
 
-            Message = "Extracing files from PAF executable download";
+            Message = "Extracing from PAF executable";
             Progress = 1;
             await Extract(stoppingToken);
 
@@ -50,7 +50,7 @@ public class RoyalMailBuilder : BaseModule
             Progress = 22;
             Cleanup(fullClean: true, stoppingToken);
 
-            Message = "Updating SMi files and dongle list";
+            Message = "Updating SMi files & dongle list";
             Progress = 23;
             UpdateSmiFiles(stoppingToken);
 

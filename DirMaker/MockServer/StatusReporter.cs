@@ -27,6 +27,7 @@ public class StatusReporter
         modules.Add("parascriptBuilder", new BaseModule()
         {
             Status = ModuleStatus.Ready,
+            Message = "Compiling directories test"
         });
 
         modules.Add("royalMailCrawler", new BaseModule()
@@ -96,6 +97,11 @@ public class StatusReporter
         }
     }
 
+    public void ToggleProgress()
+    {
+        modules["parascriptBuilder"].Progress += 10;
+    }
+
     public void AddDirectory()
     {
         testDataYearMonth += "|202501";
@@ -156,7 +162,7 @@ public class StatusReporter
                     modules["parascriptCrawler"].Message,
                     ReadyToBuild = new
                     {
-                        DataYearMonth = testDataYearMonth,
+                        DataYearMonth = "",
                         FileCount = testFileCount,
                         DownloadDate = testDownloadDate,
                         DownloadTime = testDownloadTime,
@@ -169,7 +175,7 @@ public class StatusReporter
                     modules["parascriptBuilder"].Message,
                     BuildComplete = new
                     {
-                        DataYearMonth = testDataYearMonth,
+                        DataYearMonth = "202312|202401",
                         FileCount = testFileCount,
                         DownloadDate = testDownloadDate,
                         DownloadTime = testDownloadTime,
