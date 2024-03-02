@@ -42,6 +42,10 @@ export default defineComponent({
     let cancelButtonEnterAnimation: anime.AnimeInstance;
     let cancelButtonLeaveAnimation: anime.AnimeInstance;
 
+    const progressSlideDownRef = ref();
+    let progressSlideDownEnterAnimation: anime.AnimeInstance;
+    let progressSlideDownLeaveAnimation: anime.AnimeInstance;
+
     /* -------------------------------------------------------------------------- */
     /*                         Mounting and watchers setup                        */
     /* -------------------------------------------------------------------------- */
@@ -90,16 +94,40 @@ export default defineComponent({
         autoplay: false,
       });
 
+      progressSlideDownEnterAnimation = anime({
+        targets: progressSlideDownRef.value,
+        duration: 500,
+        height: ["0rem", "2rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      progressSlideDownLeaveAnimation = anime({
+        targets: progressSlideDownRef.value,
+        duration: 500,
+        height: ["2rem", "0rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
       // First draw/mount tweaks
-      if (props.module?.Status == 1) {
-        refreshIconAnimation.play();
+      switch (props.module?.Status) {
+        case 1:
+          refreshIconAnimation.play();
+          downloadButtonRef.value.style.width = "8rem";
+          downloadButtonRef.value.style.backgroundSize = "0% 0%";
+          break;
+        case 2:
+          downloadButtonDrainAnimation.play();
+          refreshIconAnimation.pause();
+          cancelButtonRef.value.style.opacity = "0";
+          break;
 
-        downloadButtonRef.value.style.width = "8rem";
-        downloadButtonRef.value.style.backgroundSize = "0% 0%";
-      } else {
-        refreshIconAnimation.pause();
-
-        cancelButtonRef.value.style.opacity = "0";
+        default:
+          refreshIconAnimation.pause();
+          cancelButtonRef.value.style.opacity = "0";
+          progressSlideDownRef.value.style.height = "0rem";
+          break;
       }
     });
 
@@ -107,14 +135,26 @@ export default defineComponent({
     watch(
       () => props.module?.Status,
       () => {
-        if (props.module?.Status == 1) {
-          refreshIconAnimation.play();
-          downloadButtonDrainAnimation.play();
-          cancelButtonEnterAnimation.play();
-        } else {
-          refreshIconAnimation.pause();
-          downloadButtonFillAnimation.play();
-          cancelButtonLeaveAnimation.play();
+        switch (props.module?.Status) {
+          case 1:
+            refreshIconAnimation.play();
+            downloadButtonDrainAnimation.play();
+            cancelButtonEnterAnimation.play();
+            progressSlideDownEnterAnimation.play();
+            break;
+          case 2:
+            downloadButtonDrainAnimation.play();
+            refreshIconAnimation.pause();
+            cancelButtonRef.value.style.opacity = "0";
+            progressSlideDownEnterAnimation.play();
+            break;
+
+          default:
+            refreshIconAnimation.pause();
+            downloadButtonFillAnimation.play();
+            cancelButtonLeaveAnimation.play();
+            progressSlideDownLeaveAnimation.play();
+            break;
         }
       }
     );
@@ -160,7 +200,7 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.50.40:5000/toggle", requestOptions).then(
+      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -185,7 +225,7 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch("http://192.168.50.40:5000/toggle", requestOptions).then(
+      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -283,19 +323,33 @@ export default defineComponent({
       switch (props.name) {
         case "SmartMatch":
           return (
-            <img class="w-20 h-20 border rounded-full" src={SmartMatchLogo} />
+            <img
+              class="justify-self-end w-20 h-20 border rounded-full"
+              src={SmartMatchLogo}
+            />
           );
         case "Parascript":
           return (
-            <img class="w-20 h-20 border rounded-full" src={ParascriptLogo} />
+            <img
+              class="justify-self-end w-20 h-20 border rounded-full"
+              src={ParascriptLogo}
+            />
           );
         case "RoyalMail":
           return (
-            <img class="w-20 h-20 border rounded-full" src={RoyalMailLogo} />
+            <img
+              class="justify-self-end w-20 h-20 border rounded-full"
+              src={RoyalMailLogo}
+            />
           );
 
         default:
-          return <img class="w-20 h-20 border rounded-full" src={ErrorLogo} />;
+          return (
+            <img
+              class="justify-self-end w-20 h-20 border rounded-full"
+              src={ErrorLogo}
+            />
+          );
       }
     }
 
@@ -357,23 +411,39 @@ export default defineComponent({
       );
     }
 
+    function ProgressSlideDown() {
+      return (
+        <div ref={progressSlideDownRef} class="overflow-hidden h-8">
+          <div class="flex justify-center text-sm text-gray-500">
+            Task:{" "}
+            {props.module?.Message != ""
+              ? props.module?.Message
+              : "Not available"}
+          </div>
+        </div>
+      );
+    }
+
     /* -------------------------------------------------------------------------- */
     /*                               Render function                              */
     /* -------------------------------------------------------------------------- */
     return () => (
       <div class="overflow-hidden select-none min-w-[23rem] max-w-[23rem] min-h-[12rem] bg-white rounded-lg shadow divide-y divide-gray-200">
-        <div class="flex items-center justify-between p-6">
-          <div class="flex items-center">
-            <p class="text-gray-900 text-sm font-medium">{props.name}</p>
+        <div class="grid grid-cols-3 grid-rows-1 items-center p-6">
+          <div class="col-span-2 flex items-center">
+            <p class="text-gray-900 text-sm font-medium py-2">{props.name}</p>
             {StatusLabel()}
             {StatusIcon()}
           </div>
           {DirectoryImage()}
         </div>
-        <div class="min-h-[5rem] grid grid-cols-3 grid-rows-1 items-center">
-          <div />
-          {DownloadButton()}
-          {CancelButton()}
+        <div>
+          <div class="min-h-[5rem] grid grid-cols-3 grid-rows-1 items-center">
+            <div />
+            {DownloadButton()}
+            {CancelButton()}
+          </div>
+          {ProgressSlideDown()}
         </div>
       </div>
     );

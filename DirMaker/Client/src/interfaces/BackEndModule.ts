@@ -5,4 +5,5 @@ export default interface BackEndModule {
   Progress: Number;
   Message: String;
   ReadyToBuild: BackEndDbEntry;
+  BuildComplete: BackEndDbEntry;
 }

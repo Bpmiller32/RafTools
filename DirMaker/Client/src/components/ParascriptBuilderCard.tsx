@@ -4,6 +4,7 @@ import {
   defineComponent,
   onMounted,
   ref,
+  watch,
 } from "vue";
 import BackEndModule from "../interfaces/BackEndModule";
 import anime from "animejs/lib/anime.es.js";
@@ -14,6 +15,7 @@ import {
   RefreshIcon,
   SelectorIcon,
   CheckIcon,
+  XCircleIcon,
 } from "@heroicons/vue/outline";
 import ParascriptLogo from "../assets/ParascriptLogo.png";
 import {
@@ -32,23 +34,11 @@ export default defineComponent({
     buildermodule: Object as PropType<BackEndModule>,
   },
   setup(props) {
-    const people = [
-      { id: 1, name: "Durward Reynolds" },
-      { id: 2, name: "Kenton Towne" },
-      { id: 3, name: "Therese Wunsch" },
-      { id: 4, name: "Benedict Kessler" },
-      { id: 5, name: "Katelyn Rohan" },
-      { id: 6, name: "Billy Miller" },
-    ];
-    // const selectedPerson = ref(null);
-    const selectedPerson = ref(people[0]);
-
     /* -------------------------------------------------------------------------- */
     /*                            DirectoryState object                           */
     /* -------------------------------------------------------------------------- */
     const directoriesState = ref({
       directories: [] as ListDirectory[],
-      selectedDirectory: {} as ListDirectory,
       monthNames: new Map([
         ["01", "January"],
         ["02", "February"],
@@ -68,32 +58,295 @@ export default defineComponent({
 
         const readyDataYearMonths =
           props.crawlermodule?.ReadyToBuild.DataYearMonth.split("|").reverse();
+        const builtDataYearMonths =
+          props.buildermodule?.BuildComplete.DataYearMonth.split("|");
 
         // Format directories into objects
-        readyDataYearMonths?.forEach((directory, index) => {
+        readyDataYearMonths?.forEach((directory) => {
           const monthNum = directory.substring(4, 6);
           const yearNum = directory.substring(0, 4);
+
+          let isBuilt = false;
+          if (builtDataYearMonths?.includes(directory)) {
+            isBuilt = true;
+          }
 
           const dir: ListDirectory = {
             name:
               directoriesState.value.monthNames.get(monthNum) + " " + yearNum,
+            fullName: directory,
             icon: undefined,
             fileCount: "",
             downloadDate: "",
             downloadTime: "",
             isNew: false,
+            isBuilt: isBuilt,
           };
           directoriesState.value.directories.push(dir);
         });
       },
     });
 
+    const selectedDirectory = ref();
+    const directoriesAvailable = ref();
+
+    /* -------------------------------------------------------------------------- */
+    /*                            Animation refs setup                            */
+    /* -------------------------------------------------------------------------- */
+    const refreshIconRef = ref();
+    let refreshIconAnimation: anime.AnimeInstance;
+
+    const downloadButtonRef = ref();
+    let downloadButtonFillAnimation: anime.AnimeInstance;
+    let downloadButtonDrainAnimation: anime.AnimeInstance;
+
+    const cancelButtonRef = ref();
+    let cancelButtonEnterAnimation: anime.AnimeInstance;
+    let cancelButtonLeaveAnimation: anime.AnimeInstance;
+
+    const progressSlideDownRef = ref();
+    let progressSlideDownEnterAnimation: anime.AnimeInstance;
+    let progressSlideDownLeaveAnimation: anime.AnimeInstance;
+
     /* -------------------------------------------------------------------------- */
     /*                         Mounting and watchers setup                        */
     /* -------------------------------------------------------------------------- */
     onMounted(() => {
+      // Animation
+      refreshIconAnimation = anime({
+        targets: refreshIconRef.value,
+        rotate: "-=2turn",
+        easing: "easeInOutSine",
+        loop: true,
+        autoplay: false,
+      });
+
+      downloadButtonFillAnimation = anime({
+        targets: downloadButtonRef.value,
+        duration: 300,
+        backgroundSize: ["0% 0%", "150% 150%"],
+        width: ["7.5rem", "8.75rem"],
+        marginLeft: ["4.5rem", "3.75rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      downloadButtonDrainAnimation = anime({
+        targets: downloadButtonRef.value,
+        duration: 300,
+        backgroundSize: ["150% 150%", "0% 0%"],
+        width: ["8.75rem", "7.5rem"],
+        marginLeft: ["3.75rem", "4.5rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      cancelButtonEnterAnimation = anime({
+        targets: cancelButtonRef.value,
+        duration: 500,
+        translateY: ["0.5rem", "0rem"],
+        opacity: ["0", "0.9999"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      cancelButtonLeaveAnimation = anime({
+        targets: cancelButtonRef.value,
+        duration: 500,
+        translateY: ["0rem", "0.5rem"],
+        opacity: ["0.9999", "0"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      progressSlideDownEnterAnimation = anime({
+        targets: progressSlideDownRef.value,
+        duration: 500,
+        height: ["0rem", "5.5rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      progressSlideDownLeaveAnimation = anime({
+        targets: progressSlideDownRef.value,
+        duration: 500,
+        height: ["5.5rem", "0rem"],
+        easing: "easeInOutQuad",
+        autoplay: false,
+      });
+
+      // Listbox and directorystate init
       directoriesState.value.FormatData();
+      selectedDirectory.value = directoriesState.value.directories[0];
+
+      if (selectedDirectory.value.name == "undefined ") {
+        directoriesAvailable.value = false;
+      } else {
+        directoriesAvailable.value = true;
+      }
+
+      // First draw/mount tweaks
+      switch (props.buildermodule?.Status) {
+        case 1:
+          refreshIconAnimation.play();
+          downloadButtonRef.value.style.width = "7.5rem";
+          downloadButtonRef.value.style.marginLeft = "4.5rem";
+          downloadButtonRef.value.style.backgroundSize = "0% 0%";
+          break;
+        case 2:
+          downloadButtonDrainAnimation.play();
+          refreshIconAnimation.pause();
+          cancelButtonRef.value.style.opacity = "0";
+          break;
+
+        default:
+          refreshIconAnimation.pause();
+          cancelButtonRef.value.style.opacity = "0";
+          progressSlideDownRef.value.style.height = "0rem";
+          break;
+      }
     });
+
+    // Watch if new directories are added to be built
+    watch(
+      () => props.crawlermodule?.ReadyToBuild.DataYearMonth,
+      () => {
+        directoriesState.value.FormatData();
+
+        if (directoriesState.value.directories[0].name != "undefined ") {
+          directoriesAvailable.value = true;
+        }
+      }
+    );
+
+    // Watch if status of the module changes
+    watch(
+      () => props.buildermodule?.Status,
+      () => {
+        switch (props.buildermodule?.Status) {
+          case 1:
+            refreshIconAnimation.play();
+            downloadButtonDrainAnimation.play();
+            cancelButtonEnterAnimation.play();
+            progressSlideDownEnterAnimation.play();
+            break;
+          case 2:
+            refreshIconAnimation.pause();
+            downloadButtonDrainAnimation.play();
+            cancelButtonLeaveAnimation.play();
+            progressSlideDownEnterAnimation.play();
+            break;
+
+          default:
+            refreshIconAnimation.pause();
+            downloadButtonFillAnimation.play();
+            cancelButtonLeaveAnimation.play();
+            progressSlideDownLeaveAnimation.play();
+            break;
+        }
+      }
+    );
+
+    /* -------------------------------------------------------------------------- */
+    /*                                   Events                                   */
+    /* -------------------------------------------------------------------------- */
+    function CrawlButtonClicked() {
+      // Do nothing if Crawler is not in the ready state
+      if (
+        props.buildermodule?.Status != 0 ||
+        !selectedDirectory.value.fullName
+      ) {
+        return;
+      }
+
+      // // PROD
+      // // Define the request options
+      // const requestOptions = {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     moduleCommand: "start",
+      //     dataYearMonth: selectedDirectory.value.fullName,
+      //   }),
+      // };
+
+      // // Send the request using the Fetch API
+      // fetch(
+      //   "http://192.168.50.40:5000/parascript/builder",
+      //   requestOptions
+      // ).then((response) => {
+      //   if (!response.ok) {
+      //     throw new Error("Network response was not ok");
+      //   }
+      // });
+
+      // TEST
+      // Define the request options
+      const requestOptions = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+
+      // Send the request using the Fetch API
+      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
+        (response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+        }
+      );
+    }
+
+    function CancelButtonClicked() {
+      // Do nothing if Crawler is not in the in progress state
+      if (props.buildermodule?.Status != 1) {
+        return;
+      }
+
+      // TEST
+      // Define the request options
+      const requestOptions = {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+
+      // Send the request using the Fetch API
+      fetch("http://192.168.50.40:5000/toggleStatus", requestOptions).then(
+        (response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+        }
+      );
+
+      // // PROD
+      // // Define the request options
+      // const requestOptions = {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     moduleCommand: "stop",
+      //   }),
+      // };
+
+      // // Send the request using the Fetch API
+      // fetch(
+      //   "http://192.168.50.40:5000/parascript/builder",
+      //   requestOptions
+      // ).then((response) => {
+      //   if (!response.ok) {
+      //     throw new Error("Network response was not ok");
+      //   }
+      // });
+    }
 
     /* -------------------------------------------------------------------------- */
     /*                                Subcomponents                               */
@@ -183,6 +436,10 @@ export default defineComponent({
     function ListBoxButton() {
       return (
         <ListboxButton
+          // @ts-ignore
+          disabled={
+            props.buildermodule?.Status != 0 || !directoriesAvailable.value
+          }
           class={{
             "cursor-not-allowed": props.buildermodule?.Status != 0,
             "relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500":
@@ -198,7 +455,7 @@ export default defineComponent({
     }
 
     function ListBoxButtonHelper() {
-      if (selectedPerson.value == null) {
+      if (!directoriesAvailable.value) {
         return (
           <div class="flex items-center">
             <div class="ml-2">No directories available</div>
@@ -209,13 +466,19 @@ export default defineComponent({
           <div class="flex items-center">
             <div
               class={{
-                "bg-green-400": true,
-                "bg-yellow-400": false,
-                "bg-gray-200": false,
+                "bg-green-400":
+                  selectedDirectory.value.isBuilt == true &&
+                  props.buildermodule?.Status != 1,
+                "bg-yellow-400":
+                  props.buildermodule?.Status == 1 ||
+                  props.buildermodule?.Status == 2,
+                "bg-gray-200":
+                  selectedDirectory.value.isBuilt == false &&
+                  props.buildermodule?.Status != 1,
                 "h-2 w-2 rounded-full": true,
               }}
             />
-            <div class="ml-3">{selectedPerson.value.name}</div>
+            <div class="ml-3">{selectedDirectory.value.name}</div>
           </div>
         );
       }
@@ -224,8 +487,8 @@ export default defineComponent({
     function ListBoxOptions() {
       return (
         <ListboxOptions class="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-[15rem] rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
-          {people.map((person) => (
-            <ListboxOption key={person.id} value={person}>
+          {directoriesState.value.directories.map((directory, index) => (
+            <ListboxOption key={index} value={directory}>
               {(uiOptions: ListboxOptionProperties) => (
                 <li
                   class={{
@@ -237,9 +500,9 @@ export default defineComponent({
                   <div class="flex items-center">
                     <span
                       class={{
-                        "bg-green-400": true,
+                        "bg-green-400": directory.isBuilt == true,
                         "bg-yellow-400": false,
-                        "bg-gray-200": false,
+                        "bg-gray-200": directory.isBuilt == false,
                         "flex-shrink-0 h-2 w-2 rounded-full": true,
                       }}
                     />
@@ -250,7 +513,7 @@ export default defineComponent({
                         "ml-3 truncate": true,
                       }}
                     >
-                      {person.name}
+                      {directory.name}
                     </span>
                   </div>
 
@@ -278,18 +541,18 @@ export default defineComponent({
     function BuildButton() {
       return (
         <button
-          //   ref={downloadButtonRef}
-          //   onClick={CrawlButtonClicked}
+          ref={downloadButtonRef}
+          onClick={CrawlButtonClicked}
           type="button"
           disabled={props.buildermodule?.Status == 0 ? false : true}
           class={{
             "cursor-not-allowed ": props.buildermodule?.Status != 0,
-            "my-6 flex items-center px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
+            "col-span-5 ml-14 my-6 flex items-center px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
               true,
           }}
         >
           <RefreshIcon
-            // ref={refreshIconRef}
+            ref={refreshIconRef}
             class="shrink-0 h-5 w-5 text-white z-10"
           />
           <TransitionGroup
@@ -301,7 +564,7 @@ export default defineComponent({
               switch (props.buildermodule?.Status) {
                 case 0:
                   return (
-                    <p key="0" class="ml-1">
+                    <p key="0" class="ml-1 shrink-0">
                       Build Directory
                     </p>
                   );
@@ -319,25 +582,50 @@ export default defineComponent({
       );
     }
 
+    function CancelButton() {
+      return (
+        <XCircleIcon
+          ref={cancelButtonRef}
+          onClick={CancelButtonClicked}
+          class={{
+            "select-none": props.buildermodule?.Status == 0,
+            "cursor-pointer": props.buildermodule?.Status == 1,
+            " h-6 w-6 text-red-500": true,
+          }}
+        />
+      );
+    }
+
     function ProgressSlideDown() {
       return (
-        <div class="overflow-hidden h-14">
-          {" "}
-          <div class="flex justify-center text-sm font-medium text-gray-700">
-            Currently Building:
-          </div>
+        <div ref={progressSlideDownRef} class="overflow-hidden h-14">
+          {ProgressSlideDownHelper()}
           <div class="min-w-[16rem] mt-1 mb-4 bg-gray-200 rounded-full dark:bg-gray-700">
             <div
               class="bg-indigo-600 text-xs font-medium text-indigo-100 text-center p-0.5 leading-none rounded-full"
-              style="
-                  'width: ' + store.builders[props.dirType].Progress + '%'
-                "
+              style={{ width: props.buildermodule?.Progress + "%" }}
             >
-              99%
+              {props.buildermodule?.Progress}%
             </div>
+          </div>
+          <div class="flex justify-center text-sm text-gray-500">
+            Task:{" "}
+            {props.buildermodule?.Message != ""
+              ? props.buildermodule?.Message
+              : "Not available"}
           </div>
         </div>
       );
+    }
+
+    function ProgressSlideDownHelper() {
+      if (selectedDirectory.value) {
+        return (
+          <div class="flex justify-center text-sm font-medium text-gray-700">
+            Currently Building: {selectedDirectory.value.name}
+          </div>
+        );
+      }
     }
 
     /* -------------------------------------------------------------------------- */
@@ -350,14 +638,16 @@ export default defineComponent({
             <img class="w-20 h-20 border rounded-full" src={ParascriptLogo} />
           </div>
 
-          <div class="flex justify-center mt-4 items-center shrink-0">
-            <p class="text-gray-900 text-sm font-medium">Parascript</p>
+          <div class="flex mt-4 items-center shrink-0">
+            <p class="text-gray-900 text-sm font-medium ml-12 py-2">
+              Parascript
+            </p>
             {StatusLabel()}
             {StatusIcon()}
           </div>
 
           <div class="mt-6">
-            <Listbox as="div" v-model={selectedPerson.value}>
+            <Listbox as="div" v-model={selectedDirectory.value}>
               <ListboxLabel class="mt-2 text-sm font-medium text-gray-900">
                 Select Month to Build
               </ListboxLabel>
@@ -371,7 +661,10 @@ export default defineComponent({
         </div>
         <div class="flex justify-center">
           <div>
-            <div class="flex justify-center">{BuildButton()}</div>
+            <div class="grid grid-cols-6 grid-rows-1 items-center">
+              {BuildButton()}
+              {CancelButton()}
+            </div>
             {ProgressSlideDown()}
           </div>
         </div>
