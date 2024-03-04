@@ -209,7 +209,8 @@ public class RoyalMailCrawler : BaseModule
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             await context.SaveChangesAsync(stoppingToken);
-            SendDbUpdate = true;
         }
+
+        SendDbUpdate = true;
     }
 }
