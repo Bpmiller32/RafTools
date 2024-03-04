@@ -265,8 +265,9 @@ public class ParascriptCrawler : BaseModule
 
             logger.LogInformation($"Bundle ready to build: {bundle.DataMonth}/{bundle.DataYear}");
             await context.SaveChangesAsync(stoppingToken);
-            SendDbUpdate = true;
         }
+
+        SendDbUpdate = true;
     }
 
     private async Task WaitForDownload(ParaFile file, CancellationToken stoppingToken)
