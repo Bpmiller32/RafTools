@@ -137,7 +137,8 @@ public class SmartMatchBuilder : BaseModule
             await Task.Delay(TimeSpan.FromSeconds(1));
         }
 
-        Status = ModuleStatus.Error;
+        // Set back to ready here instead of Error, otherwise no chance to set
+        Status = ModuleStatus.Ready;
     }
 
     private void UpdateStatus(string status, Logging.LogLevel logLevel)
@@ -148,7 +149,7 @@ public class SmartMatchBuilder : BaseModule
         {
             int stageNumberIndex = status.IndexOf("(was Stage ");
             int stageNumber = int.Parse(status.Substring(stageNumberIndex + 11, 1));
-            Message = $"Completed Stage {stageNumber}";
+            Message = $"Stage {stageNumber + 1}";
 
             switch (stageNumber)
             {

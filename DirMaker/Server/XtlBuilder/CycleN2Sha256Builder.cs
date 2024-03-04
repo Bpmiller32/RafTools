@@ -103,17 +103,17 @@ namespace Com.Raf.Xtl.Build
                         return;
                     }*/
 
-                    string msg = $"Expiration date ({expirationDate.AddDays(Convert.ToDouble(Expiration))}) will be in the past. Click 'Yes' to continue or 'No' to set the expiration to 105 days from today?";
-                    if (MessageBox.Show(msg, "Expiration Problem", MessageBoxButtons.YesNo) == DialogResult.Yes)
-                    {
-                        LogAndUpdateUser($"User opted to accept an expiration date in the past ({expirationDate.AddDays(Convert.ToDouble(Expiration))})", Logging.LogLevel.Warn);
-                    }
-                    else
-                    {
-                        // LogAndUpdateUser($"User declined to continue with expiration date in the past", Logging.LogLevel.Warn);
-                        expirationDate = DateTime.Now.AddDays(105);
-                        LogAndUpdateUser($"User opted to override expiration date in the past ({expirationDate.AddDays(Convert.ToDouble(Expiration))})", Logging.LogLevel.Warn);
-                    }
+                    // string msg = $"Expiration date ({expirationDate.AddDays(Convert.ToDouble(Expiration))}) will be in the past. Click 'Yes' to continue or 'No' to set the expiration to 105 days from today?";
+                    // if (MessageBox.Show(msg, "Expiration Problem", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    // {
+                    //     LogAndUpdateUser($"User opted to accept an expiration date in the past ({expirationDate.AddDays(Convert.ToDouble(Expiration))})", Logging.LogLevel.Warn);
+                    // }
+                    // else
+                    // {
+                    //     // LogAndUpdateUser($"User declined to continue with expiration date in the past", Logging.LogLevel.Warn);
+                    //     expirationDate = DateTime.Now.AddDays(105);
+                    //     LogAndUpdateUser($"User opted to override expiration date in the past ({expirationDate.AddDays(Convert.ToDouble(Expiration))})", Logging.LogLevel.Warn);
+                    // }
                 }
 
                 if (Directory.Exists(xtlOutput))
@@ -130,15 +130,17 @@ namespace Com.Raf.Xtl.Build
                 string mappedOutput = OutputFolder.Replace(NetworkShare, $"{mappedDrive}\\");
                 if (Directory.Exists(mappedOutput))
                 {
-                    if (MessageBox.Show("Existing build found, override?", "Override existing build", MessageBoxButtons.OKCancel) == DialogResult.OK)
-                    {
-                        FileSystem.DeleteDirectory(mappedOutput);
-                    }
-                    else
-                    {
-                        LogAndUpdateUser($"User declined to overwrite existing build {mappedOutput}", Logging.LogLevel.Warn);
-                        return;
-                    }
+                    // if (MessageBox.Show("Existing build found, override?", "Override existing build", MessageBoxButtons.OKCancel) == DialogResult.OK)
+                    // {
+                    //     FileSystem.DeleteDirectory(mappedOutput);
+                    // }
+                    // else
+                    // {
+                    //     LogAndUpdateUser($"User declined to overwrite existing build {mappedOutput}", Logging.LogLevel.Warn);
+                    //     return;
+                    // }
+
+                    FileSystem.DeleteDirectory(mappedOutput);
                 }
 
                 if (!SKIP_BUILD)

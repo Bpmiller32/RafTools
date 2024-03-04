@@ -17,17 +17,17 @@ public class DirTester : BaseModule
         this.config = config;
     }
 
-    public async Task Start(string directoryName, string dataYearMonth)
+    public async Task Start(string directoryType, string dataYearMonth)
     {
         try
         {
             logger.LogInformation("Starting Tester");
             Status = ModuleStatus.InProgress;
 
-            Settings.DirectoryName = directoryName;
+            Settings.DirectoryName = directoryType;
             Settings.Validate(config);
 
-            switch (directoryName)
+            switch (directoryType)
             {
                 case "Zip4":
                     // CurrentTask = "Zip4";
@@ -50,7 +50,7 @@ public class DirTester : BaseModule
 
                     Message = "Checking directory license file";
                     Progress = 45;
-                    if (await CheckLicense(directoryName))
+                    if (await CheckLicense(directoryType))
                     {
                         Message = "Changed to known working configuration, dongle on list";
                     }
@@ -65,7 +65,7 @@ public class DirTester : BaseModule
 
                     Message = "Injecting test images";
                     Progress = 75;
-                    await InjectImages(directoryName);
+                    await InjectImages(directoryType);
                     break;
                 case "Parascript":
                     // CurrentTask = "Parascript";
@@ -95,7 +95,7 @@ public class DirTester : BaseModule
 
                     Message = "Checking directory license file";
                     Progress = 45;
-                    if (await CheckLicense(directoryName))
+                    if (await CheckLicense(directoryType))
                     {
                         Message = "Changed to known working configuration, dongle on list";
                     }
@@ -110,7 +110,7 @@ public class DirTester : BaseModule
 
                     Message = "Injecting test images";
                     Progress = 75;
-                    await InjectImages(directoryName);
+                    await InjectImages(directoryType);
                     break;
             }
 

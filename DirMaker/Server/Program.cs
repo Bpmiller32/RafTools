@@ -11,6 +11,7 @@ using Server.Crawlers;
 using Server.ServerMessages;
 using Server.Tester;
 using Server;
+using System.Text.Json;
 
 string applicationName = "DirMaker";
 using var mutex = new Mutex(false, applicationName);
@@ -252,7 +253,7 @@ app.MapPost("/dirtester", (DirTester dirTester, TesterMessage serverMessage) =>
     switch (serverMessage.ModuleCommand)
     {
         case "start":
-            Task.Run(() => dirTester.Start(serverMessage.TestDirectoryName, serverMessage.DataYearMonth));
+            Task.Run(() => dirTester.Start(serverMessage.TestDirectoryType, serverMessage.DataYearMonth));
             return Results.Ok();
 
         default:
