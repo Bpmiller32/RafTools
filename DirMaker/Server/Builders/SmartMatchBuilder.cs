@@ -26,6 +26,7 @@ public class SmartMatchBuilder : BaseModule
         logger.LogInformation("Starting Builder");
         Status = ModuleStatus.InProgress;
         Message = "Starting Builder";
+        CurrentTask = dataYearMonth;
 
         Settings.Validate(config);
 
@@ -131,6 +132,7 @@ public class SmartMatchBuilder : BaseModule
                 logger.LogInformation("XtlBuilder finished running");
                 await CheckBuildComplete(dataYearMonth, cycle, stoppingTokenSource.Token);
                 Status = ModuleStatus.Ready;
+                CurrentTask = "";
                 return;
             }
 
@@ -139,6 +141,7 @@ public class SmartMatchBuilder : BaseModule
 
         // Set back to ready here instead of Error, otherwise no chance to set
         Status = ModuleStatus.Ready;
+        CurrentTask = "";
     }
 
     private void UpdateStatus(string status, Logging.LogLevel logLevel)

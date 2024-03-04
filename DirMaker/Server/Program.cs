@@ -118,10 +118,10 @@ app.MapGet("/status", async (HttpContext context, StatusReporter statusReporter)
 
     for (var i = 0; true; i++)
     {
-        string message = statusReporter.UpdateReport();
+        string message = await statusReporter.UpdateReport();
         byte[] bytes = Encoding.ASCII.GetBytes($"data: {message}\r\r");
 
-        await context.Response.Body.WriteAsync(bytes, 0, bytes.Length);
+        await context.Response.Body.WriteAsync(bytes);
         await context.Response.Body.FlushAsync();
         await Task.Delay(TimeSpan.FromSeconds(1));
     }

@@ -13,6 +13,7 @@ public class CrawlerReporter
     public ModuleStatus Status { get; set; }
     public int Progress { get; set; }
     public string Message { get; set; } = "";
+    public string CurrentTask { get; set; } = "";
     public ReadyToBuildReporter ReadyToBuild { get; set; } = new();
 }
 
@@ -29,6 +30,7 @@ public class BuilderReporter
     public ModuleStatus Status { get; set; }
     public int Progress { get; set; }
     public string Message { get; set; } = "";
+    public string CurrentTask { get; set; } = "";
     public BuildCompleteReporter BuildComplete { get; set; } = new();
 }
 

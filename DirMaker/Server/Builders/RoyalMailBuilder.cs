@@ -32,6 +32,7 @@ public class RoyalMailBuilder : BaseModule
         {
             logger.LogInformation("Starting Builder");
             Status = ModuleStatus.InProgress;
+            CurrentTask = dataYearMonth;
 
             Settings.Validate(config);
             this.dataYearMonth = dataYearMonth;
@@ -74,14 +75,16 @@ public class RoyalMailBuilder : BaseModule
             Progress = 99;
             await CheckBuildComplete(stoppingToken);
 
-            Message = "";
             Progress = 100;
-            logger.LogInformation($"Build Complete: {dataYearMonth}");
             Status = ModuleStatus.Ready;
+            Message = "";
+            CurrentTask = "";
+            logger.LogInformation($"Build Complete: {dataYearMonth}");
         }
         catch (TaskCanceledException e)
         {
             Status = ModuleStatus.Ready;
+            CurrentTask = "";
             logger.LogDebug($"{e.Message}");
         }
         catch (Exception e)
