@@ -44,7 +44,7 @@ public class RoyalMailBuilder : BaseModule
 
             Message = "Extracing from PAF executable";
             Progress = 1;
-            await Extract(stoppingToken);
+            await Extract(key, stoppingToken);
 
             Message = "Cleaning up from previous builds";
             Progress = 22;
@@ -98,6 +98,11 @@ public class RoyalMailBuilder : BaseModule
             return;
         }
 
+        if (string.IsNullOrEmpty(royalKey))
+        {
+            return;
+        }
+
         PafKey filteredKey = new()
         {
             DataYear = int.Parse(dataYearMonth[..4]),
@@ -115,15 +120,15 @@ public class RoyalMailBuilder : BaseModule
         }
     }
 
-    private async Task Extract(CancellationToken stoppingToken)
+    private async Task Extract(string key, CancellationToken stoppingToken)
     {
         if (stoppingToken.IsCancellationRequested)
         {
             return;
         }
 
-
-        PafKey key = context.PafKeys.Where(x => (int.Parse(dataYearMonth.Substring(4, 2)) == x.DataMonth) && (int.Parse(dataYearMonth.Substring(0, 4)) == x.DataYear)).FirstOrDefault() ?? throw new Exception("Key not found in db");
+        // Change so that front end still collects keys for db, but uses what it passes every time in case of mistake
+        // PafKey key = context.PafKeys.Where(x => (int.Parse(dataYearMonth.Substring(4, 2)) == x.DataMonth) && (int.Parse(dataYearMonth.Substring(0, 4)) == x.DataYear)).FirstOrDefault() ?? throw new Exception("Key not found in db");
 
         using UIA2Automation automation = new();
         FlaUI.Core.Application app = FlaUI.Core.Application.Launch(Path.Combine(dataSourcePath, "SetupRM.exe"));
@@ -135,7 +140,7 @@ public class RoyalMailBuilder : BaseModule
         // TODO: Somehow if key is wrong, look for label maybe?
         AutomationElement keyText = windows[0].FindFirstDescendant(cf => cf.ByClassName("TEdit")) ?? throw new Exception("Could not find the window elements");
 
-        keyText.AsTextBox().Enter(key.Value);
+        keyText.AsTextBox().Enter(key);
 
         // 1st page
         AutomationElement beginButton = windows[0].FindFirstDescendant(cf => cf.ByClassName("TButton"));

@@ -39,6 +39,8 @@ export default defineComponent({
     /*                                    State                                   */
     /* -------------------------------------------------------------------------- */
     const state = useGlobalState();
+    const selectedDirectory = ref();
+    const directoriesAvailable = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                            DirectoryState object                           */
@@ -92,9 +94,6 @@ export default defineComponent({
         });
       },
     });
-
-    const selectedDirectory = ref();
-    const directoriesAvailable = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */

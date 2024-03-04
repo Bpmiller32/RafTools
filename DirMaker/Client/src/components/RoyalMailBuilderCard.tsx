@@ -39,6 +39,9 @@ export default defineComponent({
     /*                                    State                                   */
     /* -------------------------------------------------------------------------- */
     const state = useGlobalState();
+    const selectedDirectory = ref();
+    const pafKey = ref();
+    const directoriesAvailable = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                            DirectoryState object                           */
@@ -93,10 +96,6 @@ export default defineComponent({
       },
     });
 
-    const selectedDirectory = ref();
-    const pafKey = ref();
-    const directoriesAvailable = ref();
-
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */
     /* -------------------------------------------------------------------------- */
@@ -114,6 +113,11 @@ export default defineComponent({
     const progressSlideDownRef = ref();
     let progressSlideDownEnterAnimation: anime.AnimeInstance;
     let progressSlideDownLeaveAnimation: anime.AnimeInstance;
+
+    const errorLabelRef = ref();
+    let errorLabelAnimation: anime.AnimeInstance;
+
+    const pafKeyInputRef = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                         Mounting and watchers setup                        */
@@ -180,6 +184,48 @@ export default defineComponent({
         height: ["5.5rem", "0rem"],
         easing: "easeInOutQuad",
         autoplay: false,
+      });
+
+      errorLabelAnimation = anime({
+        targets: errorLabelRef.value,
+        autoplay: false,
+        keyframes: [
+          {
+            translateX: 0,
+            color: "rgb(239, 68, 68)",
+            duration: 0,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -6,
+            rotateY: -9,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 5,
+            rotateY: 7,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -3,
+            rotateY: -5,
+            duration: 130,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 2,
+            rotateY: 3,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 0,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+        ],
       });
 
       // Listbox and directorystate init
@@ -266,7 +312,44 @@ export default defineComponent({
         return;
       }
 
-      pafKey.value.replace(/[^a-zA-Z0-9]/g, "");
+      if (!IsPafKeyValid()) {
+        errorLabelRef.value.style.opacity = "0.9999";
+        errorLabelAnimation.play();
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
+          toRemove1,
+          ""
+        );
+        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
+          toRemove2,
+          ""
+        );
+
+        // Add wanted tw styles
+        pafKeyInputRef.value.className += " ring-red-300";
+
+        return;
+      } else {
+        errorLabelRef.value.style.opacity = "0";
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
+          toRemove1,
+          ""
+        );
+        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
+          toRemove2,
+          ""
+        );
+
+        // Add wanted tw styles
+        pafKeyInputRef.value.className += " ring-gray-300";
+      }
 
       // PROD
       // Define the request options
@@ -316,6 +399,25 @@ export default defineComponent({
           }
         }
       );
+    }
+
+    function IsPafKeyValid() {
+      if (
+        pafKey.value == null ||
+        pafKey.value == undefined ||
+        pafKey.value == ""
+      ) {
+        return false;
+      }
+
+      //   Remove all punctuation, spaces, special characters
+      pafKey.value = pafKey.value.replace(/[^a-zA-Z0-9]/g, "");
+
+      if (pafKey.value.length != 24) {
+        return false;
+      }
+
+      return true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -598,12 +700,39 @@ export default defineComponent({
       }
     }
 
+    function PafKeyInput() {
+      return (
+        <div class="mt-6">
+          <div v-model={selectedDirectory.value}>
+            <div class="mt-2 text-sm font-medium text-gray-900">
+              Enter PAF Decryption Key
+            </div>
+
+            <input
+              ref={pafKeyInputRef}
+              //@ts-ignore
+              disabled={
+                props.buildermodule?.Status != 0 || !directoriesAvailable.value
+              }
+              v-model={pafKey.value}
+              type="text"
+              class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+              placeholder="XXX/XXX/XXX/XXX/XXX/XXX/XXX/XXX"
+            />
+          </div>
+          <div ref={errorLabelRef} class="my-1 text-red-500 opacity-0">
+            Invalid PafKey
+          </div>
+        </div>
+      );
+    }
+
     /* -------------------------------------------------------------------------- */
     /*                               Render function                              */
     /* -------------------------------------------------------------------------- */
     return () => (
       <div class="select-none min-w-[18rem] max-w-[18rem] h-fit bg-white rounded-lg shadow divide-y divide-gray-200">
-        <div class="p-6">
+        <div class="pt-6 px-6">
           <div class="flex justify-center">
             <img class="w-20 h-20 border rounded-full" src={RoyalMailLogo} />
           </div>
@@ -629,25 +758,7 @@ export default defineComponent({
             </Listbox>
           </div>
 
-          <div class="mt-6">
-            <div v-model={selectedDirectory.value}>
-              <div class="mt-2 text-sm font-medium text-gray-900">
-                Enter PAF Decryption Key
-              </div>
-
-              <input
-                //@ts-ignore
-                disabled={
-                  props.buildermodule?.Status != 0 ||
-                  !directoriesAvailable.value
-                }
-                v-model={pafKey.value}
-                type="text"
-                class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-                placeholder="XXX/XXX/XXX/XXX/XXX/XXX/XXX/XXX"
-              />
-            </div>
-          </div>
+          {PafKeyInput()}
         </div>
         <div class="flex justify-center">
           <div>
