@@ -16,18 +16,25 @@ import {
   SelectorIcon,
   CheckIcon,
   XCircleIcon,
+  CheckCircleIcon,
 } from "@heroicons/vue/outline";
-import RoyalMailLogo from "../assets/RoyalMailLogo.png";
+import SmartMatchLogo from "../assets/SmartMatchLogo.png";
 import {
   Listbox,
   ListboxButton,
   ListboxLabel,
   ListboxOption,
   ListboxOptions,
+  RadioGroup,
+  RadioGroupDescription,
+  RadioGroupLabel,
+  RadioGroupOption,
 } from "@headlessui/vue";
 import ListDirectory from "../interfaces/ListDirectory";
 import ListboxOptionProperties from "../interfaces/ListboxOptionProperties";
+import RadioOptionProperties from "../interfaces/RadioOptionProperties";
 import { useGlobalState } from "../store";
+import CassChoice from "../interfaces/CassChoice";
 
 export default defineComponent({
   props: {
@@ -40,7 +47,8 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     const state = useGlobalState();
     const selectedDirectory = ref();
-    const pafKey = ref();
+    const selectedCassCycle = ref();
+    const expirationDate = ref();
     const directoriesAvailable = ref();
 
     /* -------------------------------------------------------------------------- */
@@ -48,6 +56,7 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     const directoriesState = ref({
       directories: [] as ListDirectory[],
+      cassCycles: [] as CassChoice[],
       monthNames: new Map([
         ["01", "January"],
         ["02", "February"],
@@ -113,11 +122,6 @@ export default defineComponent({
     const progressSlideDownRef = ref();
     let progressSlideDownEnterAnimation: anime.AnimeInstance;
     let progressSlideDownLeaveAnimation: anime.AnimeInstance;
-
-    const errorLabelRef = ref();
-    let errorLabelAnimation: anime.AnimeInstance;
-
-    const pafKeyInputRef = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                         Mounting and watchers setup                        */
@@ -186,57 +190,38 @@ export default defineComponent({
         autoplay: false,
       });
 
-      errorLabelAnimation = anime({
-        targets: errorLabelRef.value,
-        autoplay: false,
-        keyframes: [
-          {
-            translateX: 0,
-            color: "rgb(239, 68, 68)",
-            duration: 0,
-            easing: "easeInOutQuad",
-          },
-          {
-            translateX: -6,
-            rotateY: -9,
-            duration: 65,
-            easing: "easeInOutQuad",
-          },
-          {
-            translateX: 5,
-            rotateY: 7,
-            duration: 120,
-            easing: "easeInOutQuad",
-          },
-          {
-            translateX: -3,
-            rotateY: -5,
-            duration: 130,
-            easing: "easeInOutQuad",
-          },
-          {
-            translateX: 2,
-            rotateY: 3,
-            duration: 120,
-            easing: "easeInOutQuad",
-          },
-          {
-            translateX: 0,
-            duration: 65,
-            easing: "easeInOutQuad",
-          },
-        ],
-      });
-
       // Listbox and directorystate init
       directoriesState.value.FormatData();
       selectedDirectory.value = directoriesState.value.directories[0];
+
+      directoriesState.value.cassCycles.push({
+        name: "Cycle O",
+        description: "Build with CASS Cycle O in standard mode",
+      });
+      directoriesState.value.cassCycles.push({
+        name: "Cycle N",
+        description: "Build CASS Cycle N using CASS Cycle O data",
+      });
+      directoriesState.value.cassCycles.push({
+        name: "MASS O",
+        description: "Build CASS Cycle O using MASS data",
+      });
 
       if (selectedDirectory.value.name == "undefined ") {
         directoriesAvailable.value = false;
       } else {
         directoriesAvailable.value = true;
       }
+
+      if (selectedCassCycle.value == undefined) {
+        selectedCassCycle.value = directoriesState.value.cassCycles[0];
+      }
+
+      //   //   Set expirationDate to default value
+      //   const today = new Date();
+      //   const futureDate = new Date();
+      //   futureDate.setDate(today.getDate() + 105);
+      //   expirationDate.value = futureDate;
 
       // First draw/mount tweaks
       switch (props.buildermodule?.Status) {
@@ -312,43 +297,34 @@ export default defineComponent({
         return;
       }
 
-      if (!IsPafKeyValid()) {
-        errorLabelRef.value.style.opacity = "0.9999";
-        errorLabelAnimation.play();
-
-        // Remove old tw styles
-        const toRemove1 = new RegExp("ring-gray-300", "g");
-        const toRemove2 = new RegExp("ring-red-300", "g");
-        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
-          toRemove1,
-          ""
-        );
-        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
-          toRemove2,
-          ""
-        );
-
-        // Add wanted tw styles
-        pafKeyInputRef.value.className += " ring-red-300";
-
-        return;
+      let expireDays;
+      if (expirationDate.value == undefined) {
+        expireDays = "";
       } else {
-        errorLabelRef.value.style.opacity = "0";
+        /// Convert givenDate and today's date to milliseconds
+        const expiration = new Date(expirationDate.value);
+        const expirationTime = expiration.getTime();
+        const currentTime = new Date().getTime();
 
-        // Remove old tw styles
-        const toRemove1 = new RegExp("ring-gray-300", "g");
-        const toRemove2 = new RegExp("ring-red-300", "g");
-        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
-          toRemove1,
-          ""
-        );
-        pafKeyInputRef.value.className = pafKeyInputRef.value.className.replace(
-          toRemove2,
-          ""
-        );
+        // Calculate the difference in milliseconds
+        const difference = Math.abs(currentTime - expirationTime);
 
-        // Add wanted tw styles
-        pafKeyInputRef.value.className += " ring-gray-300";
+        // Convert milliseconds to days
+        expireDays = Math.ceil(difference / (1000 * 60 * 60 * 24));
+      }
+
+      let cycle;
+      switch (selectedCassCycle.value.name) {
+        case "Cycle N":
+          cycle = "OtoN";
+          break;
+        case "MASS O":
+          cycle = "MASSO";
+          break;
+
+        default:
+          cycle = "O";
+          break;
       }
 
       // PROD
@@ -361,12 +337,13 @@ export default defineComponent({
         body: JSON.stringify({
           moduleCommand: "start",
           dataYearMonth: selectedDirectory.value.fullName,
-          royalMailKey: pafKey.value,
+          cycle: cycle,
+          expireDays: expireDays,
         }),
       };
 
       // Send the request using the Fetch API
-      fetch(state.beUrl.value + "/royalmail/builder", requestOptions).then(
+      fetch(state.beUrl.value + "/smartmatch/builder", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
@@ -392,32 +369,13 @@ export default defineComponent({
       };
 
       // Send the request using the Fetch API
-      fetch(state.beUrl.value + "/royalmail/builder", requestOptions).then(
+      fetch(state.beUrl.value + "/smartmatch/builder", requestOptions).then(
         (response) => {
           if (!response.ok) {
             throw new Error("Network response was not ok");
           }
         }
       );
-    }
-
-    function IsPafKeyValid() {
-      if (
-        pafKey.value == null ||
-        pafKey.value == undefined ||
-        pafKey.value == ""
-      ) {
-        return false;
-      }
-
-      //   Remove all punctuation, spaces, special characters
-      pafKey.value = pafKey.value.replace(/[^a-zA-Z0-9]/g, "");
-
-      if (pafKey.value.length != 24) {
-        return false;
-      }
-
-      return true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -700,29 +658,81 @@ export default defineComponent({
       }
     }
 
-    function PafKeyInput() {
+    function CycleSelectRadio() {
+      return (
+        <RadioGroup
+          //@ts-ignore
+          disabled={
+            props.buildermodule?.Status != 0 || !directoriesAvailable.value
+          }
+          class="mt-6"
+          v-model={selectedCassCycle.value}
+        >
+          <RadioGroupLabel class="mt-2 text-sm font-medium text-gray-900">
+            Select CASS Cycle
+          </RadioGroupLabel>
+
+          <div class="mt-1 grid grid-cols-1 grid-rows-3 gap-y-2">
+            {directoriesState.value.cassCycles.map((cassCycle, index) => (
+              <RadioGroupOption key={index} value={cassCycle.description}>
+                {(uiOptions: RadioOptionProperties) => (
+                  <div
+                    class={{
+                      "border-indigo-600 ring-2 ring-indigo-600":
+                        uiOptions.active == true,
+                      "border-gray-300": uiOptions.active == false,
+                      "relative flex rounded-lg border bg-white p-4 shadow-sm focus:outline-none":
+                        true,
+                    }}
+                  >
+                    <span class="flex flex-1">
+                      <span class="flex flex-col">
+                        <RadioGroupLabel
+                          as="span"
+                          class="block text-sm font-medium text-gray-900"
+                        >
+                          {cassCycle.name}
+                        </RadioGroupLabel>
+                        <RadioGroupDescription
+                          as="span"
+                          class="mt-1 flex items-center text-sm text-gray-500"
+                        >
+                          {cassCycle.description}
+                        </RadioGroupDescription>
+                      </span>
+                    </span>
+                    <CheckCircleIcon
+                      class={{
+                        "h-5 w-5 text-indigo-600": uiOptions.checked == true,
+                        "h-5 w-5 opacity-0": uiOptions.checked == false,
+                      }}
+                    />
+                  </div>
+                )}
+              </RadioGroupOption>
+            ))}
+          </div>
+        </RadioGroup>
+      );
+    }
+
+    function ExpirationDateInput() {
       return (
         <div class="mt-6">
-          <div>
-            <div class="mt-2 text-sm font-medium text-gray-900">
-              Enter PAF Decryption Key
-            </div>
+          <div class="mt-2 text-sm font-medium text-gray-900">
+            Enter Custom Expiration Date
+          </div>
 
-            <input
-              ref={pafKeyInputRef}
-              //@ts-ignore
-              disabled={
-                props.buildermodule?.Status != 0 || !directoriesAvailable.value
-              }
-              v-model={pafKey.value}
-              type="text"
-              class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
-              placeholder="XXX/XXX/XXX/XXX/XXX/XXX/XXX/XXX"
-            />
-          </div>
-          <div ref={errorLabelRef} class="my-1 text-red-500 opacity-0">
-            Invalid PafKey
-          </div>
+          <input
+            //@ts-ignore
+            disabled={
+              props.buildermodule?.Status != 0 || !directoriesAvailable.value
+            }
+            v-model={expirationDate.value}
+            type="date"
+            class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+            placeholder="mm/dd/yyyy"
+          />
         </div>
       );
     }
@@ -732,14 +742,14 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     return () => (
       <div class="select-none min-w-[18rem] max-w-[18rem] h-fit bg-white rounded-lg shadow divide-y divide-gray-200">
-        <div class="pt-6 px-6">
+        <div class="p-6">
           <div class="flex justify-center">
-            <img class="w-20 h-20 border rounded-full" src={RoyalMailLogo} />
+            <img class="w-20 h-20 border rounded-full" src={SmartMatchLogo} />
           </div>
 
           <div class="flex mt-4 items-center shrink-0">
-            <p class="text-gray-900 text-sm font-medium ml-12 py-2">
-              RoyalMail
+            <p class="text-gray-900 text-sm font-medium ml-10 py-2">
+              SmartMatch
             </p>
             {StatusLabel()}
             {StatusIcon()}
@@ -758,7 +768,8 @@ export default defineComponent({
             </Listbox>
           </div>
 
-          {PafKeyInput()}
+          {CycleSelectRadio()}
+          {ExpirationDateInput()}
         </div>
         <div class="flex justify-center">
           <div>
