@@ -34,7 +34,6 @@ import ListDirectory from "../interfaces/ListDirectory";
 import ListboxOptionProperties from "../interfaces/ListboxOptionProperties";
 import RadioOptionProperties from "../interfaces/RadioOptionProperties";
 import { useGlobalState } from "../store";
-import CassChoice from "../interfaces/CassChoice";
 
 export default defineComponent({
   props: {
@@ -43,11 +42,29 @@ export default defineComponent({
   },
   setup(props) {
     /* -------------------------------------------------------------------------- */
+    /*                              CassCycles array                              */
+    /* -------------------------------------------------------------------------- */
+    const cassCycles = [
+      {
+        name: "Cycle O",
+        description: "Build with CASS Cycle O in standard mode",
+      },
+      {
+        name: "Cycle N",
+        description: "Build CASS Cycle N using CASS Cycle O data",
+      },
+      {
+        name: "MASS O",
+        description: "Build CASS Cycle O using MASS data",
+      },
+    ];
+
+    /* -------------------------------------------------------------------------- */
     /*                                    State                                   */
     /* -------------------------------------------------------------------------- */
     const state = useGlobalState();
     const selectedDirectory = ref();
-    const selectedCassCycle = ref();
+    const selectedCassCycle = ref(cassCycles[0]);
     const expirationDate = ref();
     const directoriesAvailable = ref();
 
@@ -56,7 +73,6 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     const directoriesState = ref({
       directories: [] as ListDirectory[],
-      cassCycles: [] as CassChoice[],
       monthNames: new Map([
         ["01", "January"],
         ["02", "February"],
@@ -194,34 +210,17 @@ export default defineComponent({
       directoriesState.value.FormatData();
       selectedDirectory.value = directoriesState.value.directories[0];
 
-      directoriesState.value.cassCycles.push({
-        name: "Cycle O",
-        description: "Build with CASS Cycle O in standard mode",
-      });
-      directoriesState.value.cassCycles.push({
-        name: "Cycle N",
-        description: "Build CASS Cycle N using CASS Cycle O data",
-      });
-      directoriesState.value.cassCycles.push({
-        name: "MASS O",
-        description: "Build CASS Cycle O using MASS data",
-      });
-
       if (selectedDirectory.value.name == "undefined ") {
         directoriesAvailable.value = false;
       } else {
         directoriesAvailable.value = true;
       }
 
-      if (selectedCassCycle.value == undefined) {
-        selectedCassCycle.value = directoriesState.value.cassCycles[0];
-      }
-
-      //   //   Set expirationDate to default value
-      //   const today = new Date();
-      //   const futureDate = new Date();
-      //   futureDate.setDate(today.getDate() + 105);
-      //   expirationDate.value = futureDate;
+      directoriesState.value.directories.forEach((directory) => {
+        if (directory.fullName == props.buildermodule?.CurrentTask) {
+          selectedDirectory.value = directory;
+        }
+      });
 
       // First draw/mount tweaks
       switch (props.buildermodule?.Status) {
@@ -288,8 +287,8 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
-    function CrawlButtonClicked() {
-      // Do nothing if Crawler is not in the ready state
+    function BuildButtonClicked() {
+      // Do nothing if Builder is not in the ready state
       if (
         props.buildermodule?.Status != 0 ||
         !selectedDirectory.value.fullName
@@ -353,7 +352,7 @@ export default defineComponent({
     }
 
     function CancelButtonClicked() {
-      // Do nothing if Crawler is not in the in progress state
+      // Do nothing if Builder is not in the in progress state
       if (props.buildermodule?.Status != 1) {
         return;
       }
@@ -572,7 +571,7 @@ export default defineComponent({
       return (
         <button
           ref={downloadButtonRef}
-          onClick={CrawlButtonClicked}
+          onClick={BuildButtonClicked}
           type="button"
           disabled={props.buildermodule?.Status == 0 ? false : true}
           class={{
@@ -673,8 +672,8 @@ export default defineComponent({
           </RadioGroupLabel>
 
           <div class="mt-1 grid grid-cols-1 grid-rows-3 gap-y-2">
-            {directoriesState.value.cassCycles.map((cassCycle, index) => (
-              <RadioGroupOption key={index} value={cassCycle.description}>
+            {cassCycles.map((cassCycle, index) => (
+              <RadioGroupOption key={index} value={cassCycle}>
                 {(uiOptions: RadioOptionProperties) => (
                   <div
                     class={{

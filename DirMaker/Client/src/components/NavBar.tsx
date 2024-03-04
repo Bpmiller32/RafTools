@@ -3,9 +3,13 @@ import { defineComponent, Transition } from "vue";
 import { useRoute } from "vue-router";
 import matwLogoSmall from "../assets/matwLogoSmall.png";
 import matwLogoLarge from "../assets/matwLogoLarge.png";
+import { MenuIcon, XIcon } from "@heroicons/vue/outline";
 
 export default defineComponent({
   setup() {
+    /* -------------------------------------------------------------------------- */
+    /*                                    State                                   */
+    /* -------------------------------------------------------------------------- */
     const route = useRoute();
 
     let renderedOnce = false;
@@ -13,7 +17,9 @@ export default defineComponent({
     let isPanelOpen: boolean;
     let ClosePanel: () => void;
 
-    // Multiuse
+    /* -------------------------------------------------------------------------- */
+    /*                              Platform specific                             */
+    /* -------------------------------------------------------------------------- */
     function NavLinkDesktop(linkName: string) {
       return (
         <Transition
@@ -59,7 +65,9 @@ export default defineComponent({
       );
     }
 
-    // Organization
+    /* -------------------------------------------------------------------------- */
+    /*                                Subcomponents                               */
+    /* -------------------------------------------------------------------------- */
     function NavLogo() {
       return (
         <div class="flex items-center">
@@ -75,7 +83,27 @@ export default defineComponent({
           as="button"
           class="block sm:hidden p-2 bg-white rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-background-color transition-color duration-500"
         >
-          {isPanelOpen ? <div>OpenButton</div> : <div>ClosedButton</div>}
+          {isPanelOpen ? (
+            <Transition
+              appear
+              mode="out-in"
+              enterFromClass="opacity-0"
+              enterToClass="opacity-100"
+              enterActiveClass="duration-[500ms]"
+            >
+              <XIcon class="h-6 w-6" />
+            </Transition>
+          ) : (
+            <Transition
+              appear
+              mode="out-in"
+              enterFromClass="opacity-0"
+              enterToClass="opacity-100"
+              enterActiveClass="duration-[500ms]"
+            >
+              <MenuIcon class="h-6 w-6" />
+            </Transition>
+          )}
         </PopoverButton>
       );
     }
@@ -127,6 +155,9 @@ export default defineComponent({
       );
     }
 
+    /* -------------------------------------------------------------------------- */
+    /*                               Render function                              */
+    /* -------------------------------------------------------------------------- */
     return () => {
       if (typeof route.name === "undefined") {
         return;

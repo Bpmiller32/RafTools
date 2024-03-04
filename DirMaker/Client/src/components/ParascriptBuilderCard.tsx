@@ -190,6 +190,12 @@ export default defineComponent({
         directoriesAvailable.value = true;
       }
 
+      directoriesState.value.directories.forEach((directory) => {
+        if (directory.fullName == props.buildermodule?.CurrentTask) {
+          selectedDirectory.value = directory;
+        }
+      });
+
       // First draw/mount tweaks
       switch (props.buildermodule?.Status) {
         case 1:
@@ -255,8 +261,8 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
-    function CrawlButtonClicked() {
-      // Do nothing if Crawler is not in the ready state
+    function BuildButtonClicked() {
+      // Do nothing if Builder is not in the ready state
       if (
         props.buildermodule?.Status != 0 ||
         !selectedDirectory.value.fullName
@@ -288,7 +294,7 @@ export default defineComponent({
     }
 
     function CancelButtonClicked() {
-      // Do nothing if Crawler is not in the in progress state
+      // Do nothing if Builder is not in the in progress state
       if (props.buildermodule?.Status != 1) {
         return;
       }
@@ -509,7 +515,7 @@ export default defineComponent({
       return (
         <button
           ref={downloadButtonRef}
-          onClick={CrawlButtonClicked}
+          onClick={BuildButtonClicked}
           type="button"
           disabled={props.buildermodule?.Status == 0 ? false : true}
           class={{

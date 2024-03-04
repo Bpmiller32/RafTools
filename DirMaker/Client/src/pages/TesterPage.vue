@@ -1,3 +1,3 @@
 <template>
-  <div>Tester Page - under construction</div>
+  <div class="m-6">Tester Page currently disabled</div>
 </template>
