@@ -684,7 +684,7 @@ export default defineComponent({
                         true,
                     }}
                   >
-                    <span class="flex flex-1">
+                    <div class="flex flex-1">
                       <span class="flex flex-col">
                         <RadioGroupLabel
                           as="span"
@@ -699,19 +699,38 @@ export default defineComponent({
                           {cassCycle.description}
                         </RadioGroupDescription>
                       </span>
-                    </span>
-                    <CheckCircleIcon
-                      class={{
-                        "h-5 w-5 text-indigo-600": uiOptions.checked == true,
-                        "h-5 w-5 opacity-0": uiOptions.checked == false,
-                      }}
-                    />
+                    </div>
+                    <div>{CycleSelectRadioHelper(uiOptions.checked)}</div>
                   </div>
                 )}
               </RadioGroupOption>
             ))}
           </div>
         </RadioGroup>
+      );
+    }
+
+    function CycleSelectRadioHelper(isChecked: Boolean) {
+      return (
+        <TransitionGroup
+          enterFromClass="opacity-0"
+          enterToClass="opacity-100"
+          enterActiveClass="duration-[750ms]"
+        >
+          {() => {
+            switch (isChecked) {
+              case true:
+                return (
+                  <CheckCircleIcon
+                    key="isChecked"
+                    class="h-5 w-5 text-indigo-600"
+                  />
+                );
+              default:
+                return <div class="h-5 w-5" key="isNotChecked"></div>;
+            }
+          }}
+        </TransitionGroup>
       );
     }
 
