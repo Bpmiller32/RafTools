@@ -37,6 +37,9 @@ export default defineComponent({
     module: Object as PropType<BackEndModule>,
   },
   setup(props) {
+    /* -------------------------------------------------------------------------- */
+    /*                            Test operations array                           */
+    /* -------------------------------------------------------------------------- */
     const testOperations = [
       {
         name: "SmartMatch",
@@ -52,12 +55,13 @@ export default defineComponent({
       },
     ];
 
-    const selectedTestOperation = ref(testOperations[0]);
-
     /* -------------------------------------------------------------------------- */
-    /*                                Global state                                */
+    /*                                    State                                   */
     /* -------------------------------------------------------------------------- */
     const state = useGlobalState();
+    const selectedTestOperation = ref(testOperations[0]);
+    const dataMonth = ref();
+    const dataYear = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */
@@ -76,6 +80,15 @@ export default defineComponent({
     const progressSlideDownRef = ref();
     let progressSlideDownEnterAnimation: anime.AnimeInstance;
     let progressSlideDownLeaveAnimation: anime.AnimeInstance;
+
+    const errorLabelYearRef = ref();
+    let errorLabelYearAnimation: anime.AnimeInstance;
+
+    const errorLabelMonthRef = ref();
+    let errorLabelMonthAnimation: anime.AnimeInstance;
+
+    const dataYearInputRef = ref();
+    const dataMonthInputRef = ref();
 
     /* -------------------------------------------------------------------------- */
     /*                         Mounting and watchers setup                        */
@@ -141,6 +154,97 @@ export default defineComponent({
         autoplay: false,
       });
 
+      errorLabelMonthAnimation = anime({
+        targets: errorLabelMonthRef.value,
+        autoplay: false,
+        keyframes: [
+          {
+            translateX: 0,
+            color: "rgb(239, 68, 68)",
+            duration: 0,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -6,
+            rotateY: -9,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 5,
+            rotateY: 7,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -3,
+            rotateY: -5,
+            duration: 130,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 2,
+            rotateY: 3,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 0,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+        ],
+      });
+
+      errorLabelYearAnimation = anime({
+        targets: errorLabelYearRef.value,
+        autoplay: false,
+        keyframes: [
+          {
+            translateX: 0,
+            color: "rgb(239, 68, 68)",
+            duration: 0,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -6,
+            rotateY: -9,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 5,
+            rotateY: 7,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: -3,
+            rotateY: -5,
+            duration: 130,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 2,
+            rotateY: 3,
+            duration: 120,
+            easing: "easeInOutQuad",
+          },
+          {
+            translateX: 0,
+            duration: 65,
+            easing: "easeInOutQuad",
+          },
+        ],
+      });
+
+      // SelectedTestOperation init
+      testOperations.forEach((operation) => {
+        if (operation.name == props.module?.CurrentTask) {
+          selectedTestOperation.value = operation;
+        }
+      });
+
       // First draw/mount tweaks
       switch (props.module?.Status) {
         case 1:
@@ -194,6 +298,99 @@ export default defineComponent({
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
     function CrawlButtonClicked() {
+      // Do nothing if Builder is in the inProgress state
+      if (props.module?.Status == 1) {
+        return;
+      }
+
+      let testOperation;
+      switch (selectedTestOperation.value.name) {
+        case "SmartMatch":
+          testOperation = "OtoN";
+          break;
+        case "MASS O":
+          testOperation = "Parascript";
+          break;
+        case "RoyalMail":
+          testOperation = "Parascript";
+          break;
+
+        default:
+          testOperation = "None";
+          break;
+      }
+
+      // Check input for dataMonth
+      if (!IsDataMonthValid()) {
+        errorLabelMonthRef.value.style.opacity = "0.9999";
+        errorLabelMonthAnimation.play();
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        dataMonthInputRef.value.className =
+          dataMonthInputRef.value.className.replace(toRemove1, "");
+        dataMonthInputRef.value.className =
+          dataMonthInputRef.value.className.replace(toRemove2, "");
+
+        // Add wanted tw styles
+        dataMonthInputRef.value.className += " ring-red-300";
+      } else {
+        errorLabelMonthRef.value.style.opacity = "0";
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        dataMonthInputRef.value.className =
+          dataMonthInputRef.value.className.replace(toRemove1, "");
+        dataMonthInputRef.value.className =
+          dataMonthInputRef.value.className.replace(toRemove2, "");
+
+        // Add wanted tw styles
+        dataMonthInputRef.value.className += " ring-gray-300";
+      }
+
+      // Check input for dataYear
+      if (!IsDataYearValid()) {
+        errorLabelYearRef.value.style.opacity = "0.9999";
+        errorLabelYearAnimation.play();
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        dataYearInputRef.value.className =
+          dataYearInputRef.value.className.replace(toRemove1, "");
+        dataYearInputRef.value.className =
+          dataYearInputRef.value.className.replace(toRemove2, "");
+
+        // Add wanted tw styles
+        dataYearInputRef.value.className += " ring-red-300";
+      } else {
+        errorLabelYearRef.value.style.opacity = "0";
+
+        // Remove old tw styles
+        const toRemove1 = new RegExp("ring-gray-300", "g");
+        const toRemove2 = new RegExp("ring-red-300", "g");
+        dataYearInputRef.value.className =
+          dataYearInputRef.value.className.replace(toRemove1, "");
+        dataYearInputRef.value.className =
+          dataYearInputRef.value.className.replace(toRemove2, "");
+
+        // Add wanted tw styles
+        dataYearInputRef.value.className += " ring-gray-300";
+      }
+
+      // Return down here so that both animations can play if nessasary
+      if (!IsDataMonthValid() || !IsDataYearValid()) {
+        return;
+      }
+
+      // Combine data month + year
+      if (dataMonth.value.length == 1) {
+        dataMonth.value = "0" + dataMonth.value;
+      }
+      const dataYearMonth = dataYear.value + dataMonth.value;
+
       // PROD
       // Define the request options
       const requestOptions = {
@@ -203,6 +400,8 @@ export default defineComponent({
         },
         body: JSON.stringify({
           moduleCommand: "start",
+          testDirectoryType: testOperation,
+          dataYearMonth: dataYearMonth,
         }),
       };
 
@@ -217,11 +416,6 @@ export default defineComponent({
     }
 
     function CancelButtonClicked() {
-      // Do nothing if Builder is not in the in progress state
-      if (props.module?.Status != 1) {
-        return;
-      }
-
       const requestOptions = {
         method: "POST",
         headers: {
@@ -240,6 +434,46 @@ export default defineComponent({
           }
         }
       );
+    }
+
+    function IsDataMonthValid() {
+      if (
+        dataMonth.value == null ||
+        dataMonth.value == undefined ||
+        dataMonth.value == ""
+      ) {
+        return false;
+      }
+
+      //   Remove all punctuation, spaces, special characters
+      dataMonth.value = dataMonth.value
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .replace(/0/g, "");
+
+      if (dataMonth.value.length > 2 || dataMonth.value.length < 1) {
+        return false;
+      }
+
+      return true;
+    }
+
+    function IsDataYearValid() {
+      if (
+        dataYear.value == null ||
+        dataYear.value == undefined ||
+        dataYear.value == ""
+      ) {
+        return false;
+      }
+
+      //   Remove all punctuation, spaces, special characters
+      dataYear.value = dataYear.value.replace(/[^a-zA-Z0-9]/g, "");
+
+      if (dataYear.value.length != 4) {
+        return false;
+      }
+
+      return true;
     }
 
     /* -------------------------------------------------------------------------- */
@@ -457,9 +691,7 @@ export default defineComponent({
       return (
         <RadioGroup
           //@ts-ignore
-          // disabled={
-          //   props.buildermodule?.Status != 0 || !directoriesAvailable.value
-          // }
+          disabled={props.module?.Status != 0}
           class="mt-6 col-span-3"
           v-model={selectedTestOperation.value}
         >
@@ -566,19 +798,17 @@ export default defineComponent({
             </div>
 
             <input
-              // ref={pafKeyInputRef}
+              ref={dataMonthInputRef}
               //@ts-ignore
-              // disabled={
-              //   props.buildermodule?.Status != 0 || !directoriesAvailable.value
-              // }
-              // v-model={pafKey.value}
+              disabled={props.module?.Status != 0}
+              v-model={dataMonth.value}
               type="text"
               class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
               placeholder="XX"
             />
           </div>
           <div
-            // ref={errorLabelRef}
+            ref={errorLabelMonthRef}
             class="my-1 text-red-500 opacity-0 flex justify-center"
           >
             Invalid DataMonth
@@ -596,19 +826,17 @@ export default defineComponent({
             </div>
 
             <input
-              // ref={pafKeyInputRef}
+              ref={dataYearInputRef}
               //@ts-ignore
-              // disabled={
-              //   props.buildermodule?.Status != 0 || !directoriesAvailable.value
-              // }
-              // v-model={pafKey.value}
+              disabled={props.module?.Status != 0}
+              v-model={dataYear.value}
               type="text"
               class="mt-2 w-full h-10 text-xs text-center rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
               placeholder="XXXX"
             />
           </div>
           <div
-            // ref={errorLabelRef}
+            ref={errorLabelYearRef}
             class="my-1 text-red-500 opacity-0 flex justify-center"
           >
             Invalid DataYear
