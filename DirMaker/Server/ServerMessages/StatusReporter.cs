@@ -19,8 +19,7 @@ public class StatusReporter
     private readonly DirTester dirTester;
 
     private readonly Dictionary<string, BaseModule> modules = [];
-
-    private Dictionary<string, ModuleReporter> jsonObject = new() { { "SmartMatch", new() }, { "Parascript", new() }, { "RoyalMail", new() } };
+    private readonly Dictionary<string, ModuleReporter> jsonObject = new() { { "SmartMatch", new() { Crawler = new(), Builder = new() } }, { "Parascript", new() { Crawler = new(), Builder = new() } }, { "RoyalMail", new() { Crawler = new(), Builder = new() } }, { "Tester", new() { Tester = new() } } };
 
     public StatusReporter(DatabaseContext context, SmartMatchCrawler smartMatchCrawler, SmartMatchBuilder smartMatchBuilder, ParascriptCrawler parascriptCrawler, ParascriptBuilder parascriptBuilder, RoyalMailCrawler royalMailCrawler, RoyalMailBuilder royalMailBuilder, DirTester dirTester)
     {
@@ -179,6 +178,11 @@ public class StatusReporter
         jsonObject["RoyalMail"].Builder.Progress = royalMailBuilder.Progress;
         jsonObject["RoyalMail"].Builder.Message = royalMailBuilder.Message;
         jsonObject["RoyalMail"].Builder.CurrentTask = royalMailBuilder.CurrentTask;
+
+        jsonObject["Tester"].Tester.Status = dirTester.Status;
+        jsonObject["Tester"].Tester.Progress = dirTester.Progress;
+        jsonObject["Tester"].Tester.Message = dirTester.Message;
+        jsonObject["Tester"].Tester.CurrentTask = dirTester.CurrentTask;
 
         return JsonSerializer.Serialize(jsonObject);
     }
