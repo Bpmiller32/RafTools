@@ -83,10 +83,13 @@ DatabaseContext context = app.Services.GetService<DatabaseContext>();
 context.Database.EnsureCreated();
 
 // Register server address
+app.Urls.Add("http://localhost:5000");
 IConfiguration config = app.Services.GetService<IConfiguration>();
 string serverAddress = config.GetValue<string>("ServerAddress");
-app.Urls.Add("http://localhost:5000");
-app.Urls.Add(serverAddress);
+if (!string.IsNullOrEmpty(serverAddress))
+{
+    app.Urls.Add(serverAddress);
+}
 
 // Register Swagger
 app.UseSwagger();
@@ -254,6 +257,10 @@ app.MapPost("/dirtester", (DirTester dirTester, TesterMessage serverMessage) =>
     {
         case "start":
             Task.Run(() => dirTester.Start(serverMessage.TestDirectoryType, serverMessage.DataYearMonth));
+            return Results.Ok();
+
+        case "stop":
+            dirTester.Status = ModuleStatus.Ready;
             return Results.Ok();
 
         default:

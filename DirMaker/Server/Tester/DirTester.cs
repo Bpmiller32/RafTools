@@ -30,7 +30,7 @@ public class DirTester : BaseModule
             switch (directoryType)
             {
                 case "Zip4":
-                    // CurrentTask = "Zip4";
+                    CurrentTask = "Zip4";
 
                     Message = "Checking disc contents";
                     Progress = 50;
@@ -38,7 +38,7 @@ public class DirTester : BaseModule
 
                     break;
                 case "SmartMatch":
-                    // CurrentTask = "Cycle-O";
+                    CurrentTask = "Cycle-O";
 
                     Message = "Checking disc contents";
                     Progress = 15;
@@ -68,7 +68,7 @@ public class DirTester : BaseModule
                     await InjectImages(directoryType);
                     break;
                 case "Parascript":
-                    // CurrentTask = "Parascript";
+                    CurrentTask = "Parascript";
 
                     Message = "Checking disc contents";
                     Progress = 25;
@@ -80,10 +80,10 @@ public class DirTester : BaseModule
 
                     Message = "Injecting test images";
                     Progress = 75;
-                    // await InjectImages(directoryName);
+                    await InjectImages(directoryType);
                     break;
                 case "RoyalMail":
-                    // CurrentTask = "RoyalMail";
+                    CurrentTask = "RoyalMail";
 
                     Message = "Checking disc contents";
                     Progress = 15;
@@ -114,7 +114,7 @@ public class DirTester : BaseModule
                     break;
             }
 
-            Message = "";
+            Message = "Completed testing";
             Progress = 100;
             logger.LogInformation("Test Complete");
             Status = ModuleStatus.Ready;
@@ -122,6 +122,7 @@ public class DirTester : BaseModule
         catch (Exception e)
         {
             Status = ModuleStatus.Error;
+            Message = $"{e.Message}";
             logger.LogError($"{e.Message}");
         }
     }
@@ -129,8 +130,9 @@ public class DirTester : BaseModule
     private async Task InjectImages(string directoryName)
     {
         // AP warmup....
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        await Task.Delay(TimeSpan.FromSeconds(10));
         await Utils.StartService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
 
         // Set config with ControlPort, wait for Recmodule to initialize after setting
         ControlPort controlPort = new(logger, "127.0.0.1", 1069);
@@ -346,6 +348,8 @@ public class DirTester : BaseModule
     {
         // Stop RAFMaster
         await Utils.StopService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
 
         // Extract zipped files to temp folder (not all files are copied from DVD)
         string tempFolder = Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "SmartMatch");
@@ -383,13 +387,17 @@ public class DirTester : BaseModule
         }
 
         // Start RAFMaster
+        await Task.Delay(TimeSpan.FromSeconds(10));
         await Utils.StartService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
+
     }
 
     private async Task ParascriptInstallDirectory()
     {
         // Stop RAFMaster
         await Utils.StopService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
 
         // Extract zipped files to temp folder (not all files are copied from DVD)
         string tempFolder = Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "Parascript");
@@ -427,18 +435,23 @@ public class DirTester : BaseModule
         }
 
         // Start RAFMaster
+        await Task.Delay(TimeSpan.FromSeconds(10));
         await Utils.StartService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
     }
 
     private async Task RoyalMailInstallDirectory()
     {
         // Stop RAFMaster
         await Utils.StopService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
 
         Utils.CopyFiles(Settings.DiscDrivePath, @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i");
 
         // Start RAFMaster
+        await Task.Delay(TimeSpan.FromSeconds(10));
         await Utils.StartService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
     }
 
     private async Task AddSmartMatchLicense(string dataYearMonth)
@@ -480,6 +493,7 @@ public class DirTester : BaseModule
 
         // Overwrite old LCS, start RAFArgosyMaster
         await Utils.StopService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
         File.Copy(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "argosymonthly.elcs"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match\Zip4\argosymonthly.elcs", true);
     }
 
@@ -523,6 +537,7 @@ public class DirTester : BaseModule
 
         // Overwrite old LCS, start RAFArgosyMaster
         await Utils.StopService("RAFArgosyMaster");
+        await Task.Delay(TimeSpan.FromSeconds(10));
         File.Copy(Path.Combine(Directory.GetCurrentDirectory(), "TestDecks", "TesterTemp", "UK_RM_CM.elcs"), @"C:\ProgramData\RAF\ArgosyPost\Sync\Directories\RAF Smart Match-i\UK_RM_CM\UK_RM_CM.elcs", true);
     }
 }
