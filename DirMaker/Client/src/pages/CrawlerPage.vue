@@ -7,7 +7,9 @@ const state = useGlobalState();
 </script>
 
 <template>
-  <div v-if="state.beConnection.value.data == null">loading....</div>
+  <div v-if="state.beConnection.value.data == null" class="ml-6 mt-6">
+    Loading....
+  </div>
   <div v-else class="ml-6 mt-6 flex gap-10 flex-wrap">
     <div>
       <CrawlerCard

@@ -62,6 +62,7 @@ export default defineComponent({
     const selectedTestOperation = ref(testOperations[0]);
     const dataMonth = ref();
     const dataYear = ref();
+    const stopRadioChangeAnimation = ref(false);
 
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */
@@ -252,16 +253,25 @@ export default defineComponent({
           downloadButtonRef.value.style.width = "6rem";
           downloadButtonRef.value.style.backgroundSize = "0% 0%";
           cancelButtonRef.value.style.opacity = "0";
+          progressSlideDownRef.value.style.height = "5.5rem";
           break;
         case 2:
           downloadButtonDrainAnimation.play();
           refreshIconAnimation.pause();
+          progressSlideDownRef.value.style.height = "5.5rem";
           break;
 
         default:
-          refreshIconAnimation.pause();
-          progressSlideDownRef.value.style.height = "0rem";
+          if (
+            props.module?.CurrentTask.length &&
+            props.module.CurrentTask.length > 0
+          ) {
+            progressSlideDownRef.value.style.height = "5.5rem";
+          } else {
+            progressSlideDownRef.value.style.height = "0rem";
+          }
           cancelButtonRef.value.style.opacity = "0";
+          refreshIconAnimation.pause();
           break;
       }
     });
@@ -274,7 +284,6 @@ export default defineComponent({
           case 1:
             refreshIconAnimation.play();
             downloadButtonDrainAnimation.play();
-            cancelButtonLeaveAnimation.play();
             progressSlideDownEnterAnimation.play();
             break;
           case 2:
@@ -288,7 +297,6 @@ export default defineComponent({
             refreshIconAnimation.pause();
             downloadButtonFillAnimation.play();
             cancelButtonLeaveAnimation.play();
-            progressSlideDownLeaveAnimation.play();
             break;
         }
       }
@@ -299,20 +307,23 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     function CrawlButtonClicked() {
       // Do nothing if Builder is in the inProgress state
-      if (props.module?.Status == 1) {
+      if (props.module?.Status == 1 || props.module?.Status == 2) {
         return;
       }
+      // Set radio select state for slidedown animation
+      stopRadioChangeAnimation.value = false;
 
+      // Set test operation
       let testOperation;
       switch (selectedTestOperation.value.name) {
         case "SmartMatch":
-          testOperation = "OtoN";
+          testOperation = "SmartMatch";
           break;
-        case "MASS O":
+        case "Parascript":
           testOperation = "Parascript";
           break;
         case "RoyalMail":
-          testOperation = "Parascript";
+          testOperation = "RoyalMail";
           break;
 
         default:
@@ -434,6 +445,20 @@ export default defineComponent({
           }
         }
       );
+    }
+
+    function RadioGroupClicked() {
+      // Return if not in a ready state
+      if (
+        props.module?.Status != 0 ||
+        props.module.CurrentTask.length <= 0 ||
+        stopRadioChangeAnimation.value == true
+      ) {
+        return;
+      }
+
+      stopRadioChangeAnimation.value = true;
+      progressSlideDownLeaveAnimation.play();
     }
 
     function IsDataMonthValid() {
@@ -566,21 +591,21 @@ export default defineComponent({
         case "SmartMatch":
           return (
             <img
-              class="justify-self-end w-20 h-20 border rounded-full"
+              class="col-span-2 justify-self-end w-20 h-20 border rounded-full"
               src={Tower1}
             />
           );
         case "Parascript":
           return (
             <img
-              class="justify-self-end w-20 h-20 border rounded-full"
+              class="col-span-2 justify-self-end w-20 h-20 border rounded-full"
               src={Tower2}
             />
           );
         case "RoyalMail":
           return (
             <img
-              class="justify-self-end w-20 h-20 border rounded-full"
+              class="col-span-2 justify-self-end w-20 h-20 border rounded-full"
               src={Tower3}
             />
           );
@@ -588,7 +613,7 @@ export default defineComponent({
         default:
           return (
             <img
-              class="justify-self-end w-20 h-20 border rounded-full"
+              class="col-span-2 justify-self-end w-20 h-20 border rounded-full"
               src={TowerBlank}
             />
           );
@@ -692,8 +717,9 @@ export default defineComponent({
         <RadioGroup
           //@ts-ignore
           disabled={props.module?.Status != 0}
-          class="mt-6 col-span-3"
+          class="mt-6 col-span-8"
           v-model={selectedTestOperation.value}
+          //@ts-ignore
         >
           <RadioGroupLabel class="mt-2 text-sm font-medium text-gray-900">
             Select Test Operation
@@ -711,6 +737,7 @@ export default defineComponent({
                       "relative flex rounded-lg border bg-white p-4 shadow-sm focus:outline-none":
                         true,
                     }}
+                    onClick={RadioGroupClicked}
                   >
                     <div class="flex flex-1">
                       <span class="flex flex-col">
@@ -850,17 +877,19 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     return () => (
       <div class="overflow-hidden select-none min-w-[23rem] max-w-[23rem] min-h-[12rem] bg-white rounded-lg shadow divide-y divide-gray-200">
-        <div class="grid grid-cols-3 grid-rows-1 items-center px-6 pt-6 pb-1">
-          <div class="col-span-2 flex items-center">
-            <p class="text-gray-900 text-sm font-medium py-2">
-              Directory Tester
-            </p>
+        <div class="grid grid-cols-8 grid-rows-1 items-center px-6 pt-6 pb-1">
+          <div class="col-span-6 flex items-center">
+            <div>
+              <p class="text-gray-900 text-sm font-medium py-2">
+                Directory Tester
+              </p>
+            </div>
             {StatusLabel()}
             {StatusIcon()}
           </div>
           {DirectoryImage()}
           {OperationSelectRadio()}
-          <div class="col-span-3 flex justify-between">
+          <div class="col-span-8 flex justify-between">
             {DataMonthInput()}
             {DataYearInput()}
           </div>
