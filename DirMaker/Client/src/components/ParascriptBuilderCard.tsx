@@ -12,7 +12,6 @@ import {
   StatusOnlineIcon,
   ArrowCircleDownIcon,
   ExclamationCircleIcon,
-  RefreshIcon,
   SelectorIcon,
   CheckIcon,
   XCircleIcon,
@@ -28,6 +27,7 @@ import {
 import ListDirectory from "../interfaces/ListDirectory";
 import ListboxOptionProperties from "../interfaces/ListboxOptionProperties";
 import { useGlobalState } from "../store";
+import BuildButtonSubcomponentTest from "../subcomponents/BuildButtonSubcomponentTest";
 
 export default defineComponent({
   props: {
@@ -98,13 +98,6 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     /*                            Animation refs setup                            */
     /* -------------------------------------------------------------------------- */
-    const refreshIconRef = ref();
-    let refreshIconAnimation: anime.AnimeInstance;
-
-    const downloadButtonRef = ref();
-    let downloadButtonFillAnimation: anime.AnimeInstance;
-    let downloadButtonDrainAnimation: anime.AnimeInstance;
-
     const cancelButtonRef = ref();
     let cancelButtonEnterAnimation: anime.AnimeInstance;
     let cancelButtonLeaveAnimation: anime.AnimeInstance;
@@ -118,34 +111,6 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     onMounted(() => {
       // Animation
-      refreshIconAnimation = anime({
-        targets: refreshIconRef.value,
-        rotate: "-=2turn",
-        easing: "easeInOutSine",
-        loop: true,
-        autoplay: false,
-      });
-
-      downloadButtonFillAnimation = anime({
-        targets: downloadButtonRef.value,
-        duration: 300,
-        backgroundSize: ["0% 0%", "150% 150%"],
-        width: ["7.5rem", "8.75rem"],
-        marginLeft: ["4.5rem", "3.75rem"],
-        easing: "easeInOutQuad",
-        autoplay: false,
-      });
-
-      downloadButtonDrainAnimation = anime({
-        targets: downloadButtonRef.value,
-        duration: 300,
-        backgroundSize: ["150% 150%", "0% 0%"],
-        width: ["8.75rem", "7.5rem"],
-        marginLeft: ["3.75rem", "4.5rem"],
-        easing: "easeInOutQuad",
-        autoplay: false,
-      });
-
       cancelButtonEnterAnimation = anime({
         targets: cancelButtonRef.value,
         duration: 500,
@@ -199,19 +164,12 @@ export default defineComponent({
       // First draw/mount tweaks
       switch (props.buildermodule?.Status) {
         case 1:
-          refreshIconAnimation.play();
-          downloadButtonRef.value.style.width = "7.5rem";
-          downloadButtonRef.value.style.marginLeft = "4.5rem";
-          downloadButtonRef.value.style.backgroundSize = "0% 0%";
           break;
         case 2:
-          downloadButtonDrainAnimation.play();
-          refreshIconAnimation.pause();
           cancelButtonRef.value.style.opacity = "0";
           break;
 
         default:
-          refreshIconAnimation.pause();
           cancelButtonRef.value.style.opacity = "0";
           progressSlideDownRef.value.style.height = "0rem";
           break;
@@ -236,21 +194,15 @@ export default defineComponent({
       () => {
         switch (props.buildermodule?.Status) {
           case 1:
-            refreshIconAnimation.play();
-            downloadButtonDrainAnimation.play();
             cancelButtonEnterAnimation.play();
             progressSlideDownEnterAnimation.play();
             break;
           case 2:
-            refreshIconAnimation.pause();
-            downloadButtonDrainAnimation.play();
             cancelButtonLeaveAnimation.play();
             progressSlideDownEnterAnimation.play();
             break;
 
           default:
-            refreshIconAnimation.pause();
-            downloadButtonFillAnimation.play();
             cancelButtonLeaveAnimation.play();
             progressSlideDownLeaveAnimation.play();
             break;
@@ -511,50 +463,6 @@ export default defineComponent({
       );
     }
 
-    function BuildButton() {
-      return (
-        <button
-          ref={downloadButtonRef}
-          onClick={BuildButtonClicked}
-          type="button"
-          disabled={props.buildermodule?.Status == 0 ? false : true}
-          class={{
-            "cursor-not-allowed ": props.buildermodule?.Status != 0,
-            "col-span-5 ml-14 my-6 flex items-center px-2 py-2 max-h-8 bg-gradient-to-r bg-gray-500 from-indigo-600 to-indigo-600 hover:from-indigo-700 hover:to-indigo-700 bg-no-repeat bg-center border border-transparent text-sm text-white leading-4 font-medium rounded-md focus:outline-none":
-              true,
-          }}
-        >
-          <RefreshIcon
-            ref={refreshIconRef}
-            class="shrink-0 h-5 w-5 text-white z-10"
-          />
-          <TransitionGroup
-            enterFromClass="opacity-0"
-            enterToClass="opacity-100"
-            enterActiveClass="duration-[1500ms]"
-          >
-            {() => {
-              switch (props.buildermodule?.Status) {
-                case 0:
-                  return (
-                    <p key="0" class="ml-1 shrink-0">
-                      Build Directory
-                    </p>
-                  );
-
-                default:
-                  return (
-                    <p key="default" class="ml-1">
-                      Building ....
-                    </p>
-                  );
-              }
-            }}
-          </TransitionGroup>
-        </button>
-      );
-    }
-
     function CancelButton() {
       return (
         <XCircleIcon
@@ -635,7 +543,12 @@ export default defineComponent({
         <div class="flex justify-center">
           <div>
             <div class="grid grid-cols-6 grid-rows-1 items-center">
-              {BuildButton()}
+              {/* {BuildButton()} */}
+              <div />
+              <BuildButtonSubcomponentTest
+                buttonClicked={BuildButtonClicked}
+                moduleStatus={Number(props.buildermodule!.Status)}
+              />
               {CancelButton()}
             </div>
             {ProgressSlideDown()}

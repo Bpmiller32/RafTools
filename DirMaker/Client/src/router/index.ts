@@ -25,6 +25,10 @@ const router = createRouter({
       component: TesterPage,
       meta: { enterFrom: null, enterTo: null, leaveFrom: null, leaveTo: null },
     },
+    {
+      path: "/:pathMatch(.*)*",
+      redirect: "/",
+    },
   ],
 });
 
