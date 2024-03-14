@@ -28,6 +28,12 @@ public class RoyalMailBuilder : BaseModule
 
     public async Task Start(string dataYearMonth, string key, CancellationToken stoppingToken)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Builder");

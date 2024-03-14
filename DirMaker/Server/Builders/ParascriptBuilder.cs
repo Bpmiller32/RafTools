@@ -25,6 +25,12 @@ public class ParascriptBuilder : BaseModule
 
     public async Task Start(string dataYearMonth, CancellationToken stoppingToken)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Builder");

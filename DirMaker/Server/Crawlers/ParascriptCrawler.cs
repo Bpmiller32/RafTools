@@ -23,6 +23,11 @@ public class ParascriptCrawler : BaseModule
 
     public async Task Start(CancellationToken stoppingToken)
     {
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Crawler");
