@@ -23,6 +23,12 @@ public class SmartMatchBuilder : BaseModule
 
     public async Task Start(string cycle, string dataYearMonth, CancellationTokenSource stoppingTokenSource, string expireDays)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         logger.LogInformation("Starting Builder");
         Status = ModuleStatus.InProgress;
         Message = "Starting Builder";

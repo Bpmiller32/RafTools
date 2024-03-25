@@ -25,6 +25,12 @@ public class RoyalMailCrawler : BaseModule
 
     public async Task Start(CancellationToken stoppingToken)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Crawler");

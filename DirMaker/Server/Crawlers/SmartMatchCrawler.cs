@@ -23,6 +23,12 @@ public class SmartMatchCrawler : BaseModule
 
     public async Task Start(CancellationToken stoppingToken)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status != ModuleStatus.Ready)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Crawler");
@@ -276,7 +282,7 @@ public class SmartMatchCrawler : BaseModule
                 logger.LogInformation($"Currently downloading: {file.FileName} {file.DataMonth}/{file.DataYear} {file.Cycle}");
                 await WaitForDownload(file, stoppingToken);
 
-                if (file.FileName == "zip4natl.tar" || file.FileName == "zipmovenatl.tar")
+                if (file.FileName.Contains("zip4natl") || file.FileName.Contains("zipmovenatl"))
                 {
                     // Since Zip data is the same for N and O, make sure in both folders
                     Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, "Cycle-O"));

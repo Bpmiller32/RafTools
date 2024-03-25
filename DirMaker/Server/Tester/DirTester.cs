@@ -19,6 +19,12 @@ public class DirTester : BaseModule
 
     public async Task Start(string directoryType, string dataYearMonth)
     {
+        // Avoids lag from client click to server, likely unnessasary.... 
+        if (Status == ModuleStatus.InProgress)
+        {
+            return;
+        }
+
         try
         {
             logger.LogInformation("Starting Tester");

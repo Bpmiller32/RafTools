@@ -2,10 +2,20 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>false</SelfContained>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Update="PuppeteerSharp.dll">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+    <Content Update="PuppeteerExtraSharp.dll">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
+  </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
