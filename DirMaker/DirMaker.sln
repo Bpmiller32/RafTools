@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{EEC59F83-2C8D-4FCA-960E-DE7514A464C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MockServer", "MockServer\MockServer.csproj", "{F76F4A6C-64A5-4169-BD43-ADA4B16FC089}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestServer", "TestServer\TestServer.csproj", "{F76F4A6C-64A5-4169-BD43-ADA4B16FC089}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoCrawl", "AutoCrawl\AutoCrawl.csproj", "{790ECE53-C84C-4FD2-AFB5-EE01ED319CC0}"
 EndProject

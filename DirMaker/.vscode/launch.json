@@ -14,15 +14,15 @@
             "stopAtEntry": false,
         },
         {
-            "name": ".NET Core Launch (web mock)",
+            "name": ".NET Core Launch (web test)",
             "logging": {"moduleLoad": false},
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "buildMock",
+            "preLaunchTask": "buildTest",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/MockServer/bin/Debug/net8.0/MockServer.dll",
+            "program": "${workspaceFolder}/TestServer/bin/Debug/net8.0/TestServer.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/MockServer",
+            "cwd": "${workspaceFolder}/TestServer",
             "stopAtEntry": false,
         },
     ]
