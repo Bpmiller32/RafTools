@@ -1,3 +1,58 @@
+# ---------------------------------------------------------------------------- #
+#                              Configure days here                             #
+# ---------------------------------------------------------------------------- #
+
+# Add or modify holidays here
+$holidays = @(
+    "2024-02-19", 
+    "2024-02-20",
+
+    "2024-05-27",
+    
+    "2024-07-04",
+    "2024-07-05", 
+    "2024-07-06", 
+
+    "2024-09-02", 
+    "2024-09-03", 
+
+    "2024-11-28",
+    "2024-11-29", 
+    "2024-11-30", 
+
+    "2024-12-24",
+    "2024-12-25", 
+    "2024-12-26", 
+    "2024-12-27"
+)
+
+# Add or modify vacation days here
+$vacationDays = @(
+    "2024-08-29",
+    "2024-08-30",
+
+    "2024-10-14",
+    "2024-10-15",
+    "2024-10-16",
+    "2024-10-17",
+    "2024-10-18",
+
+    "2024-10-21",
+    "2024-10-22",
+    "2024-10-23",
+    "2024-10-24",
+    "2024-10-25"
+)
+
+# Add or modify skipped days here
+$skipDays = @(
+
+)
+
+# ---------------------------------------------------------------------------- #
+#                                Function setup                                #
+# ---------------------------------------------------------------------------- #
+
 function Get-Workspace {
     param (
         $baseUrl,
@@ -66,10 +121,12 @@ function Submit-Time {
         $headers,
         $workspace,
         $projectsList,
-        $holidays
+        $holidays,
+        $vacationDays,
+        $skipDays
     )
 
-    # Define parameters
+    # Define time parameters
     $today = (Get-Date).ToString('yyyy-MM-dd') # Date in YYYY-MM-DD format
     $start = "15:00:00"   # Start time in HH:MM:SS format
     $end = "23:00:00"     # End time in HH:MM:SS format
@@ -77,13 +134,22 @@ function Submit-Time {
     $projectToSubmit = $null
 
     # Check if today should be submitted as a holiday
-    foreach ($holiday in $holdays) {
+    foreach ($holiday in $holidays) {
         if ($today -eq $holiday) {
             $projectToSubmit = $projectsList.holiday
             break
         }
     }
 
+    # Check if today should be submitted as DTO
+    foreach ($vacationDay in $vacationDays) {
+        if ($today -eq $vacationDay) {
+            $projectToSubmit = $projectsList.dto
+            break
+        }
+    }
+
+    # If not a holiday or DTO, submit time under Techservices/Admin
     if ($null -eq $projectToSubmit) {
         $projectToSubmit = $projectsList.techservices
     }
@@ -93,6 +159,14 @@ function Submit-Time {
         Write-Host "Weekend, no time entered today"
         return
     }
+
+    # Check if it is a day to not log time generally
+    foreach ($skipDay in $skipDays) {
+        if ($today -eq $skipDay) {
+            Write-Host "For whatever reason, not logging time today"
+            return
+        }
+    }    
 
     # Construct time entry payload
     $timeEntry = @{
@@ -117,6 +191,9 @@ function Submit-Time {
     }
 }
 
+# ---------------------------------------------------------------------------- #
+#                                     Main                                     #
+# ---------------------------------------------------------------------------- #
 
 # Define Clockify API endpoints
 $baseUrl = "https://api.clockify.me/api/v1"
@@ -125,30 +202,6 @@ $headers = @{
     "X-Api-Key"    = $apiKey
     "Content-Type" = "application/json"
 }
-
-$holidays = @(
-    "2024-02-19", 
-    "2024-02-20",
-
-    "2024-05-27",
-    "2024-05-28", 
-    
-    "2024-07-04",
-    "2024-07-05", 
-    "2024-07-06", 
-
-    "2024-09-02", 
-    "2024-09-03", 
-
-    "2024-11-28",
-    "2024-11-29", 
-    "2024-11-30", 
-
-    "2024-12-24",
-    "2024-12-25", 
-    "2024-12-26", 
-    "2024-12-27"
-)
 
 $rafWorkspace = Get-Workspace -baseUrl $baseUrl -headers $headers
 if ($null -eq $rafWorkspace) {
@@ -162,4 +215,4 @@ if (($null -eq $projectsList.techservices) -or ($null -eq $projectsList.holiday)
     return
 }
 
-Submit-Time -baseUrl $baseUrl -headers $headers -workspace $rafWorkspace -projectsList $projectsList -holidays $holdays
+Submit-Time -baseUrl $baseUrl -headers $headers -workspace $rafWorkspace -projectsList $projectsList -holidays $holidays -vacationDays $vacationDays -skipDays $skipDays
