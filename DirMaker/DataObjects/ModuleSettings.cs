@@ -51,8 +51,8 @@ public class ModuleSettings
         // Dongle lists checked out from Subversion
         if (string.IsNullOrEmpty(config.GetValue<string>("DongleListPath")))
         {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "DongleListPath"));
-            DongleListPath = Path.Combine(Directory.GetCurrentDirectory(), "DongleListPath");
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "DongleLists"));
+            DongleListPath = Path.Combine(Directory.GetCurrentDirectory(), "DongleLists");
         }
         else
         {

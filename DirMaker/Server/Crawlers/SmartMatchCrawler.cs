@@ -233,7 +233,8 @@ public class SmartMatchCrawler : BaseModule
         {
             // Ensure there is a folder to land in (this will punch through recursively btw, Downloads gets created as well if does not exist)
             Directory.CreateDirectory(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle));
-            Utils.Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle), stoppingToken);
+            // Don't cleaup the folder, if some files appear on different days/times then they get overridden
+            // Utils.Cleanup(Path.Combine(Settings.AddressDataPath, file.DataYearMonth, file.Cycle), stoppingToken);
         }
 
         // Download local chromium binary to launch browser
