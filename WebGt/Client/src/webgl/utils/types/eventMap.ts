@@ -5,6 +5,8 @@ type EventMap = {
   resize: [];
   // resourceLoader
   ready: [];
+  // create new croppingBoxes
+  newCroppingBox: [];
 };
 
 // Weird default export for types....

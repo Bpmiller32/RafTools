@@ -2,14 +2,14 @@
 /*                    Used to handle keyboard input events                    */
 /* -------------------------------------------------------------------------- */
 
+import * as THREE from "three";
+import Experience from "../experience";
 import Key from "./types/key";
+import EventEmitter from "./eventEmitter";
+import EventMap from "./types/eventMap";
 
-export default class Input {
-  public isLeftKeyPressed: boolean;
-  public isRightKeyPressed: boolean;
-  public isUpKeyPressed: boolean;
-  public isDownKeyPressed: boolean;
-  public isSpacebarPressed: boolean;
+export default class Input extends EventEmitter<EventMap> {
+  private experience: Experience;
 
   public isWKeyPressed: boolean;
   public isAKeyPressed: boolean;
@@ -17,13 +17,21 @@ export default class Input {
   public isDKeyPressed: boolean;
 
   public keys: Key[];
+  public cameraTargetPosition: THREE.Vector3;
+  public clickStartPoint: THREE.Vector3;
+  public clickEndPoint: THREE.Vector3;
+  public interpolationSmoothness: number;
+
+  private isDraggingLeftClick: boolean;
+  private isDraggingRightClick: boolean;
+  private previousMousePosition: THREE.Vector2;
+  private dragSensitivity: number;
+  private scrollSensitivity: number;
 
   constructor() {
-    this.isLeftKeyPressed = false;
-    this.isRightKeyPressed = false;
-    this.isUpKeyPressed = false;
-    this.isDownKeyPressed = false;
-    this.isSpacebarPressed = false;
+    super();
+
+    this.experience = Experience.getInstance();
 
     this.isWKeyPressed = false;
     this.isAKeyPressed = false;
@@ -31,37 +39,6 @@ export default class Input {
     this.isDKeyPressed = false;
 
     this.keys = [
-      {
-        keyCode: "ArrowLeft",
-        isPressed: (eventResult: boolean) => {
-          this.isLeftKeyPressed = eventResult;
-        },
-      },
-      {
-        keyCode: "ArrowRight",
-        isPressed: (eventResult: boolean) => {
-          this.isRightKeyPressed = eventResult;
-        },
-      },
-      {
-        keyCode: "ArrowUp",
-        isPressed: (eventResult: boolean) => {
-          this.isUpKeyPressed = eventResult;
-        },
-      },
-      {
-        keyCode: "ArrowDown",
-        isPressed: (eventResult: boolean) => {
-          this.isDownKeyPressed = eventResult;
-        },
-      },
-      {
-        keyCode: "Space",
-        isPressed: (eventResult: boolean) => {
-          this.isSpacebarPressed = eventResult;
-        },
-      },
-
       // WASD
       {
         keyCode: "KeyW",
@@ -89,14 +66,28 @@ export default class Input {
       },
     ];
 
+    this.cameraTargetPosition = new THREE.Vector3();
+    this.clickStartPoint = new THREE.Vector3();
+    this.clickEndPoint = new THREE.Vector3();
+    this.interpolationSmoothness = 0.1;
+
+    this.isDraggingLeftClick = false;
+    this.isDraggingRightClick = false;
+    this.previousMousePosition = new THREE.Vector2(0, 0);
+    this.dragSensitivity = 0.01;
+    this.scrollSensitivity = 0.01;
+
     // Event listeners
+
+    // Keys
     window.addEventListener(
       "keydown",
       (event: KeyboardEvent) => {
-        this.onKeyDown(event.code, event.repeat);
+        this.onKeyDown(event.code);
       },
       false
     );
+
     window.addEventListener(
       "keyup",
       (event: KeyboardEvent) => {
@@ -104,9 +95,78 @@ export default class Input {
       },
       false
     );
+
+    // Mouse
+    window.addEventListener("mousedown", (event) => {
+      if (event.button === 0) {
+        this.isDraggingLeftClick = true;
+        this.clickStartPoint = this.getMousePosition(
+          event.clientX,
+          event.clientY
+        );
+      }
+
+      if (event.button === 2) {
+        this.isDraggingRightClick = true;
+        this.previousMousePosition.x = event.clientX;
+        this.previousMousePosition.y = event.clientY;
+      }
+    });
+
+    window.addEventListener("mouseup", (event) => {
+      if (event.button === 0 && this.isDraggingLeftClick) {
+        this.isDraggingLeftClick = false;
+        this.clickEndPoint = this.getMousePosition(
+          event.clientX,
+          event.clientY
+        );
+
+        this.emit("newCroppingBox");
+      }
+
+      if (event.button === 2) {
+        this.isDraggingRightClick = false;
+      }
+    });
+
+    window.addEventListener("mousemove", (event) => {
+      if (!this.isDraggingLeftClick && !this.isDraggingRightClick) {
+        return;
+      }
+
+      if (this.isDraggingLeftClick) {
+        this.clickEndPoint = this.getMousePosition(
+          event.clientX,
+          event.clientY
+        );
+      }
+
+      if (this.isDraggingRightClick) {
+        const deltaMove = new THREE.Vector2(
+          event.clientX - this.previousMousePosition.x,
+          event.clientY - this.previousMousePosition.y
+        );
+
+        this.cameraTargetPosition.x -= deltaMove.x * this.dragSensitivity;
+        this.cameraTargetPosition.y += deltaMove.y * this.dragSensitivity;
+
+        this.previousMousePosition.x = event.clientX;
+        this.previousMousePosition.y = event.clientY;
+      }
+    });
+
+    window.addEventListener("wheel", (event) => {
+      const delta = event.deltaY * this.scrollSensitivity;
+      this.cameraTargetPosition.z += delta;
+    });
+
+    // Disable the browser's context menu
+    window.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
   }
 
-  private onKeyDown(keyName: string, isBeingHeld: boolean) {
+  private onKeyDown(keyName: string) {
     for (const keyIndex in this.keys) {
       if (keyName == this.keys[keyIndex].keyCode) {
         this.keys[keyIndex].isPressed(true);
@@ -122,62 +182,24 @@ export default class Input {
     }
   }
 
-  // Check for double/exclusive inputs
-  public isLeft() {
-    if (this.isLeftKeyPressed && !this.isRightKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-  public isRight() {
-    if (!this.isLeftKeyPressed && this.isRightKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-  public isLeftRightCombo() {
-    if (this.isLeftKeyPressed && this.isRightKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-  public isNeitherLeftRight() {
-    if (!this.isLeftKeyPressed && !this.isRightKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-
-  public isUp() {
-    if (
-      (this.isUpKeyPressed && !this.isDownKeyPressed) ||
-      this.isSpacebarPressed
-    ) {
-      return true;
-    }
-    return false;
-  }
-  public isDown() {
-    if (!this.isUpKeyPressed && this.isDownKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-  public isUpDownCombo() {
-    if (this.isUpKeyPressed && this.isDownKeyPressed) {
-      return true;
-    }
-    return false;
-  }
-  public isNeitherUpDown() {
-    if (!this.isUpKeyPressed && !this.isDownKeyPressed) {
-      return true;
-    }
-    return false;
+  private getMousePosition(x: number, y: number) {
+    const rect = this.experience.targetElement!.getBoundingClientRect();
+    return new THREE.Vector3(
+      ((x - rect.left) / rect.width) * 2 - 1,
+      -((y - rect.top) / rect.height) * 2 + 1,
+      0.5
+    ).unproject(this.experience.camera.instance);
   }
 
   public destroy() {
     window.addEventListener("keydown", () => {});
     window.addEventListener("keyup", () => {});
+
+    window.addEventListener("mouseup", () => {});
+    window.addEventListener("mousedown", () => {});
+    window.addEventListener("mousemove", () => {});
+    window.addEventListener("wheel", () => {});
+
+    window.addEventListener("contextmenu", () => {});
   }
 }
