@@ -1,9 +1,30 @@
-﻿; Define the executable name to search for
-exeName := "ms-teams.exe" ; Replace with the executable name of the window you want to close
+﻿; Define the executable name
+exeName := "ms-teams.exe"
 
-; Check if the window associated with the executable is open
-if WinExist("ahk_exe " exeName)
-{
-    ; If the window is found, close it
-    WinClose("ahk_exe " exeName)
+; Set the title match mode
+SetTitleMatchMode(2)
+
+try {
+    ; Find the window by executable name
+    windowID := WinGetID("ahk_exe " exeName)
+
+    ; If the window is found, activate it
+    if (windowID) {
+        WinActivate(windowID)
+    } else {
+        throw Error("Window not found")
+    }
+} 
+
+; Sleep for 5 seconds
+Sleep(5000)
+
+; Attempt to close the window
+try {
+    if (windowID) {
+        WinClose(windowID)
+    } else {
+        ; If no window was found earlier, try to close any window with the same executable name
+        WinClose("ahk_exe " exeName)
+    }
 }
