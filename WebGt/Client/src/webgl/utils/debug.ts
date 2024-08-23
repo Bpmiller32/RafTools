@@ -15,7 +15,7 @@ export default class Debug {
 
     if (this.isActive) {
       // Debug gui
-      this.ui = new dat.GUI();
+      this.ui = new dat.GUI({ width: 300 });
 
       // FPS counter
       this.stats = new Stats();

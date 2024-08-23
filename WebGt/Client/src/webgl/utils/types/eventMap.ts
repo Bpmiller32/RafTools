@@ -5,8 +5,13 @@ type EventMap = {
   resize: [];
   // resourceLoader
   ready: [];
-  // create new croppingBoxes
-  newCroppingBox: [];
+  // mouse events
+  mouseDown: [];
+  mouseMove: [];
+  mouseUp: [];
+
+  stitchBoxes: [];
+  screenshotImage: [];
 };
 
 // Weird default export for types....

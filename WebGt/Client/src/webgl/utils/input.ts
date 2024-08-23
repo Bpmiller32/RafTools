@@ -15,6 +15,8 @@ export default class Input extends EventEmitter<EventMap> {
   public isAKeyPressed: boolean;
   public isSKeyPressed: boolean;
   public isDKeyPressed: boolean;
+  public isCKeyPressed: boolean;
+  public isPKeyPressed: boolean;
 
   public keys: Key[];
   public cameraTargetPosition: THREE.Vector3;
@@ -37,6 +39,9 @@ export default class Input extends EventEmitter<EventMap> {
     this.isAKeyPressed = false;
     this.isSKeyPressed = false;
     this.isDKeyPressed = false;
+
+    this.isCKeyPressed = false;
+    this.isPKeyPressed = false;
 
     this.keys = [
       // WASD
@@ -62,6 +67,23 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "KeyD",
         isPressed: (eventResult: boolean) => {
           this.isDKeyPressed = eventResult;
+        },
+      },
+
+      {
+        keyCode: "KeyC",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("stitchBoxes");
+          }
+        },
+      },
+      {
+        keyCode: "KeyP",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("screenshotImage");
+          }
         },
       },
     ];
@@ -104,6 +126,8 @@ export default class Input extends EventEmitter<EventMap> {
           event.clientX,
           event.clientY
         );
+
+        this.emit("mouseDown");
       }
 
       if (event.button === 2) {
@@ -121,10 +145,10 @@ export default class Input extends EventEmitter<EventMap> {
           event.clientY
         );
 
-        this.emit("newCroppingBox");
+        this.emit("mouseUp");
       }
 
-      if (event.button === 2) {
+      if (event.button === 2 && this.isDraggingRightClick) {
         this.isDraggingRightClick = false;
       }
     });
@@ -139,6 +163,8 @@ export default class Input extends EventEmitter<EventMap> {
           event.clientX,
           event.clientY
         );
+
+        this.emit("mouseMove");
       }
 
       if (this.isDraggingRightClick) {

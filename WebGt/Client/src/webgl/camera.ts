@@ -19,6 +19,7 @@ export default class Camera {
   private debug!: Debug;
 
   public instance!: THREE.PerspectiveCamera;
+  // public instance!: THREE.OrthographicCamera;
 
   constructor() {
     this.experience = Experience.getInstance();
@@ -49,6 +50,18 @@ export default class Camera {
       500
     );
 
+    // const aspectRatio = this.sizes.width / this.sizes.height;
+    // const frustumSize = 10; // Adjust this to control the zoom level of the orthographic camera
+
+    // this.instance = new THREE.OrthographicCamera(
+    //   (-frustumSize * aspectRatio) / 2, // left
+    //   (frustumSize * aspectRatio) / 2, // right
+    //   frustumSize / 2, // top
+    //   -frustumSize / 2, // bottom
+    //   0.1, // near
+    //   500 // far
+    // );
+
     this.scene.add(this.instance);
 
     // Set initial camera position
@@ -60,6 +73,16 @@ export default class Camera {
   public resize() {
     this.instance.aspect = this.sizes.width / this.sizes.height;
     this.instance.updateProjectionMatrix();
+
+    // const aspectRatio = this.sizes.width / this.sizes.height;
+    // const frustumSize = 10; // Use the same frustumSize as when you created the camera
+
+    // this.instance.left = (-frustumSize * aspectRatio) / 2;
+    // this.instance.right = (frustumSize * aspectRatio) / 2;
+    // this.instance.top = frustumSize / 2;
+    // this.instance.bottom = -frustumSize / 2;
+
+    // this.instance.updateProjectionMatrix();
   }
 
   public update() {
@@ -67,5 +90,7 @@ export default class Camera {
       this.input.cameraTargetPosition,
       this.input.interpolationSmoothness * this.time.delta * 60
     );
+    // this.instance.zoom += 0.01;
+    // this.instance.updateProjectionMatrix()
   }
 }
