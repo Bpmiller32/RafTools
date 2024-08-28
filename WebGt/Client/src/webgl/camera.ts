@@ -15,20 +15,57 @@ export default class Camera {
   private scene: THREE.Scene;
   private input: Input;
   private time: Time;
-
   private debug!: Debug;
 
-  public instance!: THREE.PerspectiveCamera;
-  // public instance!: THREE.OrthographicCamera;
+  public instance!: THREE.Camera;
+  public orthographicCamera!: THREE.OrthographicCamera;
+  public perspectiveCamera!: THREE.PerspectiveCamera;
+
+  private isRightClickDown: boolean;
+  private prevousMousePosition: THREE.Vector2;
+  public cameraPositionTarget: THREE.Vector3;
+  public zoomTarget: number;
+  private movementSensitivity: number;
+  private zoomSensitivity: number;
 
   constructor() {
+    // Experience fields
     this.experience = Experience.getInstance();
     this.sizes = this.experience.sizes;
     this.scene = this.experience.scene;
     this.time = this.experience.time;
     this.input = this.experience.input;
 
-    this.setInstance();
+    // Class fields
+    this.isRightClickDown = false;
+    this.cameraPositionTarget = new THREE.Vector3();
+    this.prevousMousePosition = new THREE.Vector2();
+    this.zoomTarget = 1;
+    this.movementSensitivity = 0.1;
+    this.zoomSensitivity = 0.1;
+
+    this.setOrthographicInstance();
+    this.setPerspectiveInstance();
+
+    // Default use the orthographic camera
+    this.instance = this.orthographicCamera;
+
+    // Events
+    this.input.on("mouseDown", (event) => {
+      this.mouseDown(event);
+    });
+    this.input.on("mouseMove", (event) => {
+      this.mouseMove(event);
+    });
+    this.input.on("mouseUp", (event) => {
+      this.mouseUp(event);
+    });
+    this.input.on("mouseWheel", (event) => {
+      this.mouseWheel(event);
+    });
+    this.input.on("switchCamera", () => {
+      this.switchCamera();
+    });
 
     // Debug GUI
     if (this.experience.debug.isActive) {
@@ -39,58 +76,173 @@ export default class Camera {
       cameraDebug?.add(this.instance.position, "x").name("xPosition").listen();
       cameraDebug?.add(this.instance.position, "y").name("yPosition").listen();
       cameraDebug?.add(this.instance.position, "z").name("zPosition").listen();
+      if (this.instance instanceof THREE.OrthographicCamera) {
+        cameraDebug?.add(this.instance, "zoom").name("zoom").listen();
+      }
     }
   }
+  /* ---------------------- Instance methods and controls --------------------- */
+  private setOrthographicInstance() {
+    const aspectRatio = this.sizes.width / this.sizes.height;
+    const frustumSize = 10; // Adjust this to control the zoom level of the orthographic camera
 
-  private setInstance() {
-    this.instance = new THREE.PerspectiveCamera(
+    this.orthographicCamera = new THREE.OrthographicCamera(
+      (-frustumSize * aspectRatio) / 2, // left
+      (frustumSize * aspectRatio) / 2, // right
+      frustumSize / 2, // top
+      -frustumSize / 2, // bottom
+      0.1, // near
+      500 // far
+    );
+
+    this.scene.add(this.orthographicCamera);
+
+    // Set initial camera position, initialize targetPosition to the same initial position as the camera
+    this.orthographicCamera.position.z = 10;
+    this.cameraPositionTarget.z = 10;
+  }
+
+  private setPerspectiveInstance() {
+    this.perspectiveCamera = new THREE.PerspectiveCamera(
       35,
       this.sizes.width / this.sizes.height,
       0.1,
       500
     );
 
-    // const aspectRatio = this.sizes.width / this.sizes.height;
-    // const frustumSize = 10; // Adjust this to control the zoom level of the orthographic camera
-
-    // this.instance = new THREE.OrthographicCamera(
-    //   (-frustumSize * aspectRatio) / 2, // left
-    //   (frustumSize * aspectRatio) / 2, // right
-    //   frustumSize / 2, // top
-    //   -frustumSize / 2, // bottom
-    //   0.1, // near
-    //   500 // far
-    // );
-
-    this.scene.add(this.instance);
-
-    // Set initial camera position
-    this.instance.position.z = 10;
-    // Initialize targetPosition to the same initial position as the camera
-    this.input.cameraTargetPosition.z = 10;
+    this.perspectiveCamera.position.z = 10;
+    this.scene.add(this.perspectiveCamera);
   }
 
+  private debugCameraControls() {
+    // Move forward/back
+    if (this.input.isWKeyPressed) {
+      this.instance.translateZ(-0.03);
+    }
+    if (this.input.isSKeyPressed) {
+      this.instance.translateZ(0.03);
+    }
+
+    // Strafe left/right
+    if (this.input.isAKeyPressed) {
+      this.instance.translateX(-0.03);
+    }
+    if (this.input.isDKeyPressed) {
+      this.instance.translateX(0.03);
+    }
+
+    // Rotate left/right
+    if (this.input.isQKeyPressed) {
+      this.instance.rotation.y += 0.03;
+    }
+    if (this.input.isEKeyPressed) {
+      this.instance.rotation.y -= 0.03;
+    }
+
+    // Height
+    if (this.input.isSpacePressed) {
+      this.instance.translateY(0.03);
+    }
+    if (this.input.isControlLeftPressed) {
+      this.instance.translateY(-0.03);
+    }
+  }
+
+  /* ------------------------------ Event methods ----------------------------- */
+  private mouseDown(event: MouseEvent) {
+    if (event.button !== 2) {
+      return;
+    }
+
+    this.isRightClickDown = true;
+    this.prevousMousePosition.x = event.clientX;
+    this.prevousMousePosition.y = event.clientY;
+  }
+
+  private mouseMove(event: MouseEvent) {
+    if (!this.isRightClickDown) {
+      return;
+    }
+
+    const deltaMove = new THREE.Vector2(
+      event.clientX - this.prevousMousePosition.x,
+      event.clientY - this.prevousMousePosition.y
+    );
+
+    // Move the camera in the opposite direction of the drag
+    this.cameraPositionTarget.x -= deltaMove.x * this.time.delta;
+    this.cameraPositionTarget.y += deltaMove.y * this.time.delta;
+
+    this.prevousMousePosition.x = event.clientX;
+    this.prevousMousePosition.y = event.clientY;
+  }
+
+  private mouseUp(event: MouseEvent) {
+    if (event.button === 2 && this.isRightClickDown) {
+      this.isRightClickDown = false;
+    }
+  }
+
+  private mouseWheel(event: WheelEvent) {
+    // Zoom in and out
+    this.zoomTarget += event.deltaY * -this.zoomSensitivity * this.time.delta;
+    // Clamp the zoom level to prevent inverting the view or zooming too far out
+    this.zoomTarget = Math.max(0.5, Math.min(5, this.zoomTarget));
+  }
+
+  private switchCamera() {
+    if (this.instance instanceof THREE.OrthographicCamera) {
+      this.instance = this.perspectiveCamera;
+    } else {
+      this.instance = this.orthographicCamera;
+    }
+  }
+
+  /* ------------------------------ Tick methods ------------------------------ */
   public resize() {
-    this.instance.aspect = this.sizes.width / this.sizes.height;
-    this.instance.updateProjectionMatrix();
+    const aspectRatio = this.sizes.width / this.sizes.height;
 
-    // const aspectRatio = this.sizes.width / this.sizes.height;
-    // const frustumSize = 10; // Use the same frustumSize as when you created the camera
+    if (this.instance instanceof THREE.OrthographicCamera) {
+      const frustumSize = 10;
 
-    // this.instance.left = (-frustumSize * aspectRatio) / 2;
-    // this.instance.right = (frustumSize * aspectRatio) / 2;
-    // this.instance.top = frustumSize / 2;
-    // this.instance.bottom = -frustumSize / 2;
+      this.instance.left = (-frustumSize * aspectRatio) / 2;
+      this.instance.right = (frustumSize * aspectRatio) / 2;
+      this.instance.top = frustumSize / 2;
+      this.instance.bottom = -frustumSize / 2;
 
-    // this.instance.updateProjectionMatrix();
+      this.instance.updateProjectionMatrix();
+      return;
+    }
+
+    // Debug perspective camera
+    if (this.instance instanceof THREE.PerspectiveCamera) {
+      this.instance.updateProjectionMatrix();
+      return;
+    }
   }
 
   public update() {
+    if (!(this.instance instanceof THREE.OrthographicCamera)) {
+      this.debugCameraControls();
+
+      return;
+    }
+
+    // Camera position update
     this.instance.position.lerp(
-      this.input.cameraTargetPosition,
-      this.input.interpolationSmoothness * this.time.delta * 60
+      this.cameraPositionTarget,
+      this.movementSensitivity
     );
-    // this.instance.zoom += 0.01;
-    // this.instance.updateProjectionMatrix()
+
+    // Camera zoom update
+    this.instance.zoom +=
+      (this.zoomTarget - this.instance.zoom) * this.zoomSensitivity;
+
+    // Called to make zoom work
+    this.instance.updateProjectionMatrix();
+  }
+
+  public destroy() {
+    this.scene.remove(this.instance);
   }
 }

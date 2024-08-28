@@ -1,0 +1,216 @@
+/* -------------------------------------------------------------------------- */
+/*   Handler for creating and joining clipping boxes, cropping to image box   */
+/* -------------------------------------------------------------------------- */
+
+import * as THREE from "three";
+import Experience from "../experience";
+import Camera from "../camera";
+import Input from "../utils/input";
+import Sizes from "../utils/sizes";
+import { CSG } from "three-csg-ts";
+import World from "./world";
+
+export default class ClipBoxHandler {
+  private experience: Experience;
+  private scene: THREE.Scene;
+  private camera: Camera;
+  private sizes: Sizes;
+  private input: Input;
+  private world: World;
+
+  private isLeftClickDown: boolean;
+  private hasMovedMouseOnce: boolean;
+  private worldStartMousePosition: THREE.Vector3;
+  private worldEndMousePosition: THREE.Vector3;
+  private activeMesh: THREE.Mesh | null;
+  private clippingBoxes: THREE.Mesh[];
+
+  constructor() {
+    // Experience fields
+    this.experience = Experience.getInstance();
+    this.scene = this.experience.scene;
+    this.camera = this.experience.camera;
+    this.sizes = this.experience.sizes;
+    this.input = this.experience.input;
+    this.world = this.experience.world;
+
+    // Class fields
+    this.isLeftClickDown = false;
+    this.hasMovedMouseOnce = false;
+    this.worldStartMousePosition = new THREE.Vector3();
+    this.worldEndMousePosition = new THREE.Vector3();
+    this.activeMesh = new THREE.Mesh();
+    this.clippingBoxes = [];
+
+    // Events
+    this.input.on("mouseDown", (event) => {
+      this.mouseDown(event);
+    });
+    this.input.on("mouseMove", (event) => {
+      this.mouseMove(event);
+    });
+    this.input.on("mouseUp", (event) => {
+      this.mouseUp(event);
+    });
+    this.input.on("stitchBoxes", () => {
+      this.stitchBoxes();
+    });
+  }
+
+  /* ------------------------------ Event methods ----------------------------- */
+  private mouseDown(event: MouseEvent) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    this.isLeftClickDown = true;
+
+    // Convert the mouse position to world coordinates
+    this.worldStartMousePosition = this.screenToSceneCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    // Create a new mesh at the starting position
+    const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+      wireframe: false,
+      transparent: true,
+      opacity: 0.5,
+    });
+    this.activeMesh = new THREE.Mesh(geometry, material);
+    this.activeMesh.position.set(
+      this.worldStartMousePosition.x,
+      this.worldStartMousePosition.y,
+      0
+    );
+    this.scene.add(this.activeMesh);
+  }
+
+  private mouseMove(event: MouseEvent) {
+    if (!this.isLeftClickDown) {
+      return;
+    }
+
+    // Gate to add behavior of box size on starting click
+    if (!this.hasMovedMouseOnce) {
+      this.hasMovedMouseOnce = true;
+
+      this.activeMesh?.geometry.dispose();
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      this.activeMesh!.geometry = geometry;
+    }
+
+    // Convert the mouse position to world coordinates
+    this.worldEndMousePosition = this.screenToSceneCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    // Calculate the width and height based on world coordinates
+    const size = new THREE.Vector3(
+      Math.abs(this.worldEndMousePosition.x - this.worldStartMousePosition.x),
+      Math.abs(this.worldEndMousePosition.y - this.worldStartMousePosition.y),
+      // Annoying to find bugfix for CSG union later, this mesh must have depth to be 3d and intersect later....
+      // Math.abs(this.worldEndMousePosition.z - this.worldStartMousePosition.z)
+      2
+    );
+
+    // Scale the mesh
+    this.activeMesh?.scale.set(size.x, size.y, size.z);
+
+    // Reposition the mesh to stay centered between start and end points
+    this.activeMesh?.position.copy(
+      this.worldStartMousePosition
+        .clone()
+        .add(this.worldEndMousePosition)
+        .divideScalar(2)
+    );
+  }
+
+  private mouseUp(event: MouseEvent) {
+    if (event.button === 0) {
+      this.isLeftClickDown = false;
+      this.hasMovedMouseOnce = false;
+
+      // Add the activeMesh to the clippingBoxes array here
+      this.activeMesh!.updateMatrix();
+      this.clippingBoxes.push(this.activeMesh!);
+    }
+  }
+
+  private async stitchBoxes() {
+    if (this.clippingBoxes.length === 0) {
+      return;
+    }
+
+    let combinedMesh = this.clippingBoxes[0];
+
+    for (let i = 0; i < this.clippingBoxes.length; i++) {
+      combinedMesh = CSG.union(combinedMesh, this.clippingBoxes[i]);
+
+      this.scene.remove(this.clippingBoxes[i]);
+      this.clippingBoxes[i].geometry.dispose();
+    }
+
+    // Change the color of the new combined clippingBox
+    // combinedMesh.material = new THREE.MeshBasicMaterial({ color: "red" });
+
+    // Dispose of the references in clippingBoxes, add the only existing clippingBox in case of further clips
+    this.clippingBoxes.length = 0;
+    // this.clippingBoxes.push(combinedMesh);
+
+    // Push the combinedMesh back to the same plane as the imageBox mesh, update it's local position matrix for CSG
+    combinedMesh.position.z = 0;
+    combinedMesh.updateMatrix();
+
+    // debug, add for visual
+    // this.scene.add(combinedMesh);
+
+    // Add the new combined mesh to the scene
+    const croppedMesh = CSG.intersect(
+      this.world.imageBoxHandler.mesh,
+      combinedMesh
+    );
+
+    // Remove the old imageBox so it doesn't overlap with the croppedMesh, set croppedMesh to imageBox
+    this.scene.remove(this.world.imageBoxHandler.mesh);
+    this.world.imageBoxHandler.mesh = croppedMesh;
+    this.scene.add(croppedMesh);
+  }
+
+  /* ----------------------------- Helper methods ----------------------------- */
+  private screenToSceneCoordinates(
+    mouseX: number,
+    mouseY: number
+  ): THREE.Vector3 {
+    // Normalize mouse coordinates (-1 to 1)
+    const ndcX = (mouseX / this.sizes.width) * 2 - 1;
+    const ndcY = -(mouseY / this.sizes.height) * 2 + 1;
+
+    // Create a vector in NDC space
+    const vector = new THREE.Vector3(ndcX, ndcY, 0.5); // z=0.5 to unproject at the center of the near and far planes
+
+    // Unproject the vector to scene coordinates
+    vector.unproject(this.camera.instance);
+
+    // Adjust the z-coordinate to match the camera's z-plane
+    vector.z = 5; // Set the z-coordinate to 0 or the plane you want to work on, in this case 5 since the gtImage is at z==0
+
+    return vector;
+  }
+
+  /* ------------------------------ Tick methods ------------------------------ */
+  public destroy() {
+    if (this.activeMesh) {
+      this.scene.remove(this.activeMesh);
+      this.activeMesh.geometry.dispose();
+    }
+
+    for (let i = 0; i < this.clippingBoxes.length; i++) {
+      this.scene.remove(this.clippingBoxes[i]);
+      this.clippingBoxes[i].geometry.dispose();
+    }
+  }
+}

@@ -88,6 +88,7 @@ export default class Experience {
     // Event listeners
     this.sizes.destroy();
     this.time.destroy();
+    this.input.destroy();
 
     // Scene items first
     this.world.destroy();

@@ -6,12 +6,15 @@ type EventMap = {
   // resourceLoader
   ready: [];
   // mouse events
-  mouseDown: [];
-  mouseMove: [];
-  mouseUp: [];
-
+  mouseDown: [MouseEvent];
+  mouseMove: [MouseEvent];
+  mouseUp: [MouseEvent];
+  mouseWheel: [WheelEvent];
+  // world events
+  switchCamera: [];
   stitchBoxes: [];
   screenshotImage: [];
+  resetImage: [];
 };
 
 // Weird default export for types....
