@@ -10,6 +10,7 @@ type EventMap = {
   mouseMove: [MouseEvent];
   mouseUp: [MouseEvent];
   mouseWheel: [WheelEvent];
+  lockPointer: [boolean];
   // world events
   switchCamera: [];
   stitchBoxes: [];

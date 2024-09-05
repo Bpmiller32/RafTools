@@ -21,6 +21,10 @@ export default class Input extends EventEmitter<EventMap> {
 
   public isControlLeftPressed: boolean;
   public isSpacePressed: boolean;
+  public isShiftLeftPressed: boolean;
+
+  public isLeftClickPressed: boolean;
+  public isRightClickPressed: boolean;
 
   public keys: Key[];
 
@@ -40,6 +44,10 @@ export default class Input extends EventEmitter<EventMap> {
 
     this.isControlLeftPressed = false;
     this.isSpacePressed = false;
+    this.isShiftLeftPressed = false;
+
+    this.isLeftClickPressed = false;
+    this.isRightClickPressed = false;
 
     // Define keys
     this.keys = [
@@ -131,6 +139,14 @@ export default class Input extends EventEmitter<EventMap> {
           this.isControlLeftPressed = eventResult;
         },
       },
+      {
+        keyCode: "ShiftLeft",
+        isPressed: (eventResult: boolean) => {
+          this.emit("lockPointer", eventResult);
+
+          this.isShiftLeftPressed = eventResult;
+        },
+      },
     ];
 
     /* -------------------------------------------------------------------------- */
@@ -164,23 +180,37 @@ export default class Input extends EventEmitter<EventMap> {
 
     // Mouse events
     window.addEventListener("mousedown", (event) => {
-      this.emit("mouseDown", event);
-    });
+      if (event.button === 1) {
+        this.isLeftClickPressed = true;
+      }
+      if (event.button === 2) {
+        this.isRightClickPressed = true;
+      }
 
-    window.addEventListener("mouseup", (event) => {
-      this.emit("mouseUp", event);
+      this.emit("mouseDown", event);
     });
 
     window.addEventListener("mousemove", (event) => {
       this.emit("mouseMove", event);
     });
 
-    // Window events
+    window.addEventListener("mouseup", (event) => {
+      if (event.button === 1) {
+        this.isLeftClickPressed = false;
+      }
+      if (event.button === 2) {
+        this.isRightClickPressed = false;
+      }
+
+      this.emit("mouseUp", event);
+    });
+
     window.addEventListener("wheel", (event) => {
       this.emit("mouseWheel", event);
     });
 
-    // Disable the browser's context menu
+    // Window events
+    // Disable the browser's context menu (enables prefered right click behavior)
     window.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });

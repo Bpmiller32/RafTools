@@ -45,7 +45,11 @@ export default class Experience {
     this.time = new Time();
     this.input = new Input();
     this.resources = new ResourceLoader([
-      { name: "test", type: "texture", path: "/sample.png" },
+      {
+        name: "test",
+        type: "texture",
+        path: "/assets/20240703_161406_9310_43589_01.jpg",
+      },
     ]);
 
     this.targetElement = canvas;
@@ -94,6 +98,7 @@ export default class Experience {
     this.world.destroy();
 
     // Camera then renderer
+    this.camera.destroy();
     this.renderer.destroy();
 
     // Debug menu

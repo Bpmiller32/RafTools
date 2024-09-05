@@ -18,7 +18,6 @@ export default class ClipBoxHandler {
   private input: Input;
   private world: World;
 
-  private isLeftClickDown: boolean;
   private hasMovedMouseOnce: boolean;
   private worldStartMousePosition: THREE.Vector3;
   private worldEndMousePosition: THREE.Vector3;
@@ -35,7 +34,6 @@ export default class ClipBoxHandler {
     this.world = this.experience.world;
 
     // Class fields
-    this.isLeftClickDown = false;
     this.hasMovedMouseOnce = false;
     this.worldStartMousePosition = new THREE.Vector3();
     this.worldEndMousePosition = new THREE.Vector3();
@@ -55,6 +53,9 @@ export default class ClipBoxHandler {
     this.input.on("stitchBoxes", () => {
       this.stitchBoxes();
     });
+    this.input.on("resetImage", () => {
+      this.resetImage();
+    });
   }
 
   /* ------------------------------ Event methods ----------------------------- */
@@ -63,7 +64,7 @@ export default class ClipBoxHandler {
       return;
     }
 
-    this.isLeftClickDown = true;
+    this.input.isLeftClickPressed = true;
 
     // Convert the mouse position to world coordinates
     this.worldStartMousePosition = this.screenToSceneCoordinates(
@@ -89,7 +90,11 @@ export default class ClipBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.isLeftClickDown) {
+    if (!this.input.isLeftClickPressed) {
+      return;
+    }
+
+    if (this.input.isShiftLeftPressed) {
       return;
     }
 
@@ -131,7 +136,7 @@ export default class ClipBoxHandler {
 
   private mouseUp(event: MouseEvent) {
     if (event.button === 0) {
-      this.isLeftClickDown = false;
+      this.input.isLeftClickPressed = false;
       this.hasMovedMouseOnce = false;
 
       // Add the activeMesh to the clippingBoxes array here
@@ -178,6 +183,15 @@ export default class ClipBoxHandler {
     this.scene.remove(this.world.imageBoxHandler.mesh);
     this.world.imageBoxHandler.mesh = croppedMesh;
     this.scene.add(croppedMesh);
+  }
+
+  private resetImage() {
+    for (let i = 0; i < this.clippingBoxes.length; i++) {
+      this.scene.remove(this.clippingBoxes[i]);
+      this.clippingBoxes[i].geometry.dispose();
+    }
+
+    this.clippingBoxes.length = 0;
   }
 
   /* ----------------------------- Helper methods ----------------------------- */

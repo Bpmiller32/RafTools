@@ -9,6 +9,7 @@ import Input from "../utils/input";
 import Sizes from "../utils/sizes";
 import ResourceLoader from "../utils/resourceLoader";
 import Renderer from "../renderer";
+import Debug from "../utils/debug";
 
 export default class ImageBoxHandler {
   private experience: Experience;
@@ -18,10 +19,15 @@ export default class ImageBoxHandler {
   private camera: Camera;
   private sizes: Sizes;
   private input: Input;
+  private debug!: Debug;
 
   public geometry!: THREE.BoxGeometry;
   public materials!: THREE.MeshBasicMaterial[];
   public mesh!: THREE.Mesh;
+
+  private rotationSpeed: number;
+  private lerpFactor: number;
+  private targetRotation: THREE.Vector2;
 
   constructor() {
     // Experience fields
@@ -38,6 +44,10 @@ export default class ImageBoxHandler {
     this.setMaterial();
     this.setMesh();
 
+    this.rotationSpeed = 0.005;
+    this.lerpFactor = 0.1;
+    this.targetRotation = new THREE.Vector2();
+
     // Events
     this.input.on("screenshotImage", () => {
       this.screenshotImage();
@@ -45,10 +55,36 @@ export default class ImageBoxHandler {
     this.input.on("resetImage", () => {
       this.resetImage();
     });
+    this.input.on("mouseMove", (event) => {
+      this.mouseMove(event);
+    });
+    this.input.on("lockPointer", (event) => {
+      this.lockPointer(event);
+    });
+
+    // Debug
+    if (this.experience.debug.isActive) {
+      this.debug = this.experience.debug;
+
+      const imageBoxDebug = this.debug.ui?.addFolder("imageBoxDebug");
+      imageBoxDebug?.open();
+      imageBoxDebug
+        ?.add(this.input, "isShiftLeftPressed")
+        .name("Image adjust")
+        .listen();
+    }
   }
   /* ---------------------------- Instance methods ---------------------------- */
   private setGeometry() {
-    this.geometry = new THREE.BoxGeometry(5, 5, 1);
+    const textureAspectRatio =
+      this.resources.items.test.image.width /
+      this.resources.items.test.image.height;
+
+    const boxHeight = 5;
+    const boxWidth = boxHeight * textureAspectRatio;
+    const boxDepth = 1;
+
+    this.geometry = new THREE.BoxGeometry(boxHeight, boxWidth, boxDepth);
   }
 
   private setMaterial() {
@@ -148,6 +184,52 @@ export default class ImageBoxHandler {
     this.camera.zoomTarget = 1;
   }
 
+  private mouseMove(event: MouseEvent) {
+    if (!this.input.isShiftLeftPressed) {
+      return;
+    }
+
+    if (this.input.isRightClickPressed) {
+      return;
+    }
+
+    const deltaX = event.movementX;
+    const deltaY = event.movementY;
+
+    this.targetRotation.x -= deltaY * this.rotationSpeed;
+    this.targetRotation.y -= deltaX * this.rotationSpeed;
+  }
+
+  private lockPointer(event: boolean) {
+    if (event) {
+      this.experience.targetElement?.requestPointerLock();
+    } else {
+      document.exitPointerLock();
+    }
+  }
+
+  /* ----------------------------- Helper methods ----------------------------- */
+
   /* ------------------------------ Tick methods ------------------------------ */
-  public destroy() {}
+  public update() {
+    this.mesh.rotation.z = THREE.MathUtils.lerp(
+      this.mesh.rotation.z,
+      this.targetRotation.x,
+      this.lerpFactor
+    );
+    this.mesh.rotation.z = THREE.MathUtils.lerp(
+      this.mesh.rotation.z,
+      this.targetRotation.y,
+      this.lerpFactor
+    );
+  }
+
+  public destroy() {
+    this.scene.remove(this.mesh);
+    this.geometry.dispose();
+
+    this.materials.forEach((texture) => {
+      texture.dispose();
+    });
+  }
 }

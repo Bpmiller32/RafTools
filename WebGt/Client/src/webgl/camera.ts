@@ -21,7 +21,6 @@ export default class Camera {
   public orthographicCamera!: THREE.OrthographicCamera;
   public perspectiveCamera!: THREE.PerspectiveCamera;
 
-  private isRightClickDown: boolean;
   private prevousMousePosition: THREE.Vector2;
   public cameraPositionTarget: THREE.Vector3;
   public zoomTarget: number;
@@ -37,7 +36,6 @@ export default class Camera {
     this.input = this.experience.input;
 
     // Class fields
-    this.isRightClickDown = false;
     this.cameraPositionTarget = new THREE.Vector3();
     this.prevousMousePosition = new THREE.Vector2();
     this.zoomTarget = 1;
@@ -154,13 +152,13 @@ export default class Camera {
       return;
     }
 
-    this.isRightClickDown = true;
+    this.input.isRightClickPressed = true;
     this.prevousMousePosition.x = event.clientX;
     this.prevousMousePosition.y = event.clientY;
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.isRightClickDown) {
+    if (!this.input.isRightClickPressed) {
       return;
     }
 
@@ -178,8 +176,8 @@ export default class Camera {
   }
 
   private mouseUp(event: MouseEvent) {
-    if (event.button === 2 && this.isRightClickDown) {
-      this.isRightClickDown = false;
+    if (event.button === 2 && this.input.isRightClickPressed) {
+      this.input.isRightClickPressed = false;
     }
   }
 
@@ -187,7 +185,7 @@ export default class Camera {
     // Zoom in and out
     this.zoomTarget += event.deltaY * -this.zoomSensitivity * this.time.delta;
     // Clamp the zoom level to prevent inverting the view or zooming too far out
-    this.zoomTarget = Math.max(0.5, Math.min(5, this.zoomTarget));
+    this.zoomTarget = Math.max(0.5, Math.min(10, this.zoomTarget));
   }
 
   private switchCamera() {

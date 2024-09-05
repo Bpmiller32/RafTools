@@ -44,7 +44,6 @@ export default class Renderer {
   }
 
   public update() {
-    // console.log(this.camera.instance);
     this.instance?.render(this.scene, this.camera.instance);
   }
 
