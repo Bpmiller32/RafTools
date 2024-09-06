@@ -60,7 +60,7 @@ export default class ClipBoxHandler {
 
   /* ------------------------------ Event methods ----------------------------- */
   private mouseDown(event: MouseEvent) {
-    if (event.button !== 0) {
+    if (event.button !== 0 || this.input.isShiftLeftPressed) {
       return;
     }
 
@@ -84,54 +84,77 @@ export default class ClipBoxHandler {
     this.activeMesh.position.set(
       this.worldStartMousePosition.x,
       this.worldStartMousePosition.y,
-      0
+      5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
     );
     this.scene.add(this.activeMesh);
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.input.isLeftClickPressed) {
+    // // Handle rotating of all clipBoxes when in move mode
+    // if (this.input.isShiftLeftPressed) {
+    //   // Target point and axis around which the mesh will rotate
+    //   const targetPoint = new THREE.Vector3(0, 0, 0);
+    //   const axis = new THREE.Vector3(0, 0, 1);
+
+    //   for (let i = 0; i < this.clippingBoxes.length; i++) {
+    //     // Translate object to the point
+    //     this.clippingBoxes[i].position.sub(targetPoint);
+
+    //     // Create rotation matrix
+    //     this.clippingBoxes[i].position.applyAxisAngle(
+    //       axis,
+    //       -event.movementX * 0.005
+    //     );
+
+    //     // Translate back
+    //     this.clippingBoxes[i].position.add(targetPoint);
+
+    //     // Apply rotation to the object's orientation
+    //     this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
+    //   }
+
+    //   return;
+    // }
+
+    // Handle drawing of new ClipBoxes
+    if (this.input.isLeftClickPressed) {
+      // Gate to add behavior of box size on starting click
+      if (!this.hasMovedMouseOnce) {
+        this.hasMovedMouseOnce = true;
+
+        this.activeMesh?.geometry.dispose();
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        this.activeMesh!.geometry = geometry;
+      }
+
+      // Convert the mouse position to world coordinates
+      this.worldEndMousePosition = this.screenToSceneCoordinates(
+        event.clientX,
+        event.clientY
+      );
+
+      // Calculate the width and height based on world coordinates
+      const size = new THREE.Vector3(
+        Math.abs(this.worldEndMousePosition.x - this.worldStartMousePosition.x),
+        Math.abs(this.worldEndMousePosition.y - this.worldStartMousePosition.y),
+        // Annoying to find bugfix for CSG union later, this mesh must have depth to be 3d and intersect later....
+        // Math.abs(this.worldEndMousePosition.z - this.worldStartMousePosition.z)
+        2 // ImageBox is depth of 1 so this fully intersects through
+      );
+
+      // Scale the mesh
+      this.activeMesh?.scale.set(size.x, size.y, size.z);
+
+      // Reposition the mesh to stay centered between start and end points
+      this.activeMesh?.position.copy(
+        this.worldStartMousePosition
+          .clone()
+          .add(this.worldEndMousePosition)
+          .divideScalar(2)
+      );
+
       return;
     }
-
-    if (this.input.isShiftLeftPressed) {
-      return;
-    }
-
-    // Gate to add behavior of box size on starting click
-    if (!this.hasMovedMouseOnce) {
-      this.hasMovedMouseOnce = true;
-
-      this.activeMesh?.geometry.dispose();
-      const geometry = new THREE.BoxGeometry(1, 1, 1);
-      this.activeMesh!.geometry = geometry;
-    }
-
-    // Convert the mouse position to world coordinates
-    this.worldEndMousePosition = this.screenToSceneCoordinates(
-      event.clientX,
-      event.clientY
-    );
-
-    // Calculate the width and height based on world coordinates
-    const size = new THREE.Vector3(
-      Math.abs(this.worldEndMousePosition.x - this.worldStartMousePosition.x),
-      Math.abs(this.worldEndMousePosition.y - this.worldStartMousePosition.y),
-      // Annoying to find bugfix for CSG union later, this mesh must have depth to be 3d and intersect later....
-      // Math.abs(this.worldEndMousePosition.z - this.worldStartMousePosition.z)
-      2
-    );
-
-    // Scale the mesh
-    this.activeMesh?.scale.set(size.x, size.y, size.z);
-
-    // Reposition the mesh to stay centered between start and end points
-    this.activeMesh?.position.copy(
-      this.worldStartMousePosition
-        .clone()
-        .add(this.worldEndMousePosition)
-        .divideScalar(2)
-    );
   }
 
   private mouseUp(event: MouseEvent) {

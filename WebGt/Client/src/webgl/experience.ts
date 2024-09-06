@@ -48,7 +48,7 @@ export default class Experience {
       {
         name: "test",
         type: "texture",
-        path: "/assets/20240703_161406_9310_43589_01.jpg",
+        path: "/assets/20240703_161418_9316_43616_01.jpg",
       },
     ]);
 

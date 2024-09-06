@@ -21,7 +21,6 @@ export default class Camera {
   public orthographicCamera!: THREE.OrthographicCamera;
   public perspectiveCamera!: THREE.PerspectiveCamera;
 
-  private prevousMousePosition: THREE.Vector2;
   public cameraPositionTarget: THREE.Vector3;
   public zoomTarget: number;
   private movementSensitivity: number;
@@ -37,7 +36,6 @@ export default class Camera {
 
     // Class fields
     this.cameraPositionTarget = new THREE.Vector3();
-    this.prevousMousePosition = new THREE.Vector2();
     this.zoomTarget = 1;
     this.movementSensitivity = 0.1;
     this.zoomSensitivity = 0.1;
@@ -71,11 +69,27 @@ export default class Camera {
 
       const cameraDebug = this.debug.ui?.addFolder("cameraDebug");
       cameraDebug?.open();
-      cameraDebug?.add(this.instance.position, "x").name("xPosition").listen();
-      cameraDebug?.add(this.instance.position, "y").name("yPosition").listen();
-      cameraDebug?.add(this.instance.position, "z").name("zPosition").listen();
+      cameraDebug
+        ?.add(this.instance.position, "x")
+        .name("xPosition")
+        .step(0.01)
+        .listen();
+      cameraDebug
+        ?.add(this.instance.position, "y")
+        .step(0.01)
+        .name("yPosition")
+        .listen();
+      cameraDebug
+        ?.add(this.instance.position, "z")
+        .name("zPosition")
+        .step(0.01)
+        .listen();
       if (this.instance instanceof THREE.OrthographicCamera) {
-        cameraDebug?.add(this.instance, "zoom").name("zoom").listen();
+        cameraDebug
+          ?.add(this.instance, "zoom")
+          .name("zoom")
+          .step(0.01)
+          .listen();
       }
     }
   }
@@ -153,26 +167,18 @@ export default class Camera {
     }
 
     this.input.isRightClickPressed = true;
-    this.prevousMousePosition.x = event.clientX;
-    this.prevousMousePosition.y = event.clientY;
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.input.isRightClickPressed) {
+    if (!this.input.isShiftLeftPressed || !this.input.isRightClickPressed) {
       return;
     }
 
-    const deltaMove = new THREE.Vector2(
-      event.clientX - this.prevousMousePosition.x,
-      event.clientY - this.prevousMousePosition.y
-    );
+    const deltaMove = new THREE.Vector2(event.movementX, event.movementY);
 
     // Move the camera in the opposite direction of the drag
     this.cameraPositionTarget.x -= deltaMove.x * this.time.delta;
     this.cameraPositionTarget.y += deltaMove.y * this.time.delta;
-
-    this.prevousMousePosition.x = event.clientX;
-    this.prevousMousePosition.y = event.clientY;
   }
 
   private mouseUp(event: MouseEvent) {
@@ -200,6 +206,7 @@ export default class Camera {
   public resize() {
     const aspectRatio = this.sizes.width / this.sizes.height;
 
+    // Orthographic camera
     if (this.instance instanceof THREE.OrthographicCamera) {
       const frustumSize = 10;
 

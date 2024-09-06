@@ -45,6 +45,7 @@ export default class ImageBoxHandler {
     this.setMesh();
 
     this.rotationSpeed = 0.005;
+    // this.lerpFactor = 1;
     this.lerpFactor = 0.1;
     this.targetRotation = new THREE.Vector2();
 
@@ -107,7 +108,7 @@ export default class ImageBoxHandler {
   }
 
   /* ------------------------------ Event methods ----------------------------- */
-  private screenshotImage() {
+  private async screenshotImage() {
     // Store the camera's current position and zoom level, render's resolution
     const originalPosition = this.camera.orthographicCamera.position;
     const originalZoom = this.camera.orthographicCamera.zoom;
@@ -151,14 +152,17 @@ export default class ImageBoxHandler {
     this.renderer.instance.render(this.scene, this.camera.orthographicCamera);
 
     // Screenshot in base64
-    const dataUrl = this.renderer.instance.domElement.toDataURL();
+    const dataUrl = this.renderer.instance.domElement.toDataURL("image/png");
+    const base64Image = dataUrl.split(",")[1]; // Remove the "data:image/png;base64," part
+    await this.sendImageToVisionAPI(base64Image);
 
-    // Automatically download the screenshot as a PNG file
-    const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = "screenshot.png"; // Specify the file name
-    link.click();
-    // document.removeChild(link);
+    // // Debug, Automatically download the screenshot as a PNG file
+    // const link = document.createElement("a");
+    // link.id = "debugDownloadImage";
+    // link.href = dataUrl;
+    // link.download = "screenshot.png"; // Specify the file name
+    // // Not appending the element to the document, only creating, no need to clean up
+    // link.click();
 
     // Restore the original position and zoom level, renderer size
     this.camera.orthographicCamera.position.copy(originalPosition);
@@ -185,11 +189,7 @@ export default class ImageBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.input.isShiftLeftPressed) {
-      return;
-    }
-
-    if (this.input.isRightClickPressed) {
+    if (!this.input.isShiftLeftPressed || this.input.isRightClickPressed) {
       return;
     }
 
@@ -209,14 +209,100 @@ export default class ImageBoxHandler {
   }
 
   /* ----------------------------- Helper methods ----------------------------- */
+  private async sendImageToVisionAPI(base64Image: string) {
+    const apiKey = "GOOGLE_VISION_API_KEY"; // Replace with your actual API key
+    const requestBody = {
+      requests: [
+        {
+          image: {
+            content: base64Image,
+          },
+          features: [
+            {
+              type: "DOCUMENT_TEXT_DETECTION",
+            },
+          ],
+        },
+      ],
+    };
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const result = await response.json();
+    console.log(
+      "Vision API Response:",
+      result.responses[0].fullTextAnnotation.text
+    );
+
+    // try {
+    //   await navigator.clipboard.writeText(
+    //     result.responses[0].fullTextAnnotation.text
+    //   );
+    //   console.log("Text copied to clipboard");
+    // } catch (err) {
+    //   console.error("Failed to copy text: ", err);
+    // }
+  }
+
+  // private async sendImageToVisionAPI(base64Image: string) {
+  //   const cred =
+  //   const projectId = "rafwebglgt"; // Replace with your Google Cloud Project ID
+
+  //   const requestBody = {
+  //     requests: [
+  //       {
+  //         image: {
+  //           content: base64Image,
+  //         },
+  //         features: [
+  //           {
+  //             type: "LABEL_DETECTION", // Change to other features as needed (e.g., TEXT_DETECTION)
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   };
+
+  //   // Headers with Authorization and Project Information
+  //   const headers = {
+  //     Authorization: `Bearer ${cred}`, // The OAuth 2.0 token
+  //     "x-goog-user-project": projectId, // The Google Cloud project ID
+  //     "Content-Type": "application/json",
+  //   };
+
+  //   try {
+  //     const response = await fetch(
+  //       "https://vision.googleapis.com/v1/images:annotate",
+  //       {
+  //         method: "POST",
+  //         headers: headers, // Add custom headers here
+  //         body: JSON.stringify(requestBody),
+  //       }
+  //     );
+
+  //     const result = await response.json();
+  //     console.log("Vision API Response:", result);
+  //   } catch (error) {
+  //     console.error("Error sending image to Vision API:", error);
+  //   }
+  // }
 
   /* ------------------------------ Tick methods ------------------------------ */
   public update() {
+    // Mouse moving on x axis
     this.mesh.rotation.z = THREE.MathUtils.lerp(
       this.mesh.rotation.z,
       this.targetRotation.x,
       this.lerpFactor
     );
+    // Mouse moving on y axis
     this.mesh.rotation.z = THREE.MathUtils.lerp(
       this.mesh.rotation.z,
       this.targetRotation.y,
