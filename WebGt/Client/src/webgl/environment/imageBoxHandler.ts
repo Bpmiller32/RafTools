@@ -45,8 +45,9 @@ export default class ImageBoxHandler {
     this.setMesh();
 
     this.rotationSpeed = 0.005;
-    // this.lerpFactor = 1;
-    this.lerpFactor = 0.1;
+    this.lerpFactor = 1;
+    // TODO: fix the rotation lerp on ClipBoxHandler to sync with this
+    // this.lerpFactor = 0.1;
     this.targetRotation = new THREE.Vector2();
 
     // Events
@@ -71,7 +72,12 @@ export default class ImageBoxHandler {
       imageBoxDebug?.open();
       imageBoxDebug
         ?.add(this.input, "isShiftLeftPressed")
-        .name("Image adjust")
+        .name("Image adjust mode")
+        .listen();
+      imageBoxDebug
+        ?.add(this.mesh.rotation, "z")
+        .name("Image rotation")
+        .step(0.01)
         .listen();
     }
   }
@@ -121,10 +127,6 @@ export default class ImageBoxHandler {
     const boundingBox = new THREE.Box3().setFromObject(this.mesh);
     const boundingBoxSize = boundingBox.getSize(new THREE.Vector3());
     const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
-
-    // Debug, create a BoxHelper to visualize the bounding box
-    // const boxHelper = new THREE.BoxHelper(this.mesh, 0xffff00); // Yellow lines
-    // this.scene.add(boxHelper);
 
     // Adjust the camera to fit the bounding box
     const maxDim = Math.max(
@@ -178,14 +180,19 @@ export default class ImageBoxHandler {
   }
 
   private resetImage() {
+    // Remove the existing mesh, recreate and add the original mesh back to the scene
     this.scene.remove(this.mesh);
     this.mesh = new THREE.Mesh(this.geometry, this.materials);
     this.scene.add(this.mesh);
 
+    // Reset the camera
     this.camera.orthographicCamera.position.set(0, 0, 10);
     this.camera.cameraPositionTarget.set(0, 0, 10);
     this.camera.orthographicCamera.zoom = 1;
     this.camera.zoomTarget = 1;
+
+    // Reset the textArea in the GUI
+    this.input.dashboardTextarea!.value = "";
   }
 
   private mouseMove(event: MouseEvent) {
@@ -241,58 +248,9 @@ export default class ImageBoxHandler {
       result.responses[0].fullTextAnnotation.text
     );
 
-    // try {
-    //   await navigator.clipboard.writeText(
-    //     result.responses[0].fullTextAnnotation.text
-    //   );
-    //   console.log("Text copied to clipboard");
-    // } catch (err) {
-    //   console.error("Failed to copy text: ", err);
-    // }
+    this.input.dashboardTextarea!.value =
+      result.responses[0].fullTextAnnotation.text;
   }
-
-  // private async sendImageToVisionAPI(base64Image: string) {
-  //   const cred =
-  //   const projectId = "rafwebglgt"; // Replace with your Google Cloud Project ID
-
-  //   const requestBody = {
-  //     requests: [
-  //       {
-  //         image: {
-  //           content: base64Image,
-  //         },
-  //         features: [
-  //           {
-  //             type: "LABEL_DETECTION", // Change to other features as needed (e.g., TEXT_DETECTION)
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //   };
-
-  //   // Headers with Authorization and Project Information
-  //   const headers = {
-  //     Authorization: `Bearer ${cred}`, // The OAuth 2.0 token
-  //     "x-goog-user-project": projectId, // The Google Cloud project ID
-  //     "Content-Type": "application/json",
-  //   };
-
-  //   try {
-  //     const response = await fetch(
-  //       "https://vision.googleapis.com/v1/images:annotate",
-  //       {
-  //         method: "POST",
-  //         headers: headers, // Add custom headers here
-  //         body: JSON.stringify(requestBody),
-  //       }
-  //     );
-
-  //     const result = await response.json();
-  //     console.log("Vision API Response:", result);
-  //   } catch (error) {
-  //     console.error("Error sending image to Vision API:", error);
-  //   }
-  // }
 
   /* ------------------------------ Tick methods ------------------------------ */
   public update() {

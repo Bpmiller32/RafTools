@@ -64,6 +64,12 @@ export default class ClipBoxHandler {
       return;
     }
 
+    console.log("isInteractingWithGui: ", this.input.isInteractingWithGui);
+
+    if (this.input.isInteractingWithGui) {
+      return;
+    }
+
     this.input.isLeftClickPressed = true;
 
     // Convert the mouse position to world coordinates
@@ -90,31 +96,31 @@ export default class ClipBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    // // Handle rotating of all clipBoxes when in move mode
-    // if (this.input.isShiftLeftPressed) {
-    //   // Target point and axis around which the mesh will rotate
-    //   const targetPoint = new THREE.Vector3(0, 0, 0);
-    //   const axis = new THREE.Vector3(0, 0, 1);
+    // Handle rotating of all existing clipBoxes when in move mode
+    if (this.input.isShiftLeftPressed && !this.input.isRightClickPressed) {
+      // Target point and axis around which the mesh will rotate
+      const targetPoint = new THREE.Vector3(0, 0, 0);
+      const axis = new THREE.Vector3(0, 0, 1);
 
-    //   for (let i = 0; i < this.clippingBoxes.length; i++) {
-    //     // Translate object to the point
-    //     this.clippingBoxes[i].position.sub(targetPoint);
+      for (let i = 0; i < this.clippingBoxes.length; i++) {
+        // Translate object to the point
+        this.clippingBoxes[i].position.sub(targetPoint);
 
-    //     // Create rotation matrix
-    //     this.clippingBoxes[i].position.applyAxisAngle(
-    //       axis,
-    //       -event.movementX * 0.005
-    //     );
+        // Create rotation matrix
+        this.clippingBoxes[i].position.applyAxisAngle(
+          axis,
+          -event.movementX * 0.005
+        );
 
-    //     // Translate back
-    //     this.clippingBoxes[i].position.add(targetPoint);
+        // Translate back
+        this.clippingBoxes[i].position.add(targetPoint);
 
-    //     // Apply rotation to the object's orientation
-    //     this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
-    //   }
+        // Apply rotation to the object's orientation
+        this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
+      }
 
-    //   return;
-    // }
+      return;
+    }
 
     // Handle drawing of new ClipBoxes
     if (this.input.isLeftClickPressed) {
@@ -182,19 +188,12 @@ export default class ClipBoxHandler {
       this.clippingBoxes[i].geometry.dispose();
     }
 
-    // Change the color of the new combined clippingBox
-    // combinedMesh.material = new THREE.MeshBasicMaterial({ color: "red" });
-
     // Dispose of the references in clippingBoxes, add the only existing clippingBox in case of further clips
     this.clippingBoxes.length = 0;
-    // this.clippingBoxes.push(combinedMesh);
 
     // Push the combinedMesh back to the same plane as the imageBox mesh, update it's local position matrix for CSG
     combinedMesh.position.z = 0;
     combinedMesh.updateMatrix();
-
-    // debug, add for visual
-    // this.scene.add(combinedMesh);
 
     // Add the new combined mesh to the scene
     const croppedMesh = CSG.intersect(

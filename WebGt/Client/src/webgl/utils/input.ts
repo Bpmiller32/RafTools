@@ -14,6 +14,7 @@ export default class Input extends EventEmitter<EventMap> {
   public isQKeyPressed: boolean;
   public isEKeyPressed: boolean;
 
+  public is0KeyPressed: boolean;
   public is1KeyPressed: boolean;
   public is2KeyPressed: boolean;
   public is3KeyPressed: boolean;
@@ -26,10 +27,15 @@ export default class Input extends EventEmitter<EventMap> {
   public isLeftClickPressed: boolean;
   public isRightClickPressed: boolean;
 
+  public dashboardGuiGlobal: HTMLElement | null;
+  public dashboardTextarea: HTMLTextAreaElement | null;
+  public isInteractingWithGui: boolean;
+
   public keys: Key[];
 
   constructor() {
     super();
+
     this.isWKeyPressed = false;
     this.isAKeyPressed = false;
     this.isSKeyPressed = false;
@@ -37,6 +43,7 @@ export default class Input extends EventEmitter<EventMap> {
     this.isQKeyPressed = false;
     this.isEKeyPressed = false;
 
+    this.is0KeyPressed = false;
     this.is1KeyPressed = false;
     this.is2KeyPressed = false;
     this.is3KeyPressed = false;
@@ -48,6 +55,12 @@ export default class Input extends EventEmitter<EventMap> {
 
     this.isLeftClickPressed = false;
     this.isRightClickPressed = false;
+
+    this.dashboardGuiGlobal = document.getElementById("gui");
+    this.dashboardTextarea = document.getElementById(
+      "guiTextArea"
+    ) as HTMLTextAreaElement;
+    this.isInteractingWithGui = false;
 
     // Define keys
     this.keys = [
@@ -87,11 +100,22 @@ export default class Input extends EventEmitter<EventMap> {
           this.isEKeyPressed = eventResult;
         },
       },
+
+      {
+        keyCode: "Digit0",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("switchCamera");
+          }
+
+          this.is0KeyPressed = eventResult;
+        },
+      },
       {
         keyCode: "Digit1",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("switchCamera");
+            this.emit("stitchBoxes");
           }
 
           this.is1KeyPressed = eventResult;
@@ -101,7 +125,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "Digit2",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("stitchBoxes");
+            this.emit("screenshotImage");
           }
 
           this.is2KeyPressed = eventResult;
@@ -111,22 +135,13 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "Digit3",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("screenshotImage");
+            this.emit("resetImage");
           }
 
           this.is3KeyPressed = eventResult;
         },
       },
-      {
-        keyCode: "Digit4",
-        isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            this.emit("resetImage");
-          }
 
-          this.is4KeyPressed = eventResult;
-        },
-      },
       {
         keyCode: "Space",
         isPressed: (eventResult: boolean) => {
@@ -211,13 +226,22 @@ export default class Input extends EventEmitter<EventMap> {
 
     // Window events
     // Disable the browser's context menu (enables prefered right click behavior)
-    window.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-    });
+    // TODO: reenable after debugging dashboard
+    // window.addEventListener("contextmenu", (event) => {
+    //   event.preventDefault();
+    // });
 
     // Prevent the window scrolling down when using mouse wheel
     window.addEventListener("wheel", (event) => event.preventDefault(), {
       passive: false,
+    });
+
+    // GUI events
+    this.dashboardGuiGlobal?.addEventListener("mousedown", () => {
+      this.isInteractingWithGui = true;
+    });
+    this.dashboardGuiGlobal?.addEventListener("mouseup", () => {
+      this.isInteractingWithGui = false;
     });
   }
 

@@ -195,6 +195,10 @@ export default class Camera {
   }
 
   private switchCamera() {
+    if (!this.experience.debug.isActive) {
+      return;
+    }
+
     if (this.instance instanceof THREE.OrthographicCamera) {
       this.instance = this.perspectiveCamera;
     } else {
