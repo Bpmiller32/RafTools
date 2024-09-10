@@ -51,7 +51,13 @@ export default class ResourceLoader extends EventEmitter<EventMap> {
     }
   }
 
-  private startLoadingFromApi() {}
+  public startLoadingFromApi(imageUrl?: string) {
+    this.textureLoader?.load(imageUrl!, (texture) => {
+      this.items["apiImage"] = texture;
+      this.emit("loadedFromApi");
+      console.log("emitting loaded apiImage");
+    });
+  }
 
   private sourceLoaded(source: Resource, file: any) {
     this.items[source.name] = file;

@@ -55,6 +55,10 @@ export default class World {
       this.imageBoxHandler = new ImageBoxHandler();
       this.clipBoxHandler = new ClipBoxHandler();
     });
+    this.resources.on("loadedFromApi", () => {
+      this.imageBoxHandler.destroy();
+      this.imageBoxHandler = new ImageBoxHandler();
+    });
   }
 
   public update() {

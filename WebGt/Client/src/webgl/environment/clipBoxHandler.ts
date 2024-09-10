@@ -164,6 +164,15 @@ export default class ClipBoxHandler {
   }
 
   private mouseUp(event: MouseEvent) {
+    // if (this.input.isInteractingWithGui) {
+    //   return;
+    // }
+
+    // Fix for isInteractingWithGui on a mouseUp
+    if (this.input.dashboardGuiGlobal?.contains(event.target as HTMLElement)) {
+      return;
+    }
+
     if (event.button === 0) {
       this.input.isLeftClickPressed = false;
       this.hasMovedMouseOnce = false;

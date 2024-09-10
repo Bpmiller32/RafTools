@@ -5,6 +5,7 @@ type EventMap = {
   resize: [];
   // resourceLoader
   ready: [];
+  loadedFromApi: [];
   // mouse events
   mouseDown: [MouseEvent];
   mouseMove: [MouseEvent];

@@ -83,9 +83,17 @@ export default class ImageBoxHandler {
   }
   /* ---------------------------- Instance methods ---------------------------- */
   private setGeometry() {
-    const textureAspectRatio =
-      this.resources.items.test.image.width /
-      this.resources.items.test.image.height;
+    let textureAspectRatio;
+
+    if (this.resources.items.apiImage) {
+      textureAspectRatio =
+        this.resources.items.apiImage.image.width /
+        this.resources.items.apiImage.image.height;
+    } else {
+      textureAspectRatio =
+        this.resources.items.test.image.width /
+        this.resources.items.test.image.height;
+    }
 
     const boxHeight = 5;
     const boxWidth = boxHeight * textureAspectRatio;
@@ -95,14 +103,25 @@ export default class ImageBoxHandler {
   }
 
   private setMaterial() {
-    this.materials = [
-      new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
-      new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
-      new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
-      new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
-      new THREE.MeshBasicMaterial({ map: this.resources.items.test }), // Front face with texture
-      new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
-    ];
+    if (this.resources.items.apiImage) {
+      this.materials = [
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
+        new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
+        new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
+        new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
+        new THREE.MeshBasicMaterial({ map: this.resources.items.apiImage }), // Front face with texture
+        new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
+      ];
+    } else {
+      this.materials = [
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
+        new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
+        new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
+        new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
+        new THREE.MeshBasicMaterial({ map: this.resources.items.test }), // Front face with texture
+        new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
+      ];
+    }
   }
 
   private setMesh() {
@@ -167,6 +186,7 @@ export default class ImageBoxHandler {
     // link.click();
 
     // Restore the original position and zoom level, renderer size
+    console.log("restoring camera....");
     this.camera.orthographicCamera.position.copy(originalPosition);
     this.camera.orthographicCamera.zoom = originalZoom;
     this.camera.cameraPositionTarget = originalPositionTarget;
@@ -269,6 +289,7 @@ export default class ImageBoxHandler {
   }
 
   public destroy() {
+    console.log("am i being called?");
     this.scene.remove(this.mesh);
     this.geometry.dispose();
 

@@ -227,9 +227,9 @@ export default class Input extends EventEmitter<EventMap> {
     // Window events
     // Disable the browser's context menu (enables prefered right click behavior)
     // TODO: reenable after debugging dashboard
-    // window.addEventListener("contextmenu", (event) => {
-    //   event.preventDefault();
-    // });
+    window.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+    });
 
     // Prevent the window scrolling down when using mouse wheel
     window.addEventListener("wheel", (event) => event.preventDefault(), {
