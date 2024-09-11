@@ -21,8 +21,8 @@ export default class Camera {
   public orthographicCamera!: THREE.OrthographicCamera;
   public perspectiveCamera!: THREE.PerspectiveCamera;
 
-  public cameraPositionTarget: THREE.Vector3;
-  public zoomTarget: number;
+  public targetPostion: THREE.Vector3;
+  public targetZoom: number;
   private movementSensitivity: number;
   private zoomSensitivity: number;
 
@@ -35,8 +35,8 @@ export default class Camera {
     this.input = this.experience.input;
 
     // Class fields
-    this.cameraPositionTarget = new THREE.Vector3();
-    this.zoomTarget = 1;
+    this.targetPostion = new THREE.Vector3();
+    this.targetZoom = 1;
     this.movementSensitivity = 0.1;
     this.zoomSensitivity = 0.1;
 
@@ -111,7 +111,7 @@ export default class Camera {
 
     // Set initial camera position, initialize targetPosition to the same initial position as the camera
     this.orthographicCamera.position.z = 10;
-    this.cameraPositionTarget.z = 10;
+    this.targetPostion.z = 10;
   }
 
   private setPerspectiveInstance() {
@@ -177,8 +177,8 @@ export default class Camera {
     const deltaMove = new THREE.Vector2(event.movementX, event.movementY);
 
     // Move the camera in the opposite direction of the drag
-    this.cameraPositionTarget.x -= deltaMove.x * this.time.delta;
-    this.cameraPositionTarget.y += deltaMove.y * this.time.delta;
+    this.targetPostion.x -= deltaMove.x * this.time.delta;
+    this.targetPostion.y += deltaMove.y * this.time.delta;
   }
 
   private mouseUp(event: MouseEvent) {
@@ -189,9 +189,9 @@ export default class Camera {
 
   private mouseWheel(event: WheelEvent) {
     // Zoom in and out
-    this.zoomTarget += event.deltaY * -this.zoomSensitivity * this.time.delta;
+    this.targetZoom += event.deltaY * -this.zoomSensitivity * this.time.delta;
     // Clamp the zoom level to prevent inverting the view or zooming too far out
-    this.zoomTarget = Math.max(0.5, Math.min(10, this.zoomTarget));
+    this.targetZoom = Math.max(0.5, Math.min(10, this.targetZoom));
   }
 
   private switchCamera() {
@@ -238,14 +238,11 @@ export default class Camera {
     }
 
     // Camera position update
-    this.instance.position.lerp(
-      this.cameraPositionTarget,
-      this.movementSensitivity
-    );
+    this.instance.position.lerp(this.targetPostion, this.movementSensitivity);
 
     // Camera zoom update
     this.instance.zoom +=
-      (this.zoomTarget - this.instance.zoom) * this.zoomSensitivity;
+      (this.targetZoom - this.instance.zoom) * this.zoomSensitivity;
 
     // Called to make zoom work
     this.instance.updateProjectionMatrix();

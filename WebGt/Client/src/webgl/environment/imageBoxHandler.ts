@@ -23,7 +23,7 @@ export default class ImageBoxHandler {
 
   public geometry!: THREE.BoxGeometry;
   public materials!: THREE.MeshBasicMaterial[];
-  public mesh!: THREE.Mesh;
+  public mesh?: THREE.Mesh;
 
   private rotationSpeed: number;
   private lerpFactor: number;
@@ -39,10 +39,10 @@ export default class ImageBoxHandler {
     this.sizes = this.experience.sizes;
     this.input = this.experience.input;
 
-    // Class fields
-    this.setGeometry();
-    this.setMaterial();
-    this.setMesh();
+    // // Class fields
+    // this.setGeometry();
+    // this.setMaterial();
+    // this.setMesh();
 
     this.rotationSpeed = 0.005;
     this.lerpFactor = 1;
@@ -74,11 +74,11 @@ export default class ImageBoxHandler {
         ?.add(this.input, "isShiftLeftPressed")
         .name("Image adjust mode")
         .listen();
-      imageBoxDebug
-        ?.add(this.mesh.rotation, "z")
-        .name("Image rotation")
-        .step(0.01)
-        .listen();
+      // imageBoxDebug
+      //   ?.add(this.mesh?.rotation, "z")
+      //   .name("Image rotation")
+      //   .step(0.01)
+      //   .listen();
     }
   }
   /* ---------------------------- Instance methods ---------------------------- */
@@ -134,16 +134,18 @@ export default class ImageBoxHandler {
 
   /* ------------------------------ Event methods ----------------------------- */
   private async screenshotImage() {
+    console.log(this.mesh);
+
     // Store the camera's current position and zoom level, render's resolution
     const originalPosition = this.camera.orthographicCamera.position;
     const originalZoom = this.camera.orthographicCamera.zoom;
-    const originalPositionTarget = this.camera.cameraPositionTarget;
-    const originalZoomTarget = this.camera.zoomTarget;
+    const originalPositionTarget = this.camera.targetPostion;
+    const originalZoomTarget = this.camera.targetZoom;
     const originalRendererSize = new THREE.Vector2();
     this.renderer.instance.getSize(originalRendererSize);
 
     // Compute the bounding box of the mesh
-    const boundingBox = new THREE.Box3().setFromObject(this.mesh);
+    const boundingBox = new THREE.Box3().setFromObject(this.mesh!);
     const boundingBoxSize = boundingBox.getSize(new THREE.Vector3());
     const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
 
@@ -189,8 +191,8 @@ export default class ImageBoxHandler {
     console.log("restoring camera....");
     this.camera.orthographicCamera.position.copy(originalPosition);
     this.camera.orthographicCamera.zoom = originalZoom;
-    this.camera.cameraPositionTarget = originalPositionTarget;
-    this.camera.zoomTarget = originalZoomTarget;
+    this.camera.targetPostion = originalPositionTarget;
+    this.camera.targetZoom = originalZoomTarget;
     this.camera.orthographicCamera.updateProjectionMatrix();
 
     this.renderer.instance.setSize(
@@ -201,15 +203,15 @@ export default class ImageBoxHandler {
 
   private resetImage() {
     // Remove the existing mesh, recreate and add the original mesh back to the scene
-    this.scene.remove(this.mesh);
+    this.scene.remove(this.mesh!);
     this.mesh = new THREE.Mesh(this.geometry, this.materials);
     this.scene.add(this.mesh);
 
     // Reset the camera
     this.camera.orthographicCamera.position.set(0, 0, 10);
-    this.camera.cameraPositionTarget.set(0, 0, 10);
+    this.camera.targetPostion.set(0, 0, 10);
     this.camera.orthographicCamera.zoom = 1;
-    this.camera.zoomTarget = 1;
+    this.camera.targetZoom = 1;
 
     // Reset the textArea in the GUI
     this.input.dashboardTextarea!.value = "";
@@ -273,7 +275,17 @@ export default class ImageBoxHandler {
   }
 
   /* ------------------------------ Tick methods ------------------------------ */
+  public setNewImage() {
+    this.setGeometry();
+    this.setMaterial();
+    this.setMesh();
+  }
+
   public update() {
+    if (!this.mesh) {
+      return;
+    }
+
     // Mouse moving on x axis
     this.mesh.rotation.z = THREE.MathUtils.lerp(
       this.mesh.rotation.z,
@@ -289,7 +301,10 @@ export default class ImageBoxHandler {
   }
 
   public destroy() {
-    console.log("am i being called?");
+    if (!this.mesh) {
+      return;
+    }
+
     this.scene.remove(this.mesh);
     this.geometry.dispose();
 

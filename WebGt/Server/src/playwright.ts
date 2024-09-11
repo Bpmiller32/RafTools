@@ -1,4 +1,6 @@
 import { Browser, chromium, Page } from "playwright";
+import * as fs from "fs";
+import * as path from "path";
 
 export async function startBrowser(
   url: string
@@ -9,10 +11,7 @@ export async function startBrowser(
   // Navigate to the webpage
   await page.goto(url);
 
-  /* -------------------------------------------------------------------------- */
-  /*                                 Login Page                                 */
-  /* -------------------------------------------------------------------------- */
-
+  //   Now on: Login page
   /* ----------------------------- Input username ----------------------------- */
   // Wait for the element to be visible
   const usernameSelector = "#gtuser";
@@ -61,9 +60,7 @@ export async function startBrowser(
   const loginButtonSelector = "#login > input[type=submit]:nth-child(14)";
   await page.click(loginButtonSelector);
 
-  /* -------------------------------------------------------------------------- */
-  /*                                Main App Page                               */
-  /* -------------------------------------------------------------------------- */
+  //   Now on: Main app page
   const instructionsExit = "#instructionstextdiv";
   await page.waitForSelector(instructionsExit, { state: "visible" });
 
@@ -76,15 +73,22 @@ export async function stopBrowser(browser: Browser) {
   await browser.close();
 }
 
-export async function getImageName(page: Page): Promise<string | null> {
+export async function getImageName(page: Page): Promise<string> {
   const url = page.url();
 
   // Regular expression to match the fileid parameter
   const regex = /[?&]fileid=([^&]*)/;
   const match = url.match(regex);
 
-  // If match is found, return the captured fileid, otherwise return null
-  return match ? match[1] : null;
+  // If match is found, return the captured fileid, otherwise return empty string
+  let output = "";
+  if (match) {
+    output = match[1];
+  } else {
+    output = "";
+  }
+
+  return output;
 }
 
 export async function downloadImage(page: Page): Promise<Buffer> {
@@ -118,6 +122,7 @@ export async function downloadImage(page: Page): Promise<Buffer> {
   // Navigate back to the previous page
   await page.goBack();
 
+  // Return the image as a data buffer
   return buffer;
 }
 
@@ -177,4 +182,79 @@ export async function gotoNextImage(page: Page) {
 
   // Click on the next button
   await page.click(nextButtonSelector);
+
+  // Wait for the page to be fully loaded, should ensure the next image is present and available to extract
+  await page.waitForLoadState("networkidle");
+}
+
+/* ---------------------------------- Debug --------------------------------- */
+export async function manualGotoImage(
+  page: Page,
+  incrementNavigation: boolean
+) {
+  const url = page.url();
+  const urlObj = new URL(url);
+
+  // Get the current fileid, increment or decrement it by 1
+  const fileIdParam = urlObj.searchParams.get("fileid");
+
+  if (fileIdParam) {
+    let fileId = parseInt(fileIdParam, 10);
+    if (incrementNavigation) {
+      fileId = fileId + 1;
+    } else {
+      fileId = fileId - 1;
+    }
+    urlObj.searchParams.set("fileid", fileId.toString());
+
+    // Navigate to new url
+    await page.goto(urlObj.toString());
+
+    // Wait for the page to be fully loaded, should ensure the next image is present and available to extract
+    await page.waitForLoadState("networkidle");
+  }
+}
+
+export async function getImageFromDisk(imageFilePath: string): Promise<Buffer> {
+  // Resolve the absolute path to the image on disk
+  const resolvedImagePath = path.resolve(imageFilePath);
+
+  // Read the image file from disk and return it as a buffer
+  const buffer = fs.readFileSync(resolvedImagePath);
+
+  // Return the image buffer
+  return buffer;
+}
+
+export async function getNextImageFromDisk(
+  fileId: string,
+  imageFolderPath: string
+): Promise<Buffer> {
+  // Read the contents of the directory
+  const files = fs.readdirSync(imageFolderPath);
+
+  // Filter for image files only (assuming .jpg, .jpeg, .png extensions)
+  const imageFiles = files.filter((file) => /\.(jpg|jpeg|png)$/i.test(file));
+
+  // Sort the image files alphabetically
+  imageFiles.sort();
+
+  // Find the current file index based on the fileId
+  const currentFileIndex = imageFiles.findIndex((file) =>
+    file.includes(fileId)
+  );
+
+  // If the current file is not found, return null
+  if (currentFileIndex === -1) {
+    throw new Error("File with the given fileId not found.");
+  }
+
+  // Get the next file in the sequence; if it's the last file, loop back to the first file
+  const nextFile =
+    currentFileIndex === imageFiles.length - 1
+      ? imageFiles[0] // Loop back to the first file
+      : imageFiles[currentFileIndex + 1];
+
+  // GetImageFromDisk with the absolute path to the next image
+  return await getImageFromDisk(path.resolve(imageFolderPath, nextFile));
 }

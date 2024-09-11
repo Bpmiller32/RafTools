@@ -10,7 +10,13 @@ import Experience from "../webgl/experience";
 import axios from "axios";
 
 export default defineComponent({
-  setup() {
+  props: {
+    apiUrl: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
     /* -------------------------------------------------------------------------- */
     /*                                    State                                   */
     /* -------------------------------------------------------------------------- */
@@ -30,17 +36,6 @@ export default defineComponent({
     /* -------------------------------------------------------------------------- */
     /*                                   Events                                   */
     /* -------------------------------------------------------------------------- */
-    // const CopyToClipBoardButtonClicked = async () => {
-    //   const textToCopy = textAreaRef.value.value;
-
-    //   try {
-    //     await navigator.clipboard.writeText(textToCopy);
-    //     // console.log("Text copied to clipboard!");
-    //   } catch (err) {
-    //     console.error("Failed to copy text to clipboard: ", err);
-    //   }
-    // };
-
     const MailTypeButtonClicked = (buttonType: string) => {
       switch (buttonType) {
         case "MP":
@@ -85,6 +80,57 @@ export default defineComponent({
     };
 
     const NavButtonClicked = async (buttonType: string) => {
+      if (buttonType === "Debug") {
+        // // Pull existing image
+        // try {
+        //   const downloadImageUrl = props.apiUrl + "/downloadImage";
+
+        //   const response = await axios.get(downloadImageUrl, {
+        //     responseType: "arraybuffer",
+        //   });
+        //   const { imageName, base64Image } = response.data;
+
+        //   // Set image's name in gui
+        //   imageNameRef.value.innerText = imageName + ".jpg";
+
+        //   // Convert base64 image to a data URL
+        //   const dataURL = `data:image/jpeg;base64,${base64Image}`;
+
+        //   // Start load into three as a texture, event handler will trigger when finished in three\world
+        //   experience.resources.startLoadingFromApi(dataURL);
+        // } catch (error) {
+        //   console.error(error);
+        // }
+
+        try {
+          const gotoImageResponse = await axios.post(
+            props.apiUrl + "/manualGotoImage",
+            true
+          );
+          console.log(gotoImageResponse);
+
+          const response = await axios.get(props.apiUrl + "/getImageFromDisk", {
+            responseType: "arraybuffer",
+          });
+
+          // Convert response data to a Blob
+          const imageBlob = new Blob([response.data], {
+            type: response.headers["content-type"],
+          });
+
+          // Create a URL for the Blob
+          const imageUrl = URL.createObjectURL(imageBlob);
+
+          // Start load into three as a texture, event handler will trigger when finished in three\world
+          experience.resources.loadFromApi(imageUrl);
+
+          // Clean up
+          URL.revokeObjectURL(imageUrl);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
       if (buttonType === "Send") {
         // Define data request body
         const data = {
@@ -107,7 +153,7 @@ export default defineComponent({
         }
 
         // Define the API endpoint URL
-        const apiUrl = "https://termite-grand-moose.ngrok-free.app/fillInForm";
+        const apiUrl = props.apiUrl + "/fillInForm";
 
         // Send POST request with Axios
         try {
@@ -122,12 +168,9 @@ export default defineComponent({
 
       if (buttonType === "Next") {
         // Define the API endpoint URL
-        const nextImageUrl =
-          "https://termite-grand-moose.ngrok-free.app/gotoNextImage";
-        const getImageName =
-          "https://termite-grand-moose.ngrok-free.app/getImageName";
-        const downloadImageUrl =
-          "https://termite-grand-moose.ngrok-free.app/downloadImage";
+        const nextImageUrl = props.apiUrl + "/gotoNextImage";
+        const getImageName = props.apiUrl + "/getImageName";
+        const downloadImageUrl = props.apiUrl + "/downloadImage";
 
         // Navigate to new image
         try {
@@ -179,7 +222,7 @@ export default defineComponent({
           // a.click();
 
           // Start load into three as a texture, event handler will trigger when finished in three\world
-          experience.resources.startLoadingFromApi(imageUrl);
+          experience.resources.loadFromApi(imageUrl);
 
           // Clean up
           URL.revokeObjectURL(imageUrl);
@@ -259,7 +302,7 @@ export default defineComponent({
             "rounded-r-xl": roundRightCorner,
           }}
         >
-          {NavButtonHelper(buttonType)}
+          {NavButtonIconSelector(buttonType)}
           <p class="text-white text-sm group-hover:text-indigo-100 duration-300">
             {buttonType}
           </p>
@@ -267,7 +310,7 @@ export default defineComponent({
       );
     };
 
-    const NavButtonHelper = (buttonType: string) => {
+    const NavButtonIconSelector = (buttonType: string) => {
       if (buttonType === "Send") {
         return (
           <ArrowUpCircleIcon class="h-5 w-5 text-gray-100 transition-colors group-hover:text-indigo-100 duration-300" />
@@ -295,12 +338,12 @@ export default defineComponent({
             "rounded-r-xl": roundRightCorner,
           }}
         >
-          {ActionButtonHelper(buttonType)}
+          {ActionButtonIconSelector(buttonType)}
         </button>
       );
     };
 
-    const ActionButtonHelper = (buttonType: string) => {
+    const ActionButtonIconSelector = (buttonType: string) => {
       switch (buttonType) {
         case "Cut":
           return (
@@ -338,6 +381,7 @@ export default defineComponent({
               20240703_161418_9316_43616_01.jpg
             </label>
             <div class="flex">
+              {NavButton("Debug", true, true)}
               {NavButton("Send", true, false)}
               {NavButton("Next", false, true)}
             </div>

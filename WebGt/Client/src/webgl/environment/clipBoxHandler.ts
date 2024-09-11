@@ -33,6 +33,10 @@ export default class ClipBoxHandler {
     this.input = this.experience.input;
     this.world = this.experience.world;
 
+    console.log("world in clipBoxHandler: ", this.world);
+    console.log("input in clipBoxHandler: ", this.input);
+    console.log("sizes in clipBoxHandler: ", this.sizes);
+
     // Class fields
     this.hasMovedMouseOnce = false;
     this.worldStartMousePosition = new THREE.Vector3();
@@ -206,13 +210,13 @@ export default class ClipBoxHandler {
 
     // Add the new combined mesh to the scene
     const croppedMesh = CSG.intersect(
-      this.world.imageBoxHandler.mesh,
+      this.world.imageBoxHandler!.mesh!,
       combinedMesh
     );
 
     // Remove the old imageBox so it doesn't overlap with the croppedMesh, set croppedMesh to imageBox
-    this.scene.remove(this.world.imageBoxHandler.mesh);
-    this.world.imageBoxHandler.mesh = croppedMesh;
+    this.scene.remove(this.world.imageBoxHandler!.mesh!);
+    this.world.imageBoxHandler!.mesh = croppedMesh;
     this.scene.add(croppedMesh);
   }
 
@@ -247,6 +251,10 @@ export default class ClipBoxHandler {
   }
 
   /* ------------------------------ Tick methods ------------------------------ */
+public newImageSet(){
+  
+}
+
   public destroy() {
     if (this.activeMesh) {
       this.scene.remove(this.activeMesh);

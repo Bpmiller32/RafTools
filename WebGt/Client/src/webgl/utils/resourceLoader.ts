@@ -15,21 +15,16 @@ export default class ResourceLoader extends EventEmitter<EventMap> {
 
   private textureLoader?: THREE.TextureLoader;
 
-  constructor(sources?: Resource[]) {
+  constructor(sources: Resource[]) {
     super();
 
-    if (sources) {
-      this.sources = sources;
-      this.items = {};
-      this.toLoad = this.sources.length;
-      this.loaded = 0;
+    this.sources = sources;
+    this.items = {};
+    this.toLoad = this.sources.length;
+    this.loaded = 0;
 
-      this.setLoaders();
-      this.startLoadingFromLocal();
-    } else {
-      this.setLoaders();
-      this.startLoadingFromApi();
-    }
+    this.setLoaders();
+    this.startLoadingFromLocal();
   }
 
   private setLoaders() {
@@ -51,20 +46,20 @@ export default class ResourceLoader extends EventEmitter<EventMap> {
     }
   }
 
-  public startLoadingFromApi(imageUrl?: string) {
-    this.textureLoader?.load(imageUrl!, (texture) => {
-      this.items["apiImage"] = texture;
-      this.emit("loadedFromApi");
-      console.log("emitting loaded apiImage");
-    });
-  }
-
   private sourceLoaded(source: Resource, file: any) {
     this.items[source.name] = file;
     this.loaded++;
 
     if (this.loaded === this.toLoad) {
-      this.emit("ready");
+      this.emit("appReady");
     }
+  }
+
+  public loadFromApi(imageUrl?: string) {
+    this.textureLoader?.load(imageUrl!, (texture) => {
+      this.items["apiImage"] = texture;
+      this.emit("loadedFromApi");
+      console.log("emitting loaded apiImage");
+    });
   }
 }

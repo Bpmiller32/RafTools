@@ -12,6 +12,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <EditorDashboard id="gui" class="absolute" />
+  <EditorDashboard
+    id="gui"
+    class="absolute"
+    apiUrl="https://termite-grand-moose.ngrok-free.app"
+  />
   <canvas ref="webglRef" class=""></canvas>
 </template>

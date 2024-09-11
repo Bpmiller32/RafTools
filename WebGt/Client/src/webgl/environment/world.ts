@@ -17,7 +17,6 @@ export default class World {
   private scene: THREE.Scene;
   private debug!: Debug;
 
-  public spriteBoxMesh!: THREE.Mesh;
   public imageBoxHandler!: ImageBoxHandler;
   public clipBoxHandler!: ClipBoxHandler;
 
@@ -28,9 +27,24 @@ export default class World {
     this.camera = this.experience.camera;
     this.scene = this.experience.scene;
 
-    // Class fields
+    // Events
+    this.resources.on("appReady", () => {
+      this.imageBoxHandler = new ImageBoxHandler();
+      this.clipBoxHandler = new ClipBoxHandler();
+    });
 
-    // Debug GUI
+    this.resources.on("loadedFromApi", () => {
+      this.imageBoxHandler.destroy();
+      this.imageBoxHandler.setNewImage();
+
+      this.clipBoxHandler.destroy();
+      this.clipBoxHandler = new ClipBoxHandler();
+
+      this.camera.targetPostion.set(0, 0, 10);
+      this.camera.targetZoom = 1;
+    });
+
+    // Debug
     if (this.experience.debug.isActive) {
       this.debug = this.experience.debug;
 
@@ -49,16 +63,6 @@ export default class World {
         .name("renderer height")
         .listen();
     }
-
-    // Resources events
-    this.resources.on("ready", () => {
-      this.imageBoxHandler = new ImageBoxHandler();
-      this.clipBoxHandler = new ClipBoxHandler();
-    });
-    this.resources.on("loadedFromApi", () => {
-      this.imageBoxHandler.destroy();
-      this.imageBoxHandler = new ImageBoxHandler();
-    });
   }
 
   public update() {
