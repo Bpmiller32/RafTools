@@ -23,8 +23,8 @@ export default class Camera {
 
   public targetPostion: THREE.Vector3;
   public targetZoom: number;
-  private movementSensitivity: number;
-  private zoomSensitivity: number;
+  private sensitivityMovement: number;
+  private sensitivityZoom: number;
 
   constructor() {
     // Experience fields
@@ -37,8 +37,8 @@ export default class Camera {
     // Class fields
     this.targetPostion = new THREE.Vector3();
     this.targetZoom = 1;
-    this.movementSensitivity = 0.1;
-    this.zoomSensitivity = 0.1;
+    this.sensitivityMovement = 0.1;
+    this.sensitivityZoom = 0.1;
 
     this.setOrthographicInstance();
     this.setPerspectiveInstance();
@@ -96,7 +96,7 @@ export default class Camera {
   /* ---------------------- Instance methods and controls --------------------- */
   private setOrthographicInstance() {
     const aspectRatio = this.sizes.width / this.sizes.height;
-    const frustumSize = 10; // Adjust this to control the zoom level of the orthographic camera
+    const frustumSize = 10; // Adjust this to control the max zoom level of the orthographic camera
 
     this.orthographicCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspectRatio) / 2, // left
@@ -107,11 +107,11 @@ export default class Camera {
       500 // far
     );
 
-    this.scene.add(this.orthographicCamera);
-
     // Set initial camera position, initialize targetPosition to the same initial position as the camera
     this.orthographicCamera.position.z = 10;
     this.targetPostion.z = 10;
+
+    this.scene.add(this.orthographicCamera);
   }
 
   private setPerspectiveInstance() {
@@ -189,7 +189,7 @@ export default class Camera {
 
   private mouseWheel(event: WheelEvent) {
     // Zoom in and out
-    this.targetZoom += event.deltaY * -this.zoomSensitivity * this.time.delta;
+    this.targetZoom += event.deltaY * -this.sensitivityZoom * this.time.delta;
     // Clamp the zoom level to prevent inverting the view or zooming too far out
     this.targetZoom = Math.max(0.5, Math.min(10, this.targetZoom));
   }
@@ -238,11 +238,11 @@ export default class Camera {
     }
 
     // Camera position update
-    this.instance.position.lerp(this.targetPostion, this.movementSensitivity);
+    this.instance.position.lerp(this.targetPostion, this.sensitivityMovement);
 
     // Camera zoom update
     this.instance.zoom +=
-      (this.targetZoom - this.instance.zoom) * this.zoomSensitivity;
+      (this.targetZoom - this.instance.zoom) * this.sensitivityZoom;
 
     // Called to make zoom work
     this.instance.updateProjectionMatrix();

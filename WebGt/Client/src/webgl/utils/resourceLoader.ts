@@ -8,19 +8,25 @@ import EventMap from "./types/eventMap";
 import Resource from "./types/resource";
 
 export default class ResourceLoader extends EventEmitter<EventMap> {
-  private sources!: Resource[];
-  public items!: { [key: string]: any };
-  public toLoad!: number;
-  public loaded!: number;
+  private sources?: Resource[];
+  public items: { [key: string]: any };
+  public toLoad: number;
+  public loaded: number;
 
   private textureLoader?: THREE.TextureLoader;
 
-  constructor(sources: Resource[]) {
+  constructor(sources?: Resource[]) {
     super();
 
     this.sources = sources;
     this.items = {};
-    this.toLoad = this.sources.length;
+
+    if (sources) {
+      this.toLoad = this.sources!.length;
+    } else {
+      this.toLoad = 0;
+    }
+
     this.loaded = 0;
 
     this.setLoaders();
@@ -31,7 +37,12 @@ export default class ResourceLoader extends EventEmitter<EventMap> {
     this.textureLoader = new THREE.TextureLoader();
   }
 
-  private startLoadingFromLocal() {
+  private async startLoadingFromLocal() {
+    if (!this.sources) {
+      this.emit("appReady");
+      return;
+    }
+
     for (const source of this.sources) {
       switch (source.type) {
         case "texture":

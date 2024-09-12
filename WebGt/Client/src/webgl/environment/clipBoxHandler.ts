@@ -181,6 +181,22 @@ export default class ClipBoxHandler {
       this.input.isLeftClickPressed = false;
       this.hasMovedMouseOnce = false;
 
+      // TODO:cleanup later, fixes if too small of a box was added
+      // Create a Box3 to compute the bounding box
+      const boundingBox = new THREE.Box3().setFromObject(this.activeMesh!);
+
+      // Get the size of the bounding box
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
+
+      console.log("size: ", size);
+
+      if (size.x < 0.2001 || size.y < 0.2001 || size.z < 0.2001) {
+        console.log("size too small");
+        this.scene.remove(this.activeMesh!);
+        return;
+      }
+
       // Add the activeMesh to the clippingBoxes array here
       this.activeMesh!.updateMatrix();
       this.clippingBoxes.push(this.activeMesh!);
@@ -251,9 +267,7 @@ export default class ClipBoxHandler {
   }
 
   /* ------------------------------ Tick methods ------------------------------ */
-public newImageSet(){
-  
-}
+  public newImageSet() {}
 
   public destroy() {
     if (this.activeMesh) {

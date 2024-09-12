@@ -40,17 +40,19 @@ export default class Experience {
 
   // Replacement public constructor
   public async configure(canvas: HTMLCanvasElement | null) {
+    // Class fields
     this.debug = new Debug();
     this.sizes = new Sizes();
     this.time = new Time();
     this.input = new Input();
-    this.resources = new ResourceLoader([
-      {
-        name: "test",
-        type: "texture",
-        path: "/assets/20240703_161418_9316_43616_01.jpg",
-      },
-    ]);
+    // this.resources = new ResourceLoader([
+    //   {
+    //     name: "test",
+    //     type: "texture",
+    //     path: "/assets/20240703_161418_9316_43616_01.jpg",
+    //   },
+    // ]);
+    this.resources = new ResourceLoader();
 
     this.targetElement = canvas;
 
@@ -59,17 +61,17 @@ export default class Experience {
     this.renderer = new Renderer();
     this.world = new World();
 
-    // Sizes resize event
+    // Events
     this.sizes.on("resize", () => {
       this.resize();
     });
 
-    // Time tick event
     this.time.on("tick", () => {
       this.update();
     });
   }
 
+  /* ------------------------------ Tick methods ------------------------------ */
   public resize() {
     this.camera.resize();
     this.renderer.resize();

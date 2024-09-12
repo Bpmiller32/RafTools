@@ -17,8 +17,8 @@ export default class World {
   private scene: THREE.Scene;
   private debug!: Debug;
 
-  public imageBoxHandler!: ImageBoxHandler;
-  public clipBoxHandler!: ClipBoxHandler;
+  public imageBoxHandler?: ImageBoxHandler;
+  public clipBoxHandler?: ClipBoxHandler;
 
   constructor() {
     // Experience fields
@@ -34,10 +34,10 @@ export default class World {
     });
 
     this.resources.on("loadedFromApi", () => {
-      this.imageBoxHandler.destroy();
-      this.imageBoxHandler.setNewImage();
+      this.imageBoxHandler?.destroy();
+      this.imageBoxHandler?.setNewImage();
 
-      this.clipBoxHandler.destroy();
+      this.clipBoxHandler?.destroy();
       this.clipBoxHandler = new ClipBoxHandler();
 
       this.camera.targetPostion.set(0, 0, 10);
@@ -67,12 +67,12 @@ export default class World {
 
   public update() {
     this.camera.update();
-    this.imageBoxHandler.update();
+    this.imageBoxHandler?.update();
   }
 
   public destroy() {
     this.camera.destroy();
-    this.imageBoxHandler.destroy();
-    this.clipBoxHandler.destroy();
+    this.imageBoxHandler?.destroy();
+    this.clipBoxHandler?.destroy();
   }
 }

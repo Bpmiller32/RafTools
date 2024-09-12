@@ -1,5 +1,5 @@
 /* -------------------------------------------------------------------------- */
-/*                    Used to handle keyboard input events                    */
+/*               Used to handle keyboard and mouse input events               */
 /* -------------------------------------------------------------------------- */
 
 import Key from "./types/key";
@@ -28,6 +28,7 @@ export default class Input extends EventEmitter<EventMap> {
   public isRightClickPressed: boolean;
 
   public dashboardGuiGlobal: HTMLElement | null;
+  public loginGuiGlobal: HTMLElement | null;
   public dashboardTextarea: HTMLTextAreaElement | null;
   public isInteractingWithGui: boolean;
 
@@ -57,6 +58,7 @@ export default class Input extends EventEmitter<EventMap> {
     this.isRightClickPressed = false;
 
     this.dashboardGuiGlobal = document.getElementById("gui");
+    this.loginGuiGlobal = document.getElementById("loginPage");
     this.dashboardTextarea = document.getElementById(
       "guiTextArea"
     ) as HTMLTextAreaElement;
@@ -241,6 +243,12 @@ export default class Input extends EventEmitter<EventMap> {
       this.isInteractingWithGui = true;
     });
     this.dashboardGuiGlobal?.addEventListener("mouseup", () => {
+      this.isInteractingWithGui = false;
+    });
+    this.loginGuiGlobal?.addEventListener("mousedown", () => {
+      this.isInteractingWithGui = true;
+    });
+    this.loginGuiGlobal?.addEventListener("mouseup", () => {
       this.isInteractingWithGui = false;
     });
   }

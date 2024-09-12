@@ -25,7 +25,7 @@ export default defineComponent({
     const imageNameRef = ref();
     const textAreaRef = ref();
 
-    const isMpImage = ref(false);
+    const isMpImage = ref(true);
     const isHWImage = ref(false);
     const isBadImage = ref(false);
 
@@ -179,9 +179,9 @@ export default defineComponent({
           console.error(error);
         }
 
-        // Clear all fields for new image
+        // Clear all fields for new image, except isMpImage since that should be the default
         textAreaRef.value.value = "";
-        isMpImage.value = false;
+        isMpImage.value = true;
         isHWImage.value = false;
         isBadImage.value = false;
         isRts.value = false;
@@ -369,7 +369,7 @@ export default defineComponent({
     /*                               Render function                              */
     /* -------------------------------------------------------------------------- */
     return () => (
-      <main class="overflow-hidden pt-5 pl-5">
+      <article class="overflow-hidden pt-5 pl-5">
         {/* Filename, textarea, clipboard copy button */}
         <section class="w-[27rem]">
           <div class="flex justify-between items-center">
@@ -418,7 +418,7 @@ export default defineComponent({
             {MailTypeButton("Form 3547", is3547.value, false, true)}
           </div>
         </section>
-      </main>
+      </article>
     );
   },
 });

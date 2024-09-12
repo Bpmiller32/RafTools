@@ -218,7 +218,10 @@ export default class ImageBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.input.isShiftLeftPressed || this.input.isRightClickPressed) {
+    // if (!this.input.isShiftLeftPressed || this.input.isRightClickPressed) {
+    //   return;
+    // }
+    if (this.input.isRightClickPressed) {
       return;
     }
 
@@ -282,6 +285,8 @@ export default class ImageBoxHandler {
   }
 
   public update() {
+    console.log("jhere");
+
     if (!this.mesh) {
       return;
     }
