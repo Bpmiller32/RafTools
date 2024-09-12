@@ -2,8 +2,7 @@
 /*                          Typescript event emitter                          */
 /* -------------------------------------------------------------------------- */
 
-// Great resource for when you forget....
-// https://www.youtube.com/watch?v=Pl7pDjWd830&pp=ygUXdHlwZXNjcmlwdCBldmVudGVtaXR0ZXI%3D
+// Credit: TypeScript: Building a better EventEmitter by Tech Talks with Simon when you forget how this works
 
 type Listener<T extends Array<any>> = (...args: T) => void;
 

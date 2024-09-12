@@ -17,7 +17,7 @@ export default class Experience {
   private static instance: Experience;
   private constructor() {}
 
-  public debug!: Debug;
+  public debug?: Debug;
   public sizes!: Sizes;
   public time!: Time;
   public input!: Input;
@@ -45,13 +45,6 @@ export default class Experience {
     this.sizes = new Sizes();
     this.time = new Time();
     this.input = new Input();
-    // this.resources = new ResourceLoader([
-    //   {
-    //     name: "test",
-    //     type: "texture",
-    //     path: "/assets/20240703_161418_9316_43616_01.jpg",
-    //   },
-    // ]);
     this.resources = new ResourceLoader();
 
     this.targetElement = canvas;
@@ -78,21 +71,21 @@ export default class Experience {
   }
 
   public update() {
-    if (this.debug.isActive) {
+    if (this.debug?.isActive) {
       this.debug.stats?.begin();
     }
 
     this.world.update();
     this.renderer.update();
 
-    if (this.debug.isActive) {
+    if (this.debug?.isActive) {
       this.debug.stats?.end();
     }
   }
 
   public destroy() {
     // Event listeners
-    this.sizes.destroy();
+    this.sizes?.destroy();
     this.time.destroy();
     this.input.destroy();
 
@@ -104,7 +97,7 @@ export default class Experience {
     this.renderer.destroy();
 
     // Debug menu
-    if (this.debug.isActive) {
+    if (this.debug?.isActive) {
       this.debug.destroy();
     }
   }

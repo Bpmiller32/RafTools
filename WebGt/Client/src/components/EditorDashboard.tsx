@@ -1,4 +1,4 @@
-import { defineComponent, ref } from "vue";
+import { defineComponent, onMounted, ref } from "vue";
 import {
   ArrowUpCircleIcon,
   ArrowUturnLeftIcon,
@@ -7,7 +7,7 @@ import {
   ScissorsIcon,
 } from "@heroicons/vue/16/solid";
 import Experience from "../webgl/experience";
-import axios from "axios";
+import { fillInForm, gotoNextImage } from "./apiHandler";
 
 export default defineComponent({
   props: {
@@ -17,9 +17,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    /* -------------------------------------------------------------------------- */
-    /*                                    State                                   */
-    /* -------------------------------------------------------------------------- */
+    /* ---------------------------------- State --------------------------------- */
     const experience = Experience.getInstance();
 
     const imageNameRef = ref();
@@ -33,9 +31,19 @@ export default defineComponent({
     const isFwd = ref(false);
     const is3547 = ref(false);
 
-    /* -------------------------------------------------------------------------- */
-    /*                                   Events                                   */
-    /* -------------------------------------------------------------------------- */
+    onMounted(() => {
+      // TODO: fix this, experience and therefore are not ready by the time this mounts
+      setTimeout(() => {
+        experience.input.on("fillInForm", async () => {
+          await FormHelper();
+        });
+        experience.input.on("gotoNextImage", async () => {
+          await NextImageHelper();
+        });
+      }, 1000);
+    });
+
+    /* --------------------------------- Events --------------------------------- */
     const MailTypeButtonClicked = (buttonType: string) => {
       switch (buttonType) {
         case "MP":
@@ -80,155 +88,14 @@ export default defineComponent({
     };
 
     const NavButtonClicked = async (buttonType: string) => {
-      if (buttonType === "Debug") {
-        // // Pull existing image
-        // try {
-        //   const downloadImageUrl = props.apiUrl + "/downloadImage";
-
-        //   const response = await axios.get(downloadImageUrl, {
-        //     responseType: "arraybuffer",
-        //   });
-        //   const { imageName, base64Image } = response.data;
-
-        //   // Set image's name in gui
-        //   imageNameRef.value.innerText = imageName + ".jpg";
-
-        //   // Convert base64 image to a data URL
-        //   const dataURL = `data:image/jpeg;base64,${base64Image}`;
-
-        //   // Start load into three as a texture, event handler will trigger when finished in three\world
-        //   experience.resources.startLoadingFromApi(dataURL);
-        // } catch (error) {
-        //   console.error(error);
-        // }
-
-        try {
-          const gotoImageResponse = await axios.post(
-            props.apiUrl + "/manualGotoImage",
-            true
-          );
-          console.log(gotoImageResponse);
-
-          const response = await axios.get(props.apiUrl + "/getImageFromDisk", {
-            responseType: "arraybuffer",
-          });
-
-          // Convert response data to a Blob
-          const imageBlob = new Blob([response.data], {
-            type: response.headers["content-type"],
-          });
-
-          // Create a URL for the Blob
-          const imageUrl = URL.createObjectURL(imageBlob);
-
-          // Start load into three as a texture, event handler will trigger when finished in three\world
-          experience.resources.loadFromApi(imageUrl);
-
-          // Clean up
-          URL.revokeObjectURL(imageUrl);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-
       if (buttonType === "Send") {
-        // Define data request body
-        const data = {
-          address: textAreaRef.value.value,
-
-          isMpImage: isMpImage.value,
-          isHwImage: isHWImage.value,
-          isBadImage: isBadImage.value,
-        };
-
-        // Change the data based on gui
-        if (isRts.value) {
-          data.address = "RTS\n" + textAreaRef.value.value;
-        }
-        if (isFwd.value) {
-          data.address = "FWD\n" + textAreaRef.value.value;
-        }
-        if (is3547.value) {
-          data.address = "FORM3547\n" + textAreaRef.value.value;
-        }
-
-        // Define the API endpoint URL
-        const apiUrl = props.apiUrl + "/fillInForm";
-
-        // Send POST request with Axios
-        try {
-          const response = await axios.post(apiUrl, data);
-          console.log(response);
-        } catch (error) {
-          console.error("Error:", error);
-        }
+        await FormHelper();
 
         return;
       }
 
       if (buttonType === "Next") {
-        // Define the API endpoint URL
-        const nextImageUrl = props.apiUrl + "/gotoNextImage";
-        const getImageName = props.apiUrl + "/getImageName";
-        const downloadImageUrl = props.apiUrl + "/downloadImage";
-
-        // Navigate to new image
-        try {
-          await axios.get(nextImageUrl);
-        } catch (error) {
-          console.error(error);
-        }
-
-        // Clear all fields for new image, except isMpImage since that should be the default
-        textAreaRef.value.value = "";
-        isMpImage.value = true;
-        isHWImage.value = false;
-        isBadImage.value = false;
-        isRts.value = false;
-        isFwd.value = false;
-        is3547.value = false;
-
-        // Get new image's name, set in gui
-        try {
-          const response = await axios.get(getImageName);
-          imageNameRef.value.innerText = response.data + ".jpg";
-        } catch (error) {
-          console.error(error);
-        }
-
-        // Pull new image
-        try {
-          const response = await axios.get(downloadImageUrl, {
-            responseType: "arraybuffer",
-          });
-
-          // Convert response data to a Blob
-          const imageBlob = new Blob([response.data], {
-            type: response.headers["content-type"],
-          });
-
-          // Create a URL for the Blob
-          const imageUrl = URL.createObjectURL(imageBlob);
-
-          // // Debug: download image to disk
-          // const a = document.createElement("a");
-          // a.href = imageUrl;
-          // a.download = "debugResponseImage.jpg";
-
-          // // Append the <a> element to the body (necessary for Firefox)
-          // document.body.appendChild(a);
-
-          // // Trigger the download
-          // a.click();
-
-          // Start load into three as a texture, event handler will trigger when finished in three\world
-          experience.resources.loadFromApi(imageUrl);
-
-          // Clean up
-          URL.revokeObjectURL(imageUrl);
-        } catch (error) {
-          console.error(error);
-        }
+        await NextImageHelper();
 
         return;
       }
@@ -251,9 +118,57 @@ export default defineComponent({
       }
     };
 
-    /* -------------------------------------------------------------------------- */
-    /*                                Subcomponents                               */
-    /* -------------------------------------------------------------------------- */
+    /* ---------------------------- Helper functions ---------------------------- */
+    const FormHelper = async () => {
+      // Define data request body
+      const data = {
+        address: textAreaRef.value.value,
+
+        isMpImage: isMpImage.value,
+        isHwImage: isHWImage.value,
+        isBadImage: isBadImage.value,
+      };
+
+      // Change the data based on gui
+      if (isRts.value) {
+        data.address = "RTS\n" + textAreaRef.value.value;
+      }
+      if (isFwd.value) {
+        data.address = "FWD\n" + textAreaRef.value.value;
+      }
+      if (is3547.value) {
+        data.address = "FORM3547\n" + textAreaRef.value.value;
+      }
+
+      // Send POST request to server
+      await fillInForm(props.apiUrl, data);
+    };
+
+    const NextImageHelper = async () => {
+      // Navigate to the next image then download
+      const image = await gotoNextImage(props.apiUrl);
+
+      if (!image) {
+        return;
+      }
+
+      // Start image load into webgl scene as a texture, resourceLoader will trigger an event when finished loading
+      experience.resources.loadFromApi(image.imageBlob);
+
+      // Set the image's name in the gui
+      imageNameRef.value.innerText = image.imageName + ".jpg";
+
+      // Clear all fields for new image, except isMpImage since that should be the default
+      textAreaRef.value.value = "";
+      isMpImage.value = true;
+      isHWImage.value = false;
+      isBadImage.value = false;
+      isRts.value = false;
+      isFwd.value = false;
+      is3547.value = false;
+    };
+
+    /* ------------------------------ Subcomponents ----------------------------- */
     const MailTypeButton = (
       buttonType: string,
       buttonVariable: boolean,
@@ -365,23 +280,19 @@ export default defineComponent({
       }
     };
 
-    /* -------------------------------------------------------------------------- */
-    /*                               Render function                              */
-    /* -------------------------------------------------------------------------- */
+    /* ----------------------------- Render function ---------------------------- */
     return () => (
       <article class="overflow-hidden pt-5 pl-5">
         {/* Filename, textarea, clipboard copy button */}
         <section class="w-[27rem]">
           <div class="flex justify-between items-center">
             <label
+              id="gtImageName"
               ref={imageNameRef}
               for="comment"
               class="mr-4 self-end overflow-hidden font-medium leading-6 text-gray-100 text-xs text-ellipsis"
-            >
-              20240703_161418_9316_43616_01.jpg
-            </label>
+            ></label>
             <div class="flex">
-              {NavButton("Debug", true, true)}
               {NavButton("Send", true, false)}
               {NavButton("Next", false, true)}
             </div>

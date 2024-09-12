@@ -17,7 +17,9 @@ type EventMap = {
   stitchBoxes: [];
   screenshotImage: [];
   resetImage: [];
+  // api events
+  fillInForm: [];
+  gotoNextImage: [];
 };
 
-// Weird default export for types....
 export default EventMap;

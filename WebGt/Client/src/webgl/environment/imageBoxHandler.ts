@@ -19,7 +19,7 @@ export default class ImageBoxHandler {
   private camera: Camera;
   private sizes: Sizes;
   private input: Input;
-  private debug!: Debug;
+  private debug?: Debug;
 
   public geometry!: THREE.BoxGeometry;
   public materials!: THREE.MeshBasicMaterial[];
@@ -28,6 +28,7 @@ export default class ImageBoxHandler {
   private rotationSpeed: number;
   private lerpFactor: number;
   private targetRotation: THREE.Vector2;
+  public debugRotation: number;
 
   constructor() {
     // Experience fields
@@ -40,15 +41,12 @@ export default class ImageBoxHandler {
     this.input = this.experience.input;
 
     // // Class fields
-    // this.setGeometry();
-    // this.setMaterial();
-    // this.setMesh();
-
     this.rotationSpeed = 0.005;
     this.lerpFactor = 1;
     // TODO: fix the rotation lerp on ClipBoxHandler to sync with this
     // this.lerpFactor = 0.1;
     this.targetRotation = new THREE.Vector2();
+    this.debugRotation = 0;
 
     // Events
     this.input.on("screenshotImage", () => {
@@ -65,7 +63,7 @@ export default class ImageBoxHandler {
     });
 
     // Debug
-    if (this.experience.debug.isActive) {
+    if (this.experience.debug?.isActive) {
       this.debug = this.experience.debug;
 
       const imageBoxDebug = this.debug.ui?.addFolder("imageBoxDebug");
@@ -74,26 +72,18 @@ export default class ImageBoxHandler {
         ?.add(this.input, "isShiftLeftPressed")
         .name("Image adjust mode")
         .listen();
-      // imageBoxDebug
-      //   ?.add(this.mesh?.rotation, "z")
-      //   .name("Image rotation")
-      //   .step(0.01)
-      //   .listen();
+      imageBoxDebug
+        ?.add(this, "debugRotation")
+        .name("Image rotation")
+        .step(0.01)
+        .listen();
     }
   }
   /* ---------------------------- Instance methods ---------------------------- */
   private setGeometry() {
-    let textureAspectRatio;
-
-    if (this.resources.items.apiImage) {
-      textureAspectRatio =
-        this.resources.items.apiImage.image.width /
-        this.resources.items.apiImage.image.height;
-    } else {
-      textureAspectRatio =
-        this.resources.items.test.image.width /
-        this.resources.items.test.image.height;
-    }
+    const textureAspectRatio =
+      this.resources.items.apiImage.image.width /
+      this.resources.items.apiImage.image.height;
 
     const boxHeight = 5;
     const boxWidth = boxHeight * textureAspectRatio;
@@ -103,39 +93,29 @@ export default class ImageBoxHandler {
   }
 
   private setMaterial() {
-    if (this.resources.items.apiImage) {
-      this.materials = [
-        new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
-        new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
-        new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
-        new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
-        new THREE.MeshBasicMaterial({ map: this.resources.items.apiImage }), // Front face with texture
-        new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
-      ];
-    } else {
-      this.materials = [
-        new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
-        new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
-        new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
-        new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
-        new THREE.MeshBasicMaterial({ map: this.resources.items.test }), // Front face with texture
-        new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
-      ];
-    }
+    this.materials = [
+      new THREE.MeshBasicMaterial({ color: 0x00ff00 }), // Right face
+      new THREE.MeshBasicMaterial({ color: 0xff0000 }), // Left face
+      new THREE.MeshBasicMaterial({ color: 0x0000ff }), // Top face
+      new THREE.MeshBasicMaterial({ color: 0xffff00 }), // Bottom face
+      new THREE.MeshBasicMaterial({ map: this.resources.items.apiImage }), // Front face with texture
+      new THREE.MeshBasicMaterial({ color: 0xffffff }), // Back face
+    ];
   }
 
   private setMesh() {
     this.mesh = new THREE.Mesh(this.geometry, this.materials);
     this.scene.add(this.mesh);
 
-    // Update matrix updates local transform, otherwise mesh is still at 0
+    // Update matrix local position for CSG
     this.mesh.updateMatrix();
+
+    // Fix for debug since mesh is not always set
+    this.debugRotation = this.convertRotation(this.mesh.rotation.z);
   }
 
   /* ------------------------------ Event methods ----------------------------- */
   private async screenshotImage() {
-    console.log(this.mesh);
-
     // Store the camera's current position and zoom level, render's resolution
     const originalPosition = this.camera.orthographicCamera.position;
     const originalZoom = this.camera.orthographicCamera.zoom;
@@ -150,7 +130,7 @@ export default class ImageBoxHandler {
     const boundingBoxCenter = boundingBox.getCenter(new THREE.Vector3());
 
     // Adjust the camera to fit the bounding box
-    const maxDim = Math.max(
+    const maxDimension = Math.max(
       boundingBoxSize.x,
       boundingBoxSize.y,
       boundingBoxSize.z
@@ -158,7 +138,7 @@ export default class ImageBoxHandler {
     this.camera.orthographicCamera.position.set(
       boundingBoxCenter.x,
       boundingBoxCenter.y,
-      boundingBoxCenter.z + maxDim
+      boundingBoxCenter.z + maxDimension
     ); // Adjust z as necessary
     this.camera.orthographicCamera.zoom = Math.min(
       this.camera.orthographicCamera.right / boundingBoxSize.x,
@@ -188,7 +168,6 @@ export default class ImageBoxHandler {
     // link.click();
 
     // Restore the original position and zoom level, renderer size
-    console.log("restoring camera....");
     this.camera.orthographicCamera.position.copy(originalPosition);
     this.camera.orthographicCamera.zoom = originalZoom;
     this.camera.targetPostion = originalPositionTarget;
@@ -218,10 +197,8 @@ export default class ImageBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    // if (!this.input.isShiftLeftPressed || this.input.isRightClickPressed) {
-    //   return;
-    // }
-    if (this.input.isRightClickPressed) {
+    // Do not continue if not in image adjust mode or regardless if you in IAM are but pressing right click (move over rotate)
+    if (!this.input.isShiftLeftPressed || this.input.isRightClickPressed) {
       return;
     }
 
@@ -277,6 +254,25 @@ export default class ImageBoxHandler {
       result.responses[0].fullTextAnnotation.text;
   }
 
+  private convertRotation(rotationInRadians: number) {
+    // Convert radians to degrees
+    const radians = rotationInRadians;
+    let degrees = radians * (180 / Math.PI);
+
+    // Determine if the original value was negative
+    const wasNegative = degrees < 0;
+
+    // Normalize degrees to be within the range (-180, 180)
+    degrees = ((((degrees + 180) % 360) + 360) % 360) - 180;
+
+    // If the original value was negative, ensure the normalized value is negative
+    if (wasNegative) {
+      degrees = -Math.abs(degrees);
+    }
+
+    return degrees;
+  }
+
   /* ------------------------------ Tick methods ------------------------------ */
   public setNewImage() {
     this.setGeometry();
@@ -285,8 +281,6 @@ export default class ImageBoxHandler {
   }
 
   public update() {
-    console.log("jhere");
-
     if (!this.mesh) {
       return;
     }
@@ -303,6 +297,9 @@ export default class ImageBoxHandler {
       this.targetRotation.y,
       this.lerpFactor
     );
+
+    // Fix for debug since mesh isn't always set, normalize degrees to be within the range [0, 360)
+    this.debugRotation = this.convertRotation(this.mesh.rotation.z);
   }
 
   public destroy() {

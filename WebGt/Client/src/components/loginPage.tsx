@@ -1,6 +1,6 @@
 import { defineComponent, onMounted, ref } from "vue";
+import { pingServer } from "./apiHandler";
 import volarisLogo from "../assets/volarisLogo.svg";
-import axios from "axios";
 
 export default defineComponent({
   props: {
@@ -11,32 +11,21 @@ export default defineComponent({
   },
   emits: { appStarted: () => true }, // No payload, just the event
   setup(props, { emit }) {
-    /* -------------------------------------------------------------------------- */
-    /*                          Component state and setup                         */
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------ Component state and setup ----------------------- */
     const isServerOnline = ref(false);
+    const isButtonEnabled = ref(true);
 
     onMounted(async () => {
-      try {
-        await axios.get(props.apiUrl + "/helloWorld");
-
-        isServerOnline.value = true;
-      } catch {
-        console.log("Server not available");
-        isServerOnline.value = false;
-      }
+      isServerOnline.value = await pingServer(props.apiUrl);
     });
 
-    /* -------------------------------------------------------------------------- */
-    /*                                   Events                                   */
-    /* -------------------------------------------------------------------------- */
+    /* --------------------------------- Events --------------------------------- */
     const StartAppButtonClicked = () => {
       emit("appStarted");
+      isButtonEnabled.value = false;
     };
 
-    /* -------------------------------------------------------------------------- */
-    /*                                Subcomponents                               */
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------ Subcomponents ----------------------------- */
     const ServerStatusBadge = () => {
       return (
         <span class="mb-2 inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-100 ring-1 ring-inset ring-gray-200">
@@ -71,7 +60,7 @@ export default defineComponent({
     };
 
     const StartAppButton = () => {
-      if (isServerOnline.value) {
+      if (isServerOnline.value && isButtonEnabled.value) {
         return (
           <button
             type="button"
@@ -93,9 +82,7 @@ export default defineComponent({
       }
     };
 
-    /* -------------------------------------------------------------------------- */
-    /*                               Render function                              */
-    /* -------------------------------------------------------------------------- */
+    /* ----------------------------- Render function ---------------------------- */
     return () => (
       <main class="w-screen h-screen flex justify-center items-center">
         <section>

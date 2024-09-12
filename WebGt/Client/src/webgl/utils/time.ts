@@ -22,7 +22,7 @@ export default class Time extends EventEmitter<EventMap> {
     this.delta = 16; // 16 because at 60 fps delta for 1 frame is ~16. Avoid using 0 for bugs
     this.previous = 0;
 
-    // instead of calling tick() immediately, wait 1 frame for delta time subtraction
+    // Instead of calling tick() immediately, wait 1 frame for delta time subtraction
     window.requestAnimationFrame(() => {
       this.tick();
     });
@@ -30,7 +30,7 @@ export default class Time extends EventEmitter<EventMap> {
 
   private tick() {
     this.elapsed = this.clock.getElapsedTime();
-    //   Clamp this value to a minimum framerate, this way when tab is suspended the deltaTime does not get huge
+    // Clamp this value to a minimum framerate, this way when tab is suspended the deltaTime does not get huge
     this.delta = Math.min(this.elapsed - this.previous, 1 / 30);
     this.previous = this.elapsed;
 

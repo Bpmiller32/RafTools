@@ -15,9 +15,9 @@ export default class Camera {
   private scene: THREE.Scene;
   private input: Input;
   private time: Time;
-  private debug!: Debug;
+  private debug?: Debug;
 
-  public instance!: THREE.Camera;
+  public instance: THREE.Camera;
   public orthographicCamera!: THREE.OrthographicCamera;
   public perspectiveCamera!: THREE.PerspectiveCamera;
 
@@ -25,6 +25,7 @@ export default class Camera {
   public targetZoom: number;
   private sensitivityMovement: number;
   private sensitivityZoom: number;
+  private maximumZoomLevel: number;
 
   constructor() {
     // Experience fields
@@ -39,6 +40,7 @@ export default class Camera {
     this.targetZoom = 1;
     this.sensitivityMovement = 0.1;
     this.sensitivityZoom = 0.1;
+    this.maximumZoomLevel = 10;
 
     this.setOrthographicInstance();
     this.setPerspectiveInstance();
@@ -64,7 +66,7 @@ export default class Camera {
     });
 
     // Debug GUI
-    if (this.experience.debug.isActive) {
+    if (this.experience.debug?.isActive) {
       this.debug = this.experience.debug;
 
       const cameraDebug = this.debug.ui?.addFolder("cameraDebug");
@@ -96,7 +98,7 @@ export default class Camera {
   /* ---------------------- Instance methods and controls --------------------- */
   private setOrthographicInstance() {
     const aspectRatio = this.sizes.width / this.sizes.height;
-    const frustumSize = 10; // Adjust this to control the max zoom level of the orthographic camera
+    const frustumSize = this.maximumZoomLevel;
 
     this.orthographicCamera = new THREE.OrthographicCamera(
       (-frustumSize * aspectRatio) / 2, // left
@@ -170,7 +172,7 @@ export default class Camera {
   }
 
   private mouseMove(event: MouseEvent) {
-    if (!this.input.isShiftLeftPressed || !this.input.isRightClickPressed) {
+    if (!this.input.isRightClickPressed) {
       return;
     }
 
@@ -191,11 +193,14 @@ export default class Camera {
     // Zoom in and out
     this.targetZoom += event.deltaY * -this.sensitivityZoom * this.time.delta;
     // Clamp the zoom level to prevent inverting the view or zooming too far out
-    this.targetZoom = Math.max(0.5, Math.min(10, this.targetZoom));
+    this.targetZoom = Math.max(
+      0.5,
+      Math.min(this.maximumZoomLevel, this.targetZoom)
+    );
   }
 
   private switchCamera() {
-    if (!this.experience.debug.isActive) {
+    if (!this.experience.debug?.isActive) {
       return;
     }
 
@@ -208,6 +213,7 @@ export default class Camera {
 
   /* ------------------------------ Tick methods ------------------------------ */
   public resize() {
+    // Needed for both cameras
     const aspectRatio = this.sizes.width / this.sizes.height;
 
     // Orthographic camera

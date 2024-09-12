@@ -14,23 +14,28 @@ export default class Input extends EventEmitter<EventMap> {
   public isQKeyPressed: boolean;
   public isEKeyPressed: boolean;
 
-  public is0KeyPressed: boolean;
-  public is1KeyPressed: boolean;
-  public is2KeyPressed: boolean;
-  public is3KeyPressed: boolean;
-  public is4KeyPressed: boolean;
+  public isF10KeyPressed: boolean;
+  public isF1KeyPressed: boolean;
+  public isF2KeyPressed: boolean;
+  public isF3KeyPressed: boolean;
 
   public isControlLeftPressed: boolean;
   public isSpacePressed: boolean;
   public isShiftLeftPressed: boolean;
+
+  public isArrowUpPressed: boolean;
+  public isArrowDownPressed: boolean;
+  public isArrowLeftPressed: boolean;
+  public isArrowRightPressed: boolean;
 
   public isLeftClickPressed: boolean;
   public isRightClickPressed: boolean;
 
   public dashboardGuiGlobal: HTMLElement | null;
   public loginGuiGlobal: HTMLElement | null;
+
   public dashboardTextarea: HTMLTextAreaElement | null;
-  public isInteractingWithGui: boolean;
+  public dashboardImageName: HTMLLabelElement | null;
 
   public keys: Key[];
 
@@ -44,28 +49,36 @@ export default class Input extends EventEmitter<EventMap> {
     this.isQKeyPressed = false;
     this.isEKeyPressed = false;
 
-    this.is0KeyPressed = false;
-    this.is1KeyPressed = false;
-    this.is2KeyPressed = false;
-    this.is3KeyPressed = false;
-    this.is4KeyPressed = false;
+    this.isF10KeyPressed = false;
+    this.isF1KeyPressed = false;
+    this.isF2KeyPressed = false;
+    this.isF3KeyPressed = false;
 
     this.isControlLeftPressed = false;
     this.isSpacePressed = false;
     this.isShiftLeftPressed = false;
+
+    this.isArrowUpPressed = false;
+    this.isArrowDownPressed = false;
+    this.isArrowLeftPressed = false;
+    this.isArrowRightPressed = false;
 
     this.isLeftClickPressed = false;
     this.isRightClickPressed = false;
 
     this.dashboardGuiGlobal = document.getElementById("gui");
     this.loginGuiGlobal = document.getElementById("loginPage");
+
     this.dashboardTextarea = document.getElementById(
       "guiTextArea"
     ) as HTMLTextAreaElement;
-    this.isInteractingWithGui = false;
+    this.dashboardImageName = document.getElementById(
+      "gtImageName"
+    ) as HTMLLabelElement;
 
-    // Define keys
+    /* ------------------------------- Define keys ------------------------------ */
     this.keys = [
+      // FPS keys
       {
         keyCode: "KeyW",
         isPressed: (eventResult: boolean) => {
@@ -103,47 +116,49 @@ export default class Input extends EventEmitter<EventMap> {
         },
       },
 
+      // Function keys
       {
-        keyCode: "Digit0",
+        keyCode: "F10",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
             this.emit("switchCamera");
           }
 
-          this.is0KeyPressed = eventResult;
+          this.isF10KeyPressed = eventResult;
         },
       },
       {
-        keyCode: "Digit1",
+        keyCode: "F1",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
             this.emit("stitchBoxes");
           }
 
-          this.is1KeyPressed = eventResult;
+          this.isF1KeyPressed = eventResult;
         },
       },
       {
-        keyCode: "Digit2",
+        keyCode: "F2",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
             this.emit("screenshotImage");
           }
 
-          this.is2KeyPressed = eventResult;
+          this.isF2KeyPressed = eventResult;
         },
       },
       {
-        keyCode: "Digit3",
+        keyCode: "F3",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
             this.emit("resetImage");
           }
 
-          this.is3KeyPressed = eventResult;
+          this.isF3KeyPressed = eventResult;
         },
       },
 
+      // Modifier keys
       {
         keyCode: "Space",
         isPressed: (eventResult: boolean) => {
@@ -164,12 +179,52 @@ export default class Input extends EventEmitter<EventMap> {
           this.isShiftLeftPressed = eventResult;
         },
       },
+
+      // Arrow keys
+      {
+        keyCode: "ArrowUp",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("fillInForm");
+          }
+
+          this.isArrowUpPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "ArrowDown",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("stitchBoxes");
+            this.emit("screenshotImage");
+          }
+
+          this.isArrowUpPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "ArrowLeft",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("resetImage");
+          }
+
+          this.isArrowLeftPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "ArrowRight",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            this.emit("gotoNextImage");
+          }
+
+          this.isArrowRightPressed = eventResult;
+        },
+      },
     ];
 
-    /* -------------------------------------------------------------------------- */
-    /*                               Event listeners                              */
-    /* -------------------------------------------------------------------------- */
-
+    /* ------------------------------ Event methods ----------------------------- */
     // Keyboard events
     window.addEventListener(
       "keydown",
@@ -237,22 +292,9 @@ export default class Input extends EventEmitter<EventMap> {
     window.addEventListener("wheel", (event) => event.preventDefault(), {
       passive: false,
     });
-
-    // GUI events
-    this.dashboardGuiGlobal?.addEventListener("mousedown", () => {
-      this.isInteractingWithGui = true;
-    });
-    this.dashboardGuiGlobal?.addEventListener("mouseup", () => {
-      this.isInteractingWithGui = false;
-    });
-    this.loginGuiGlobal?.addEventListener("mousedown", () => {
-      this.isInteractingWithGui = true;
-    });
-    this.loginGuiGlobal?.addEventListener("mouseup", () => {
-      this.isInteractingWithGui = false;
-    });
   }
 
+  /* ------------------------------ Tick methods ------------------------------ */
   public destroy() {
     window.addEventListener("keydown", () => {});
     window.addEventListener("keyup", () => {});

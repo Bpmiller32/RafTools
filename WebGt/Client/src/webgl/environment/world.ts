@@ -15,7 +15,7 @@ export default class World {
   private resources: ResourceLoader;
   private camera: Camera;
   private scene: THREE.Scene;
-  private debug!: Debug;
+  private debug?: Debug;
 
   public imageBoxHandler?: ImageBoxHandler;
   public clipBoxHandler?: ClipBoxHandler;
@@ -38,14 +38,13 @@ export default class World {
       this.imageBoxHandler?.setNewImage();
 
       this.clipBoxHandler?.destroy();
-      this.clipBoxHandler = new ClipBoxHandler();
 
       this.camera.targetPostion.set(0, 0, 10);
       this.camera.targetZoom = 1;
     });
 
     // Debug
-    if (this.experience.debug.isActive) {
+    if (this.experience.debug?.isActive) {
       this.debug = this.experience.debug;
 
       const worldDebug = this.debug.ui?.addFolder("worldDebug");

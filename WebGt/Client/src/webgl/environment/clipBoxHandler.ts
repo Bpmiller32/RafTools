@@ -5,10 +5,10 @@
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera";
-import Input from "../utils/input";
 import Sizes from "../utils/sizes";
-import { CSG } from "three-csg-ts";
+import Input from "../utils/input";
 import World from "./world";
+import { CSG } from "three-csg-ts";
 
 export default class ClipBoxHandler {
   private experience: Experience;
@@ -33,10 +33,6 @@ export default class ClipBoxHandler {
     this.input = this.experience.input;
     this.world = this.experience.world;
 
-    console.log("world in clipBoxHandler: ", this.world);
-    console.log("input in clipBoxHandler: ", this.input);
-    console.log("sizes in clipBoxHandler: ", this.sizes);
-
     // Class fields
     this.hasMovedMouseOnce = false;
     this.worldStartMousePosition = new THREE.Vector3();
@@ -58,22 +54,23 @@ export default class ClipBoxHandler {
       this.stitchBoxes();
     });
     this.input.on("resetImage", () => {
-      this.resetImage();
+      this.destroy();
     });
   }
 
   /* ------------------------------ Event methods ----------------------------- */
   private mouseDown(event: MouseEvent) {
-    if (event.button !== 0 || this.input.isShiftLeftPressed) {
+    // Do not continue if interacting with gui/login page, are not a left click, or are in image adjust mode
+    if (
+      this.input.dashboardGuiGlobal?.contains(event.target as HTMLElement) ||
+      this.input.loginGuiGlobal?.contains(event.target as HTMLElement) ||
+      event.button !== 0 ||
+      this.input.isShiftLeftPressed
+    ) {
       return;
     }
 
-    console.log("isInteractingWithGui: ", this.input.isInteractingWithGui);
-
-    if (this.input.isInteractingWithGui) {
-      return;
-    }
-
+    // Needed to fix bug with how browser events are fired
     this.input.isLeftClickPressed = true;
 
     // Convert the mouse position to world coordinates
@@ -100,107 +97,46 @@ export default class ClipBoxHandler {
   }
 
   private mouseMove(event: MouseEvent) {
-    // Handle rotating of all existing clipBoxes when in move mode
+    // MoveEvent 1: Handle rotating of all existing clipBoxes when in move mode
     if (this.input.isShiftLeftPressed && !this.input.isRightClickPressed) {
-      // Target point and axis around which the mesh will rotate
-      const targetPoint = new THREE.Vector3(0, 0, 0);
-      const axis = new THREE.Vector3(0, 0, 1);
-
-      for (let i = 0; i < this.clippingBoxes.length; i++) {
-        // Translate object to the point
-        this.clippingBoxes[i].position.sub(targetPoint);
-
-        // Create rotation matrix
-        this.clippingBoxes[i].position.applyAxisAngle(
-          axis,
-          -event.movementX * 0.005
-        );
-
-        // Translate back
-        this.clippingBoxes[i].position.add(targetPoint);
-
-        // Apply rotation to the object's orientation
-        this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
-      }
-
+      this.rotateClipBoxes(event);
       return;
     }
 
-    // Handle drawing of new ClipBoxes
+    // MoveEvent 2: Handle drawing of new ClipBoxes
     if (this.input.isLeftClickPressed) {
-      // Gate to add behavior of box size on starting click
-      if (!this.hasMovedMouseOnce) {
-        this.hasMovedMouseOnce = true;
-
-        this.activeMesh?.geometry.dispose();
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        this.activeMesh!.geometry = geometry;
-      }
-
-      // Convert the mouse position to world coordinates
-      this.worldEndMousePosition = this.screenToSceneCoordinates(
-        event.clientX,
-        event.clientY
-      );
-
-      // Calculate the width and height based on world coordinates
-      const size = new THREE.Vector3(
-        Math.abs(this.worldEndMousePosition.x - this.worldStartMousePosition.x),
-        Math.abs(this.worldEndMousePosition.y - this.worldStartMousePosition.y),
-        // Annoying to find bugfix for CSG union later, this mesh must have depth to be 3d and intersect later....
-        // Math.abs(this.worldEndMousePosition.z - this.worldStartMousePosition.z)
-        2 // ImageBox is depth of 1 so this fully intersects through
-      );
-
-      // Scale the mesh
-      this.activeMesh?.scale.set(size.x, size.y, size.z);
-
-      // Reposition the mesh to stay centered between start and end points
-      this.activeMesh?.position.copy(
-        this.worldStartMousePosition
-          .clone()
-          .add(this.worldEndMousePosition)
-          .divideScalar(2)
-      );
-
+      this.drawNewClipBox(event);
       return;
     }
   }
 
   private mouseUp(event: MouseEvent) {
-    // if (this.input.isInteractingWithGui) {
-    //   return;
-    // }
-
-    // Fix for isInteractingWithGui on a mouseUp
-    if (this.input.dashboardGuiGlobal?.contains(event.target as HTMLElement)) {
+    // Do not continue if interacting with gui/login page, are not a left click
+    if (
+      this.input.dashboardGuiGlobal?.contains(event.target as HTMLElement) ||
+      this.input.loginGuiGlobal?.contains(event.target as HTMLElement) ||
+      event.button !== 0
+    ) {
       return;
     }
 
-    if (event.button === 0) {
-      this.input.isLeftClickPressed = false;
-      this.hasMovedMouseOnce = false;
+    // Reset gate for box size on starting click
+    this.input.isLeftClickPressed = false;
+    this.hasMovedMouseOnce = false;
 
-      // TODO:cleanup later, fixes if too small of a box was added
-      // Create a Box3 to compute the bounding box
-      const boundingBox = new THREE.Box3().setFromObject(this.activeMesh!);
+    // Get the size of the activeMesh using its bounding box, if it's too small remove it from the scene
+    const boundingBox = new THREE.Box3().setFromObject(this.activeMesh!);
 
-      // Get the size of the bounding box
-      const size = new THREE.Vector3();
-      boundingBox.getSize(size);
+    const size = new THREE.Vector3();
+    boundingBox.getSize(size);
 
-      console.log("size: ", size);
-
-      if (size.x < 0.2001 || size.y < 0.2001 || size.z < 0.2001) {
-        console.log("size too small");
-        this.scene.remove(this.activeMesh!);
-        return;
-      }
-
-      // Add the activeMesh to the clippingBoxes array here
-      this.activeMesh!.updateMatrix();
-      this.clippingBoxes.push(this.activeMesh!);
+    if (size.x < 0.05 || size.y < 0.05 || size.z < 0.05) {
+      this.scene.remove(this.activeMesh!);
+      return;
     }
+
+    // If the activeMesh is large enough, add to the clippingBoxes array here
+    this.clippingBoxes.push(this.activeMesh!);
   }
 
   private async stitchBoxes() {
@@ -236,15 +172,6 @@ export default class ClipBoxHandler {
     this.scene.add(croppedMesh);
   }
 
-  private resetImage() {
-    for (let i = 0; i < this.clippingBoxes.length; i++) {
-      this.scene.remove(this.clippingBoxes[i]);
-      this.clippingBoxes[i].geometry.dispose();
-    }
-
-    this.clippingBoxes.length = 0;
-  }
-
   /* ----------------------------- Helper methods ----------------------------- */
   private screenToSceneCoordinates(
     mouseX: number,
@@ -266,9 +193,67 @@ export default class ClipBoxHandler {
     return vector;
   }
 
-  /* ------------------------------ Tick methods ------------------------------ */
-  public newImageSet() {}
+  private rotateClipBoxes(event: MouseEvent) {
+    // Target point and axis around which the mesh will rotate
+    const targetPoint = new THREE.Vector3(0, 0, 0);
+    const axis = new THREE.Vector3(0, 0, 1);
 
+    for (let i = 0; i < this.clippingBoxes.length; i++) {
+      // Translate object to the point
+      this.clippingBoxes[i].position.sub(targetPoint);
+
+      // Create rotation matrix
+      this.clippingBoxes[i].position.applyAxisAngle(
+        axis,
+        -event.movementX * 0.005
+      );
+
+      // Translate back
+      this.clippingBoxes[i].position.add(targetPoint);
+
+      // Apply rotation to the object's orientation
+      this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
+    }
+  }
+
+  private drawNewClipBox(event: MouseEvent) {
+    // Gate to add behavior of box size on starting click
+    if (!this.hasMovedMouseOnce) {
+      this.hasMovedMouseOnce = true;
+
+      this.activeMesh?.geometry.dispose();
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      this.activeMesh!.geometry = geometry;
+    }
+
+    // Convert the mouse position to world coordinates
+    this.worldEndMousePosition = this.screenToSceneCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    // Calculate the width and height based on world coordinates
+    const size = new THREE.Vector3(
+      Math.abs(this.worldEndMousePosition.x - this.worldStartMousePosition.x),
+      Math.abs(this.worldEndMousePosition.y - this.worldStartMousePosition.y),
+      // Annoying to find bugfix for CSG union later, this mesh must have depth to be 3d and intersect later....
+      // Math.abs(this.worldEndMousePosition.z - this.worldStartMousePosition.z)
+      2 // ImageBox is depth of 1 so this fully intersects through
+    );
+
+    // Scale the mesh
+    this.activeMesh?.scale.set(size.x, size.y, size.z);
+
+    // Reposition the mesh to stay centered between start and end points
+    this.activeMesh?.position.copy(
+      this.worldStartMousePosition
+        .clone()
+        .add(this.worldEndMousePosition)
+        .divideScalar(2)
+    );
+  }
+
+  /* ------------------------------ Tick methods ------------------------------ */
   public destroy() {
     if (this.activeMesh) {
       this.scene.remove(this.activeMesh);
@@ -279,5 +264,7 @@ export default class ClipBoxHandler {
       this.scene.remove(this.clippingBoxes[i]);
       this.clippingBoxes[i].geometry.dispose();
     }
+
+    this.clippingBoxes.length = 0;
   }
 }

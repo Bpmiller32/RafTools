@@ -5,72 +5,23 @@
 import * as THREE from "three";
 import EventEmitter from "./eventEmitter";
 import EventMap from "./types/eventMap";
-import Resource from "./types/resource";
 
 export default class ResourceLoader extends EventEmitter<EventMap> {
-  private sources?: Resource[];
   public items: { [key: string]: any };
-  public toLoad: number;
-  public loaded: number;
 
   private textureLoader?: THREE.TextureLoader;
 
-  constructor(sources?: Resource[]) {
+  constructor() {
     super();
 
-    this.sources = sources;
     this.items = {};
-
-    if (sources) {
-      this.toLoad = this.sources!.length;
-    } else {
-      this.toLoad = 0;
-    }
-
-    this.loaded = 0;
-
-    this.setLoaders();
-    this.startLoadingFromLocal();
-  }
-
-  private setLoaders() {
     this.textureLoader = new THREE.TextureLoader();
-  }
-
-  private async startLoadingFromLocal() {
-    if (!this.sources) {
-      this.emit("appReady");
-      return;
-    }
-
-    for (const source of this.sources) {
-      switch (source.type) {
-        case "texture":
-          this.textureLoader?.load(source.path, (file) => {
-            this.sourceLoaded(source, file);
-          });
-          break;
-
-        default:
-          break;
-      }
-    }
-  }
-
-  private sourceLoaded(source: Resource, file: any) {
-    this.items[source.name] = file;
-    this.loaded++;
-
-    if (this.loaded === this.toLoad) {
-      this.emit("appReady");
-    }
   }
 
   public loadFromApi(imageUrl?: string) {
     this.textureLoader?.load(imageUrl!, (texture) => {
       this.items["apiImage"] = texture;
       this.emit("loadedFromApi");
-      console.log("emitting loaded apiImage");
     });
   }
 }
