@@ -2,11 +2,14 @@
 /*               Used to handle keyboard and mouse input events               */
 /* -------------------------------------------------------------------------- */
 
-import Key from "./types/key";
-import EventEmitter from "./eventEmitter";
-import EventMap from "./types/eventMap";
+import Emitter from "./eventEmitter";
 
-export default class Input extends EventEmitter<EventMap> {
+type Key = {
+  keyCode: string;
+  isPressed: (arg0: boolean) => void;
+};
+
+export default class Input {
   public isWKeyPressed: boolean;
   public isAKeyPressed: boolean;
   public isSKeyPressed: boolean;
@@ -40,8 +43,6 @@ export default class Input extends EventEmitter<EventMap> {
   public keys: Key[];
 
   constructor() {
-    super();
-
     this.isWKeyPressed = false;
     this.isAKeyPressed = false;
     this.isSKeyPressed = false;
@@ -121,7 +122,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "F10",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("switchCamera");
+            Emitter.emit("switchCamera");
           }
 
           this.isF10KeyPressed = eventResult;
@@ -131,7 +132,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "F1",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("stitchBoxes");
+            Emitter.emit("stitchBoxes");
           }
 
           this.isF1KeyPressed = eventResult;
@@ -141,7 +142,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "F2",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("screenshotImage");
+            Emitter.emit("screenshotImage");
           }
 
           this.isF2KeyPressed = eventResult;
@@ -151,7 +152,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "F3",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("resetImage");
+            Emitter.emit("resetImage");
           }
 
           this.isF3KeyPressed = eventResult;
@@ -174,7 +175,7 @@ export default class Input extends EventEmitter<EventMap> {
       {
         keyCode: "ShiftLeft",
         isPressed: (eventResult: boolean) => {
-          this.emit("lockPointer", eventResult);
+          Emitter.emit("lockPointer", eventResult);
 
           this.isShiftLeftPressed = eventResult;
         },
@@ -185,7 +186,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "ArrowUp",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("fillInForm");
+            Emitter.emit("fillInForm");
           }
 
           this.isArrowUpPressed = eventResult;
@@ -195,8 +196,8 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "ArrowDown",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("stitchBoxes");
-            this.emit("screenshotImage");
+            Emitter.emit("stitchBoxes");
+            Emitter.emit("screenshotImage");
           }
 
           this.isArrowUpPressed = eventResult;
@@ -206,7 +207,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "ArrowLeft",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("resetImage");
+            Emitter.emit("resetImage");
           }
 
           this.isArrowLeftPressed = eventResult;
@@ -216,7 +217,7 @@ export default class Input extends EventEmitter<EventMap> {
         keyCode: "ArrowRight",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            this.emit("gotoNextImage");
+            Emitter.emit("gotoNextImage");
           }
 
           this.isArrowRightPressed = eventResult;
@@ -259,11 +260,11 @@ export default class Input extends EventEmitter<EventMap> {
         this.isRightClickPressed = true;
       }
 
-      this.emit("mouseDown", event);
+      Emitter.emit("mouseDown", event);
     });
 
     window.addEventListener("mousemove", (event) => {
-      this.emit("mouseMove", event);
+      Emitter.emit("mouseMove", event);
     });
 
     window.addEventListener("mouseup", (event) => {
@@ -274,16 +275,15 @@ export default class Input extends EventEmitter<EventMap> {
         this.isRightClickPressed = false;
       }
 
-      this.emit("mouseUp", event);
+      Emitter.emit("mouseUp", event);
     });
 
     window.addEventListener("wheel", (event) => {
-      this.emit("mouseWheel", event);
+      Emitter.emit("mouseWheel", event);
     });
 
     // Window events
     // Disable the browser's context menu (enables prefered right click behavior)
-    // TODO: reenable after debugging dashboard
     window.addEventListener("contextmenu", (event) => {
       event.preventDefault();
     });

@@ -10,6 +10,8 @@ import Sizes from "../utils/sizes";
 import ResourceLoader from "../utils/resourceLoader";
 import Renderer from "../renderer";
 import Debug from "../utils/debug";
+import Stopwatch from "../utils/stopWatch";
+import Emitter from "../utils/eventEmitter";
 
 export default class ImageBoxHandler {
   private experience: Experience;
@@ -29,6 +31,7 @@ export default class ImageBoxHandler {
   private lerpFactor: number;
   private targetRotation: THREE.Vector2;
   public debugRotation: number;
+  private stopwatch: Stopwatch;
 
   constructor() {
     // Experience fields
@@ -47,18 +50,19 @@ export default class ImageBoxHandler {
     // this.lerpFactor = 0.1;
     this.targetRotation = new THREE.Vector2();
     this.debugRotation = 0;
+    this.stopwatch = new Stopwatch();
 
     // Events
-    this.input.on("screenshotImage", () => {
+    Emitter.on("screenshotImage", () => {
       this.screenshotImage();
     });
-    this.input.on("resetImage", () => {
+    Emitter.on("resetImage", () => {
       this.resetImage();
     });
-    this.input.on("mouseMove", (event) => {
+    Emitter.on("mouseMove", (event) => {
       this.mouseMove(event);
     });
-    this.input.on("lockPointer", (event) => {
+    Emitter.on("lockPointer", (event) => {
       this.lockPointer(event);
     });
 
@@ -68,6 +72,10 @@ export default class ImageBoxHandler {
 
       const imageBoxDebug = this.debug.ui?.addFolder("imageBoxDebug");
       imageBoxDebug?.open();
+      imageBoxDebug
+        ?.add(this.stopwatch, "formattedSeconds")
+        .name("time on image")
+        .listen();
       imageBoxDebug
         ?.add(this.input, "isShiftLeftPressed")
         .name("Image adjust mode")
@@ -275,12 +283,19 @@ export default class ImageBoxHandler {
 
   /* ------------------------------ Tick methods ------------------------------ */
   public setNewImage() {
+    console.log("stopwatch: ", this.stopwatch.getFormattedTime());
+
     this.setGeometry();
     this.setMaterial();
     this.setMesh();
+
+    this.stopwatch.reset();
+    this.stopwatch.start();
   }
 
   public update() {
+    this.stopwatch.update();
+
     if (!this.mesh) {
       return;
     }

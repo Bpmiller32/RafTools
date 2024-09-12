@@ -9,6 +9,7 @@ import Sizes from "../utils/sizes";
 import Input from "../utils/input";
 import World from "./world";
 import { CSG } from "three-csg-ts";
+import Emitter from "../utils/eventEmitter";
 
 export default class ClipBoxHandler {
   private experience: Experience;
@@ -41,19 +42,19 @@ export default class ClipBoxHandler {
     this.clippingBoxes = [];
 
     // Events
-    this.input.on("mouseDown", (event) => {
+    Emitter.on("mouseDown", (event) => {
       this.mouseDown(event);
     });
-    this.input.on("mouseMove", (event) => {
+    Emitter.on("mouseMove", (event) => {
       this.mouseMove(event);
     });
-    this.input.on("mouseUp", (event) => {
+    Emitter.on("mouseUp", (event) => {
       this.mouseUp(event);
     });
-    this.input.on("stitchBoxes", () => {
+    Emitter.on("stitchBoxes", () => {
       this.stitchBoxes();
     });
-    this.input.on("resetImage", () => {
+    Emitter.on("resetImage", () => {
       this.destroy();
     });
   }

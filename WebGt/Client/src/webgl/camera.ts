@@ -2,6 +2,7 @@
 /*             The camera and camera controls for the webgl scene             */
 /* -------------------------------------------------------------------------- */
 
+import Emitter from "./utils/eventEmitter";
 import * as THREE from "three";
 import Experience from "./experience";
 import Sizes from "./utils/sizes";
@@ -49,19 +50,19 @@ export default class Camera {
     this.instance = this.orthographicCamera;
 
     // Events
-    this.input.on("mouseDown", (event) => {
+    Emitter.on("mouseDown", (event) => {
       this.mouseDown(event);
     });
-    this.input.on("mouseMove", (event) => {
+    Emitter.on("mouseMove", (event) => {
       this.mouseMove(event);
     });
-    this.input.on("mouseUp", (event) => {
+    Emitter.on("mouseUp", (event) => {
       this.mouseUp(event);
     });
-    this.input.on("mouseWheel", (event) => {
+    Emitter.on("mouseWheel", (event) => {
       this.mouseWheel(event);
     });
-    this.input.on("switchCamera", () => {
+    Emitter.on("switchCamera", () => {
       this.switchCamera();
     });
 

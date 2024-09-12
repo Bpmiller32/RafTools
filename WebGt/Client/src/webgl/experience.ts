@@ -2,6 +2,7 @@
 /*     Overall handler that mounts a webgl render to a dom canvas element     */
 /* -------------------------------------------------------------------------- */
 
+import Emitter from "./utils/eventEmitter";
 import * as THREE from "three";
 import Sizes from "./utils/sizes";
 import Time from "./utils/time";
@@ -55,11 +56,11 @@ export default class Experience {
     this.world = new World();
 
     // Events
-    this.sizes.on("resize", () => {
+    Emitter.on("resize", () => {
       this.resize();
     });
 
-    this.time.on("tick", () => {
+    Emitter.on("tick", () => {
       this.update();
     });
   }

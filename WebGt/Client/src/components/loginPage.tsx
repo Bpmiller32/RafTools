@@ -1,6 +1,7 @@
 import { defineComponent, onMounted, ref } from "vue";
 import { pingServer } from "./apiHandler";
 import volarisLogo from "../assets/volarisLogo.svg";
+import Emitter from "../webgl/utils/eventEmitter";
 
 export default defineComponent({
   props: {
@@ -9,8 +10,7 @@ export default defineComponent({
       required: true,
     },
   },
-  emits: { appStarted: () => true }, // No payload, just the event
-  setup(props, { emit }) {
+  setup(props) {
     /* ------------------------ Component state and setup ----------------------- */
     const isServerOnline = ref(false);
     const isButtonEnabled = ref(true);
@@ -21,7 +21,7 @@ export default defineComponent({
 
     /* --------------------------------- Events --------------------------------- */
     const StartAppButtonClicked = () => {
-      emit("appStarted");
+      Emitter.emit("appStarted");
       isButtonEnabled.value = false;
     };
 
@@ -84,7 +84,7 @@ export default defineComponent({
 
     /* ----------------------------- Render function ---------------------------- */
     return () => (
-      <main class="w-screen h-screen flex justify-center items-center">
+      <article class="w-screen h-screen flex justify-center items-center">
         <section>
           {/* App logo */}
           <div class="mb-5">
@@ -124,7 +124,7 @@ export default defineComponent({
           {/* Start app button */}
           <div class="flex justify-center mt-2">{StartAppButton()}</div>
         </section>
-      </main>
+      </article>
     );
   },
 });

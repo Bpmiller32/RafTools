@@ -8,6 +8,7 @@ import {
 } from "@heroicons/vue/16/solid";
 import Experience from "../webgl/experience";
 import { fillInForm, gotoNextImage } from "./apiHandler";
+import Emitter from "../webgl/utils/eventEmitter";
 
 export default defineComponent({
   props: {
@@ -23,21 +24,22 @@ export default defineComponent({
     const imageNameRef = ref();
     const textAreaRef = ref();
 
-    const isMpImage = ref(true);
+    const isMpImage = ref(true); // Make this a default value
     const isHWImage = ref(false);
     const isBadImage = ref(false);
 
     const isRts = ref(false);
     const isFwd = ref(false);
     const is3547 = ref(false);
+    const isDblFeed = ref(false);
 
     onMounted(() => {
-      // TODO: fix this, experience and therefore are not ready by the time this mounts
+      // TODO: fix this, experience and therefore events firing are not ready by the time this mounts
       setTimeout(() => {
-        experience.input.on("fillInForm", async () => {
+        Emitter.on("fillInForm", async () => {
           await FormHelper();
         });
-        experience.input.on("gotoNextImage", async () => {
+        Emitter.on("gotoNextImage", async () => {
           await NextImageHelper();
         });
       }, 1000);
@@ -68,18 +70,28 @@ export default defineComponent({
           isRts.value = !isRts.value;
           isFwd.value = false;
           is3547.value = false;
+          isDblFeed.value = false;
           break;
 
         case "FWD":
           isRts.value = false;
           isFwd.value = !isFwd.value;
           is3547.value = false;
+          isDblFeed.value = false;
           break;
 
         case "Form 3547":
           isRts.value = false;
           isFwd.value = false;
           is3547.value = !is3547.value;
+          isDblFeed.value = false;
+          break;
+
+        case "DBL Feed":
+          isRts.value = false;
+          isFwd.value = false;
+          is3547.value = false;
+          isDblFeed.value = !isDblFeed.value;
           break;
 
         default:
@@ -87,16 +99,14 @@ export default defineComponent({
       }
     };
 
-    const NavButtonClicked = async (buttonType: string) => {
+    const NavButtonClicked = (buttonType: string) => {
       if (buttonType === "Send") {
-        await FormHelper();
-
+        Emitter.emit("fillInForm");
         return;
       }
 
       if (buttonType === "Next") {
-        await NextImageHelper();
-
+        Emitter.emit("gotoNextImage");
         return;
       }
     };
@@ -104,13 +114,13 @@ export default defineComponent({
     const ActionButtonClicked = (buttonType: string) => {
       switch (buttonType) {
         case "Cut":
-          experience.input.emit("stitchBoxes");
+          Emitter.emit("stitchBoxes");
           break;
         case "SendToVision":
-          experience.input.emit("screenshotImage");
+          Emitter.emit("screenshotImage");
           break;
         case "Reset":
-          experience.input.emit("resetImage");
+          Emitter.emit("resetImage");
           break;
 
         default:
@@ -139,6 +149,9 @@ export default defineComponent({
       if (is3547.value) {
         data.address = "FORM3547\n" + textAreaRef.value.value;
       }
+      if (isDblFeed.value) {
+        data.address = "DBL FEED\n" + textAreaRef.value.value;
+      }
 
       // Send POST request to server
       await fillInForm(props.apiUrl, data);
@@ -166,6 +179,7 @@ export default defineComponent({
       isRts.value = false;
       isFwd.value = false;
       is3547.value = false;
+      isDblFeed.value = false;
     };
 
     /* ------------------------------ Subcomponents ----------------------------- */
@@ -326,7 +340,8 @@ export default defineComponent({
           <div class="flex">
             {MailTypeButton("RTS/RFS", isRts.value, true, false)}
             {MailTypeButton("FWD", isFwd.value, false, false)}
-            {MailTypeButton("Form 3547", is3547.value, false, true)}
+            {MailTypeButton("Form 3547", is3547.value, false, false)}
+            {MailTypeButton("DBL Feed", isDblFeed.value, false, true)}
           </div>
         </section>
       </article>

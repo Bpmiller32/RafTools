@@ -7,8 +7,10 @@ import {
   downloadImage,
   startBrowserInstance,
 } from "./components/apiHandler.ts";
+import StatusAlert from "./components/statusAlert.tsx";
+import Emitter from "./webgl/utils/eventEmitter.ts";
 
-// App setup
+/* -------------------------------- App setup ------------------------------- */
 const webglRef = ref<HTMLCanvasElement | null>(null);
 const isAppStarted = ref(false);
 
@@ -19,11 +21,11 @@ onMounted(() => {
   webglExperience.configure(webglRef.value);
 
   // Only after experience is initialized, fire event so that world entities are created
-  webglExperience.resources.emit("appReady");
+  Emitter.emit("appReady");
 });
 
-// Handle app first start
-const handleAppStarted = async () => {
+/* --------------------------------- Events --------------------------------- */
+Emitter.on("appStarted", async () => {
   // Initialize browser on the server
   const serverInstanceInitialized = await startBrowserInstance(apiUrl);
 
@@ -50,7 +52,7 @@ const handleAppStarted = async () => {
 
   // Clean up (string is very long since it is a blob of the entire image)
   URL.revokeObjectURL(image.imageBlob);
-};
+});
 </script>
 
 <template>
@@ -60,12 +62,7 @@ const handleAppStarted = async () => {
     leaveToClass="opacity-0"
     leaveActiveClass="duration-[500ms]"
   >
-    <LoginPage
-      v-if="!isAppStarted"
-      @appStarted="handleAppStarted"
-      id="loginPage"
-      :apiUrl="apiUrl"
-    />
+    <LoginPage v-if="!isAppStarted" id="loginPage" :apiUrl="apiUrl" />
   </Transition>
 
   <!-- Main app -->
@@ -75,6 +72,8 @@ const handleAppStarted = async () => {
     enterActiveClass="duration-[2500ms]"
   >
     <main v-show="isAppStarted">
+      <StatusAlert class="absolute top-0 left-1/2 -translate-x-1/2" />
+
       <EditorDashboard id="gui" class="absolute" :apiUrl="apiUrl" />
 
       <canvas ref="webglRef"></canvas>

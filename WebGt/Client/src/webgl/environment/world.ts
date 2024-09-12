@@ -4,15 +4,14 @@
 
 import * as THREE from "three";
 import Experience from "../experience";
-import ResourceLoader from "../utils/resourceLoader.ts";
 import Camera from "../camera.ts";
 import Debug from "../utils/debug.ts";
 import ClipBoxHandler from "./clipBoxHandler.ts";
 import ImageBoxHandler from "./imageBoxHandler.ts";
+import Emitter from "../utils/eventEmitter.ts";
 
 export default class World {
   private experience: Experience;
-  private resources: ResourceLoader;
   private camera: Camera;
   private scene: THREE.Scene;
   private debug?: Debug;
@@ -23,17 +22,16 @@ export default class World {
   constructor() {
     // Experience fields
     this.experience = Experience.getInstance();
-    this.resources = this.experience.resources;
     this.camera = this.experience.camera;
     this.scene = this.experience.scene;
 
     // Events
-    this.resources.on("appReady", () => {
+    Emitter.on("appReady", () => {
       this.imageBoxHandler = new ImageBoxHandler();
       this.clipBoxHandler = new ClipBoxHandler();
     });
 
-    this.resources.on("loadedFromApi", () => {
+    Emitter.on("loadedFromApi", () => {
       this.imageBoxHandler?.destroy();
       this.imageBoxHandler?.setNewImage();
 
