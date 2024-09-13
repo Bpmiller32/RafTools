@@ -25,7 +25,6 @@ export default class Sizes {
   }
 
   public destroy() {
-    Emitter.off("resize");
     window.addEventListener("resize", () => {});
   }
 }

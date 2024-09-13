@@ -83,10 +83,10 @@ export default class ClipBoxHandler {
     // Create a new mesh at the starting position
     const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
     const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(Math.random(), Math.random(), Math.random()),
+      color: this.getRandomShadeFromBaseColor(new THREE.Color(0x00ff00), 0.1), // Adjust '0.1' for stronger or weaker variation
       wireframe: false,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.35,
     });
     this.activeMesh = new THREE.Mesh(geometry, material);
     this.activeMesh.position.set(
@@ -131,7 +131,7 @@ export default class ClipBoxHandler {
     const size = new THREE.Vector3();
     boundingBox.getSize(size);
 
-    if (size.x < 0.05 || size.y < 0.05 || size.z < 0.05) {
+    if (size.x < 0.025 || size.y < 0.025 || size.z < 0.025) {
       this.scene.remove(this.activeMesh!);
       return;
     }
@@ -251,6 +251,20 @@ export default class ClipBoxHandler {
         .clone()
         .add(this.worldEndMousePosition)
         .divideScalar(2)
+    );
+  }
+
+  private getRandomShadeFromBaseColor(baseColor: THREE.Color, variation = 0.1) {
+    // Get the base green RGB values
+    const r = baseColor.r + (Math.random() - 0.5) * variation;
+    const g = baseColor.g + (Math.random() - 0.5) * variation;
+    const b = baseColor.b + (Math.random() - 0.5) * variation;
+
+    // Ensure RGB values are within [0, 1]
+    return new THREE.Color(
+      THREE.MathUtils.clamp(r, 0, 1),
+      THREE.MathUtils.clamp(g, 0, 1),
+      THREE.MathUtils.clamp(b, 0, 1)
     );
   }
 

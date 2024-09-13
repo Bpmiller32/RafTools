@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, ref } from "vue";
 import {
   ArrowUpCircleIcon,
   ArrowUturnLeftIcon,
@@ -18,7 +18,7 @@ export default defineComponent({
     },
   },
   setup(props) {
-    /* ---------------------------------- State --------------------------------- */
+    /* ------------------------ Component state and setup ----------------------- */
     const experience = Experience.getInstance();
 
     const imageNameRef = ref();
@@ -33,19 +33,15 @@ export default defineComponent({
     const is3547 = ref(false);
     const isDblFeed = ref(false);
 
-    onMounted(() => {
-      // TODO: fix this, experience and therefore events firing are not ready by the time this mounts
-      setTimeout(() => {
-        Emitter.on("fillInForm", async () => {
-          await FormHelper();
-        });
-        Emitter.on("gotoNextImage", async () => {
-          await NextImageHelper();
-        });
-      }, 1000);
+    /* --------------------------------- Events --------------------------------- */
+    Emitter.on("fillInForm", async () => {
+      await FormHelper();
+    });
+    Emitter.on("gotoNextImage", async () => {
+      await NextImageHelper();
     });
 
-    /* --------------------------------- Events --------------------------------- */
+    /* ----------------------------- Template events ---------------------------- */
     const MailTypeButtonClicked = (buttonType: string) => {
       switch (buttonType) {
         case "MP":

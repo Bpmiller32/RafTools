@@ -19,9 +19,9 @@ export default defineComponent({
       isServerOnline.value = await pingServer(props.apiUrl);
     });
 
-    /* --------------------------------- Events --------------------------------- */
+    /* ----------------------------- Template events ---------------------------- */
     const StartAppButtonClicked = () => {
-      Emitter.emit("appStarted");
+      Emitter.emit("startApp");
       isButtonEnabled.value = false;
     };
 

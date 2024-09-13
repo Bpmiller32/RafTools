@@ -38,8 +38,4 @@ export default class Time {
       this.tick();
     });
   }
-
-  public destroy() {
-    Emitter.off("tick");
-  }
 }

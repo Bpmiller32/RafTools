@@ -33,6 +33,8 @@ export default class Input {
 
   public isLeftClickPressed: boolean;
   public isRightClickPressed: boolean;
+  public isMouseBackPressed: boolean;
+  public isMouseForwardPressed: boolean;
 
   public dashboardGuiGlobal: HTMLElement | null;
   public loginGuiGlobal: HTMLElement | null;
@@ -66,6 +68,8 @@ export default class Input {
 
     this.isLeftClickPressed = false;
     this.isRightClickPressed = false;
+    this.isMouseBackPressed = false;
+    this.isMouseForwardPressed = false;
 
     this.dashboardGuiGlobal = document.getElementById("gui");
     this.loginGuiGlobal = document.getElementById("loginPage");
@@ -259,6 +263,16 @@ export default class Input {
       if (event.button === 2) {
         this.isRightClickPressed = true;
       }
+      if (event.button === 3) {
+        this.isMouseBackPressed = true;
+        Emitter.emit("stitchBoxes");
+        Emitter.emit("screenshotImage");
+        console.log("back mouse button pressed");
+      }
+      if (event.button === 4) {
+        this.isMouseForwardPressed = true;
+        Emitter.emit("fillInForm");
+      }
 
       Emitter.emit("mouseDown", event);
     });
@@ -273,6 +287,12 @@ export default class Input {
       }
       if (event.button === 2) {
         this.isRightClickPressed = false;
+      }
+      if (event.button === 3) {
+        this.isMouseBackPressed = false;
+      }
+      if (event.button === 4) {
+        this.isMouseForwardPressed = false;
       }
 
       Emitter.emit("mouseUp", event);

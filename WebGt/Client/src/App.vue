@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import Experience from "./webgl/experience.ts";
 import EditorDashboard from "./components/editorDashboard.tsx";
 import LoginPage from "./components/loginPage.tsx";
@@ -24,8 +24,13 @@ onMounted(() => {
   Emitter.emit("appReady");
 });
 
+onUnmounted(() => {
+  webglExperience.destroy();
+  Emitter.all.clear();
+});
+
 /* --------------------------------- Events --------------------------------- */
-Emitter.on("appStarted", async () => {
+Emitter.on("startApp", async () => {
   // Initialize browser on the server
   const serverInstanceInitialized = await startBrowserInstance(apiUrl);
 

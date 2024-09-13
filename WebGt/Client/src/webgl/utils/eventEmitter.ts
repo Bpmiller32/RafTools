@@ -5,14 +5,14 @@
 import mitt from "mitt";
 
 type EventMap = {
+  // app state
+  startApp: void;
+  appReady: void;
+  appError: void;
   // time
   tick: void;
   // sizes
   resize: void;
-  // resourceLoader
-  appStarted: void;
-  appReady: void;
-  loadedFromApi: void;
   // mouse events
   mouseDown: MouseEvent;
   mouseMove: MouseEvent;
@@ -25,6 +25,7 @@ type EventMap = {
   screenshotImage: void;
   resetImage: void;
   // api events
+  loadedFromApi: void;
   fillInForm: void;
   gotoNextImage: void;
 };

@@ -165,7 +165,6 @@ export default class ImageBoxHandler {
     // Screenshot in base64
     const dataUrl = this.renderer.instance.domElement.toDataURL("image/png");
     const base64Image = dataUrl.split(",")[1]; // Remove the "data:image/png;base64," part
-    await this.sendImageToVisionAPI(base64Image);
 
     // // Debug, Automatically download the screenshot as a PNG file
     // const link = document.createElement("a");
@@ -186,6 +185,9 @@ export default class ImageBoxHandler {
       originalRendererSize.width,
       originalRendererSize.height
     );
+
+    // Send image to Google Vision at the end of the call to avoid zoom warp out effect
+    await this.sendImageToVisionAPI(base64Image);
   }
 
   private resetImage() {

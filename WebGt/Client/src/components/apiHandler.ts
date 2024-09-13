@@ -1,4 +1,5 @@
 import axios from "axios";
+import Emitter from "../webgl/utils/eventEmitter";
 
 export async function pingServer(apiUrl: string): Promise<boolean> {
   try {
@@ -6,6 +7,7 @@ export async function pingServer(apiUrl: string): Promise<boolean> {
     return true;
   } catch {
     console.error("Server not available");
+    Emitter.emit("appError");
     return false;
   }
 }
@@ -16,6 +18,7 @@ export async function startBrowserInstance(apiUrl: string): Promise<boolean> {
     return true;
   } catch {
     console.error("Server browser instance could not be initialized");
+    Emitter.emit("appError");
     return false;
   }
 }
@@ -36,6 +39,7 @@ export async function downloadImage(
     };
   } catch {
     console.error("Could not be download image from server");
+    Emitter.emit("appError");
   }
 }
 
@@ -52,6 +56,7 @@ export async function fillInForm(
     await axios.post(apiUrl + "/fillInForm", data);
   } catch {
     console.error("Could not fill in form data on the gt server");
+    Emitter.emit("appError");
   }
 }
 
@@ -66,5 +71,6 @@ export async function gotoNextImage(
     return await downloadImage(apiUrl);
   } catch {
     console.error("Could not navigate to or download the next image");
+    Emitter.emit("appError");
   }
 }
