@@ -36,6 +36,7 @@ export default class World {
       this.imageBoxHandler?.setNewImage();
 
       this.clipBoxHandler?.destroy();
+      this.clipBoxHandler?.setVisualCueMesh();
 
       this.camera.targetPostion.set(0, 0, 10);
       this.camera.targetZoom = 1;

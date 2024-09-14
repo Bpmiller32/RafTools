@@ -44,7 +44,7 @@ export default class Camera {
     this.maximumZoomLevel = 10;
 
     this.setOrthographicInstance();
-    this.setPerspectiveInstance();
+    // this.setPerspectiveInstance();
 
     // Default use the orthographic camera
     this.instance = this.orthographicCamera;
@@ -69,6 +69,8 @@ export default class Camera {
     // Debug GUI
     if (this.experience.debug?.isActive) {
       this.debug = this.experience.debug;
+
+      this.setPerspectiveInstance();
 
       const cameraDebug = this.debug.ui?.addFolder("cameraDebug");
       cameraDebug?.open();

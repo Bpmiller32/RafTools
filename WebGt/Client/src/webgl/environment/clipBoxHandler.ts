@@ -5,12 +5,12 @@
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera";
+import Time from "../utils/time";
 import Sizes from "../utils/sizes";
 import Input from "../utils/input";
 import World from "./world";
 import { CSG } from "three-csg-ts";
 import Emitter from "../utils/eventEmitter";
-import Time from "../utils/time";
 
 export default class ClipBoxHandler {
   private experience: Experience;
@@ -25,10 +25,11 @@ export default class ClipBoxHandler {
   private worldStartMousePosition: THREE.Vector3;
   private worldEndMousePosition: THREE.Vector3;
   private activeMesh: THREE.Mesh;
-  private activeVisualCueMesh: THREE.Mesh;
+  private visualCueMesh: THREE.Mesh;
   private clippingBoxes: THREE.Mesh[];
-  private visualCueMeshes: THREE.Mesh[];
   private boxSizeThreshold: number;
+
+  public combinedBoundingBox: THREE.Box3;
 
   constructor() {
     // Experience fields
@@ -45,10 +46,12 @@ export default class ClipBoxHandler {
     this.worldStartMousePosition = new THREE.Vector3();
     this.worldEndMousePosition = new THREE.Vector3();
     this.activeMesh = new THREE.Mesh();
-    this.activeVisualCueMesh = new THREE.Mesh();
+    this.visualCueMesh = new THREE.Mesh();
     this.clippingBoxes = [];
-    this.visualCueMeshes = [];
     this.boxSizeThreshold = 0.025;
+    this.combinedBoundingBox = new THREE.Box3();
+
+    this.setVisualCueMesh();
 
     // Events
     Emitter.on("mouseDown", (event) => {
@@ -107,27 +110,15 @@ export default class ClipBoxHandler {
     this.scene.add(this.activeMesh);
 
     // Create a visual cue on click by making new mesh at the starting position, separate from the activeMesh, that is added to the scene then faded out
-    const visualCueGeometry = new THREE.SphereGeometry(
-      0.2 / this.camera.orthographicCamera.zoom
-    );
-    const visualCueMaterial = material.clone();
-    visualCueMaterial.transparent = true;
-    visualCueMaterial.opacity = 0.35;
-
-    this.activeVisualCueMesh = new THREE.Mesh(
-      visualCueGeometry,
-      visualCueMaterial
-    );
-
-    this.activeVisualCueMesh.position.set(
+    this.visualCueMesh.position.set(
       this.worldStartMousePosition.x,
       this.worldStartMousePosition.y,
       5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
     );
-    this.scene.add(this.activeVisualCueMesh);
 
-    // Add to array to keep track, fixes bug where clicking fast means the new Mesh does not lose the old mesh and stop it from having a reference
-    this.visualCueMeshes.push(this.activeVisualCueMesh);
+    // New method teleports the same existing mesh and updates opacity instead of creating new meshes/materials
+    const visualCueMaterial = this.visualCueMesh.material as THREE.Material;
+    visualCueMaterial.opacity = 0.5;
   }
 
   private mouseMove(event: MouseEvent) {
@@ -198,6 +189,9 @@ export default class ClipBoxHandler {
     // Push the combinedMesh back to the same plane as the imageBox mesh, update it's local position matrix for CSG
     combinedMesh.position.z = 0;
     combinedMesh.updateMatrix();
+
+    // Store mesh bounding box
+    this.combinedBoundingBox.setFromObject(combinedMesh);
 
     // Add the new combined mesh to the scene
     const croppedMesh = CSG.intersect(
@@ -307,39 +301,43 @@ export default class ClipBoxHandler {
   }
 
   /* ------------------------------ Tick methods ------------------------------ */
+  public setVisualCueMesh() {
+    const geometry = new THREE.SphereGeometry(0.2);
+    const material = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(0x00ff00),
+      wireframe: false,
+      transparent: true,
+      opacity: 0.35,
+    });
+
+    this.visualCueMesh = new THREE.Mesh(geometry, material);
+    this.scene.add(this.visualCueMesh);
+  }
+
   public update() {
-    for (let i = 0; i < this.visualCueMeshes.length; i++) {
-      // Fade out visual cue until invisible, then dispose
-      const visualCueMesh = this.visualCueMeshes[i];
-      const visualCueMaterial = visualCueMesh.material as THREE.Material;
+    const visualCueMaterial = this.visualCueMesh.material as THREE.Material;
 
-      if (visualCueMaterial.opacity < 0) {
-        // Dispose of in three
-        this.scene.remove(this.activeVisualCueMesh);
-        visualCueMaterial.dispose();
-        this.activeVisualCueMesh.geometry.dispose();
+    if (visualCueMaterial.opacity > -1) {
+      this.visualCueMesh.scale.set(
+        1 / this.camera.orthographicCamera.zoom,
+        1 / this.camera.orthographicCamera.zoom,
+        1 / this.camera.orthographicCamera.zoom
+      );
 
-        // Remove from references array
-        this.visualCueMeshes.splice(i, 1);
-        continue;
-      }
-
-      if (visualCueMaterial.opacity > -1) {
-        visualCueMaterial.opacity =
-          visualCueMaterial.opacity - 1 * this.time.delta;
-      }
+      visualCueMaterial.opacity =
+        visualCueMaterial.opacity - 1 * this.time.delta;
     }
   }
 
   public destroy() {
     // Remove activeMesh
     this.scene.remove(this.activeMesh);
-    const material = this.activeMesh.material as THREE.Material;
-    material.dispose();
+    const activeMaterial = this.activeMesh.material as THREE.Material;
+    activeMaterial.dispose();
     this.activeMesh.geometry.dispose();
 
     // Remove ActiveVisualCueMesh
-    this.scene.remove(this.activeVisualCueMesh);
+    this.scene.remove(this.visualCueMesh);
     const visualCueMaterial = this.activeMesh.material as THREE.Material;
     visualCueMaterial.dispose();
     this.activeMesh.geometry.dispose();

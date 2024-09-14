@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 // Configure CORS
 app.use(
   cors({
-    origin: "http://localhost:5173", // Replace with approved frontend URLs
+    origin: ["http://localhost:5173", "https://webglgt.web.app"], // Replace with approved frontend URLs
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
     exposedHeaders: ["X-Gt-Image-Name"], // Expose the custom header to the client

@@ -34,8 +34,6 @@ export default class ImageBoxHandler {
   public debugRotation: number;
   public stopwatch: Stopwatch;
   public imageDownloadCount: number;
-  public percentageFasterThanOgGt: number;
-  public estimatedTimeSaved: number;
 
   constructor() {
     // Experience fields
@@ -58,8 +56,6 @@ export default class ImageBoxHandler {
     this.debugRotation = 0;
     this.stopwatch = new Stopwatch();
     this.imageDownloadCount = 0;
-    this.percentageFasterThanOgGt = 0;
-    this.estimatedTimeSaved = 0;
 
     // Events
     Emitter.on("screenshotImage", () => {
@@ -88,14 +84,6 @@ export default class ImageBoxHandler {
       imageBoxDebug
         ?.add(this.stopwatch, "elapsedTime")
         .name("time on image")
-        .listen();
-      imageBoxDebug
-        ?.add(this, "percentageFasterThanOgGt")
-        .name("% faster than tradGT")
-        .listen();
-      imageBoxDebug
-        ?.add(this, "estimatedTimeSaved")
-        .name("estimatedTimeSaved")
         .listen();
       imageBoxDebug
         ?.add(this.input, "isShiftLeftPressed")
@@ -304,33 +292,13 @@ export default class ImageBoxHandler {
     return degrees;
   }
 
-  private updateDebugStats() {
-    // Increment # of images downloaded/processed in this session
-    this.imageDownloadCount++;
-
-    // Calculate what percent faster/slower than traditional GT average
-    const averageTraditionalGtTime = 60;
-    this.percentageFasterThanOgGt =
-      ((averageTraditionalGtTime - this.stopwatch.elapsedTime) /
-        averageTraditionalGtTime) *
-      100;
-
-    // Calculate and format time saved
-    if (this.stopwatch.elapsedTime < averageTraditionalGtTime) {
-      this.estimatedTimeSaved =
-        averageTraditionalGtTime - this.stopwatch.elapsedTime;
-    } else {
-      this.estimatedTimeSaved = 0;
-    }
-  }
-
   /* ------------------------------ Tick methods ------------------------------ */
   public setNewImage() {
     this.setGeometry();
     this.setMaterial();
     this.setMesh();
 
-    this.updateDebugStats();
+    this.imageDownloadCount++;
 
     this.stopwatch.reset();
     this.stopwatch.start();

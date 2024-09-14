@@ -156,6 +156,7 @@ export default defineComponent({
       // Send POST request to server
       await fillInForm(props.apiUrl, data);
 
+      // Gate to prevent multiple firebase calls on same session/image
       if (haveUpdatedFirebaseOnce === true) {
         return;
       }
@@ -219,6 +220,14 @@ export default defineComponent({
           timeOnImage: experience.world.imageBoxHandler?.stopwatch.elapsedTime,
           rotation: experience.world.imageBoxHandler?.debugRotation,
           addressSubmitted: data.address,
+          boundingBoxMinX:
+            experience.world.clipBoxHandler?.combinedBoundingBox.min.x,
+          boundingBoxMinY:
+            experience.world.clipBoxHandler?.combinedBoundingBox.min.y,
+          boundingBoxMaxX:
+            experience.world.clipBoxHandler?.combinedBoundingBox.max.x,
+          boundingBoxMaxY:
+            experience.world.clipBoxHandler?.combinedBoundingBox.max.y,
         };
 
         // Add a new document with an auto-generated ID
