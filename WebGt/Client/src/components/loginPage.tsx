@@ -2,6 +2,8 @@ import { defineComponent, onMounted, ref } from "vue";
 import { pingServer } from "./apiHandler";
 import volarisLogo from "../assets/volarisLogo.svg";
 import Emitter from "../webgl/utils/eventEmitter";
+import { db } from "../firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 export default defineComponent({
   props: {
@@ -15,14 +17,35 @@ export default defineComponent({
     const isServerOnline = ref(false);
     const isButtonEnabled = ref(true);
 
+    const usernameRef = ref();
+    const passwordRef = ref();
+
     onMounted(async () => {
       isServerOnline.value = await pingServer(props.apiUrl);
     });
 
     /* ----------------------------- Template events ---------------------------- */
-    const StartAppButtonClicked = () => {
-      Emitter.emit("startApp");
-      isButtonEnabled.value = false;
+    const StartAppButtonClicked = async () => {
+      // Firebase login check
+      try {
+        // Get a reference to the document
+        const docRef = doc(db, "logins", usernameRef.value.value);
+
+        // Fetch the document
+        const docSnap = await getDoc(docRef);
+
+        // Check the loginPage password against the firebase value
+        const document = docSnap.data()!;
+
+        if (passwordRef.value.value !== document.password) {
+          throw new Error();
+        }
+
+        Emitter.emit("startApp");
+        isButtonEnabled.value = false;
+      } catch {
+        console.error("Username or password incorrect");
+      }
     };
 
     /* ------------------------------ Subcomponents ----------------------------- */
@@ -101,6 +124,7 @@ export default defineComponent({
                 Username
               </label>
               <input
+                ref={usernameRef}
                 type="text"
                 class="block bg-[#211d20] w-full border-0 p-0 text-gray-100 placeholder:text-gray-400 focus:ring-0"
                 placeholder="billym"
@@ -114,6 +138,7 @@ export default defineComponent({
                 Password
               </label>
               <input
+                ref={passwordRef}
                 type="password"
                 class="block bg-[#211d20] w-full border-0 p-0 text-gray-100 placeholder:text-gray-400 focus:ring-0"
                 placeholder="**********"

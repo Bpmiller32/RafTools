@@ -9,6 +9,8 @@ import {
 import Experience from "../webgl/experience";
 import { fillInForm, gotoNextImage } from "./apiHandler";
 import Emitter from "../webgl/utils/eventEmitter";
+import { db } from "../firebase";
+import { collection, doc, addDoc, getDoc, updateDoc } from "firebase/firestore";
 
 export default defineComponent({
   props: {
@@ -20,6 +22,8 @@ export default defineComponent({
   setup(props) {
     /* ------------------------ Component state and setup ----------------------- */
     const experience = Experience.getInstance();
+
+    let haveUpdatedFirebaseOnce = false;
 
     const imageNameRef = ref();
     const textAreaRef = ref();
@@ -151,6 +155,77 @@ export default defineComponent({
 
       // Send POST request to server
       await fillInForm(props.apiUrl, data);
+
+      if (haveUpdatedFirebaseOnce === true) {
+        return;
+      }
+
+      // Update firebase stats
+      try {
+        // Get a reference to the document
+        const docRef = doc(db, "globalStats", "statistics");
+
+        // Fetch the document
+        const docSnap = await getDoc(docRef);
+
+        // Update specific fields in the document
+        const document = docSnap.data()!;
+        document.imagesProcessed++;
+        if (isMpImage.value) {
+          document.numberOfMpImages++;
+        }
+        if (isHWImage.value) {
+          document.numberOfHwImages++;
+        }
+        if (isBadImage.value) {
+          document.numberOfBadImages++;
+        }
+
+        // Update the document in firestore
+        await updateDoc(docRef, {
+          imagesProcessed: document.imagesProcessed,
+          numberOfMpImages: document.numberOfMpImages,
+          numberOfHwImages: document.numberOfHwImages,
+          numberOfBadImages: document.numberOfBadImages,
+        });
+
+        // Set firebase gate to stop multiple uploads
+        haveUpdatedFirebaseOnce = true;
+      } catch {
+        console.error("Error getting stats document from firestore");
+      }
+
+      // Add image data to firebase
+      try {
+        // Reference to the collection
+        const collectionRef = collection(db, "imageData");
+
+        // Set image type as a string
+        let imageType = "";
+        if (isMpImage.value) {
+          imageType = "mp";
+        }
+        if (isHWImage.value) {
+          imageType = "hw";
+        }
+        if (isBadImage.value) {
+          imageType = "bad";
+        }
+
+        // Data to be added
+        const newData = {
+          imageName: imageNameRef.value.innerText,
+          imageType: imageType,
+          timeOnImage: experience.world.imageBoxHandler?.stopwatch.elapsedTime,
+          rotation: experience.world.imageBoxHandler?.debugRotation,
+          addressSubmitted: data.address,
+        };
+
+        // Add a new document with an auto-generated ID
+        await addDoc(collectionRef, newData);
+      } catch {
+        console.error("Error adding image data document to firestore");
+      }
     };
 
     const NextImageHelper = async () => {
@@ -160,6 +235,9 @@ export default defineComponent({
       if (!image) {
         return;
       }
+
+      // Reset firebase gate
+      haveUpdatedFirebaseOnce = false;
 
       // Start image load into webgl scene as a texture, resourceLoader will trigger an event when finished loading
       experience.resources.loadFromApi(image.imageBlob);
