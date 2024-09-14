@@ -2,36 +2,40 @@
 /*                           Stopwatch utility class                          */
 /* -------------------------------------------------------------------------- */
 
-export default class Stopwatch {
-  public formattedSeconds: number = 0;
+import Experience from "../experience";
+import Time from "./time";
 
-  private startTime: number = 0;
-  private elapsedTime: number = 0;
-  private isRunning: boolean = false;
-  private timerInterval: NodeJS.Timeout | null = null;
+export default class Stopwatch {
+  private experience: Experience;
+  private time: Time;
+
+  private isRunning: boolean;
+  public startTime: number;
+  public elapsedTime: number;
 
   constructor() {
+    // Experience fields
+    this.experience = Experience.getInstance();
+    this.time = this.experience.time;
+
+    // Class fields
+    this.startTime = 0;
+    this.elapsedTime = 0;
+    this.isRunning = false;
+
     this.reset();
   }
 
-  public update() {
-    if (this.isRunning) {
-      this.elapsedTime = Date.now() - this.startTime;
-      this.formattedSeconds = this.elapsedTime / 1000;
-    }
-  }
-
+  /* ------------------------------ Tick methods ------------------------------ */
   public start() {
     if (!this.isRunning) {
-      this.startTime = Date.now() - this.elapsedTime;
-      this.timerInterval = setInterval(() => this.update(), 100); // Update every 100ms
+      this.startTime = this.time.elapsed;
       this.isRunning = true;
     }
   }
 
   public stop() {
     if (this.isRunning) {
-      clearInterval(this.timerInterval!);
       this.isRunning = false;
     }
   }
@@ -40,23 +44,14 @@ export default class Stopwatch {
     if (this.isRunning) {
       this.stop();
     }
-    this.elapsedTime = 0;
+
     this.startTime = 0;
+    this.elapsedTime = 0;
   }
 
-  public getElapsedTime(): number {
-    this.update();
-    return this.elapsedTime;
-  }
-
-  public getFormattedTime(): string {
-    const seconds = Math.floor(this.getElapsedTime() / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const secondsDisplay = (seconds % 60).toString().padStart(2, "0");
-    const minutesDisplay = (minutes % 60).toString().padStart(2, "0");
-    const hoursDisplay = hours.toString().padStart(2, "0");
-
-    return `${hoursDisplay}:${minutesDisplay}:${secondsDisplay}`;
+  public update() {
+    if (this.isRunning) {
+      this.elapsedTime = this.time.elapsed - this.startTime;
+    }
   }
 }

@@ -29,6 +29,7 @@ app.use(
     origin: "http://localhost:5173", // Replace with approved frontend URLs
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
+    exposedHeaders: ["X-Gt-Image-Name"], // Expose the custom header to the client
   })
 );
 
@@ -36,13 +37,21 @@ app.use(
 let browser: Browser;
 let page: Page;
 
+// Google Vision API key
+const visionApiKey = "GOOGLE_VISION_API_KEY";
+
 /* -------------------------------------------------------------------------- */
 /*                                  Requests                                  */
 /* -------------------------------------------------------------------------- */
 
 /* --------------------------- Test echo function --------------------------- */
-app.get("/helloWorld", (req: Request, res: Response) => {
+app.get("/pingServer", (req: Request, res: Response) => {
   res.status(200).send("Hello, World!");
+});
+
+/* -------------------------- Serve Vision API key -------------------------- */
+app.get("/getApiKey", (req: Request, res: Response) => {
+  res.status(200).send(visionApiKey);
 });
 
 /* ----------------------- Initialize browser instance ---------------------- */
@@ -79,17 +88,6 @@ app.get("/stopBrowser", async (req: Request, res: Response) => {
   }
 });
 
-/* ------- Get the current page's image name from the current page url ------ */
-app.get("/getImageName", async (req: Request, res: Response) => {
-  try {
-    const pwOutput = await getImageName(page);
-
-    res.status(200).send(pwOutput);
-  } catch (error) {
-    res.status(500).send((error as Error).message);
-  }
-});
-
 /* --------- Download the image from the current page into Blob data -------- */
 app.get("/downloadImage", async (req: Request, res: Response) => {
   try {
@@ -100,7 +98,7 @@ app.get("/downloadImage", async (req: Request, res: Response) => {
 
     // Set the response header with the image name to save a axios call from the FE
     const imageName = await getImageName(page);
-    res.setHeader("X-Gt-Image-Name", imageName);
+    res.set("X-Gt-Image-Name", imageName);
 
     // Send the image buffer
     res.status(200).send(imageBuffer);
@@ -126,15 +124,6 @@ app.post("/fillInForm", async (req: Request, res: Response) => {
 app.get("/gotoNextImage", async (req: Request, res: Response) => {
   try {
     await gotoNextImage(page);
-
-    // // Delay the response to make sure next page/image finished loading and is present
-    // setTimeout(() => {
-    //   res
-    //     .status(200)
-    //     .send(
-    //       "Next image is being displayed, this response was delayed by 1 second"
-    //     );
-    // }, 1000);
 
     res
       .status(200)

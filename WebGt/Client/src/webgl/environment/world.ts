@@ -65,6 +65,7 @@ export default class World {
   public update() {
     this.camera.update();
     this.imageBoxHandler?.update();
+    this.clipBoxHandler?.update();
   }
 
   public destroy() {

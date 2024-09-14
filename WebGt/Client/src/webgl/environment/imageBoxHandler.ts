@@ -30,8 +30,12 @@ export default class ImageBoxHandler {
   private rotationSpeed: number;
   private lerpFactor: number;
   private targetRotation: THREE.Vector2;
+
   public debugRotation: number;
-  private stopwatch: Stopwatch;
+  public stopwatch: Stopwatch;
+  public imageDownloadCount: number;
+  public percentageFasterThanOgGt: number;
+  public estimatedTimeSaved: number;
 
   constructor() {
     // Experience fields
@@ -43,14 +47,19 @@ export default class ImageBoxHandler {
     this.sizes = this.experience.sizes;
     this.input = this.experience.input;
 
-    // // Class fields
+    // Class fields
     this.rotationSpeed = 0.005;
     this.lerpFactor = 1;
     // TODO: fix the rotation lerp on ClipBoxHandler to sync with this
     // this.lerpFactor = 0.1;
     this.targetRotation = new THREE.Vector2();
+
+    // Debug fields
     this.debugRotation = 0;
     this.stopwatch = new Stopwatch();
+    this.imageDownloadCount = 0;
+    this.percentageFasterThanOgGt = 0;
+    this.estimatedTimeSaved = 0;
 
     // Events
     Emitter.on("screenshotImage", () => {
@@ -73,8 +82,20 @@ export default class ImageBoxHandler {
       const imageBoxDebug = this.debug.ui?.addFolder("imageBoxDebug");
       imageBoxDebug?.open();
       imageBoxDebug
-        ?.add(this.stopwatch, "formattedSeconds")
+        ?.add(this, "imageDownloadCount")
+        .name("# of images DL'd")
+        .listen();
+      imageBoxDebug
+        ?.add(this.stopwatch, "elapsedTime")
         .name("time on image")
+        .listen();
+      imageBoxDebug
+        ?.add(this, "percentageFasterThanOgGt")
+        .name("% faster than tradGT")
+        .listen();
+      imageBoxDebug
+        ?.add(this, "estimatedTimeSaved")
+        .name("estimatedTimeSaved")
         .listen();
       imageBoxDebug
         ?.add(this.input, "isShiftLeftPressed")
@@ -229,7 +250,6 @@ export default class ImageBoxHandler {
 
   /* ----------------------------- Helper methods ----------------------------- */
   private async sendImageToVisionAPI(base64Image: string) {
-    const apiKey = "GOOGLE_VISION_API_KEY"; // Replace with your actual API key
     const requestBody = {
       requests: [
         {
@@ -245,7 +265,7 @@ export default class ImageBoxHandler {
       ],
     };
     const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      `https://vision.googleapis.com/v1/images:annotate?key=${this.resources.apiKey}`,
       {
         method: "POST",
         body: JSON.stringify(requestBody),
@@ -255,10 +275,11 @@ export default class ImageBoxHandler {
       }
     );
     const result = await response.json();
-    console.log(
-      "Vision API Response:",
-      result.responses[0].fullTextAnnotation.text
-    );
+    // // Debug, log fullText response from Vision
+    // console.log(
+    //   "Vision API Response:",
+    //   result.responses[0].fullTextAnnotation.text
+    // );
 
     this.input.dashboardTextarea!.value =
       result.responses[0].fullTextAnnotation.text;
@@ -283,13 +304,33 @@ export default class ImageBoxHandler {
     return degrees;
   }
 
+  private updateDebugStats() {
+    // Increment # of images downloaded/processed in this session
+    this.imageDownloadCount++;
+
+    // Calculate what percent faster/slower than traditional GT average
+    const averageTraditionalGtTime = 60;
+    this.percentageFasterThanOgGt =
+      ((averageTraditionalGtTime - this.stopwatch.elapsedTime) /
+        averageTraditionalGtTime) *
+      100;
+
+    // Calculate and format time saved
+    if (this.stopwatch.elapsedTime < averageTraditionalGtTime) {
+      this.estimatedTimeSaved =
+        averageTraditionalGtTime - this.stopwatch.elapsedTime;
+    } else {
+      this.estimatedTimeSaved = 0;
+    }
+  }
+
   /* ------------------------------ Tick methods ------------------------------ */
   public setNewImage() {
-    console.log("stopwatch: ", this.stopwatch.getFormattedTime());
-
     this.setGeometry();
     this.setMaterial();
     this.setMesh();
+
+    this.updateDebugStats();
 
     this.stopwatch.reset();
     this.stopwatch.start();

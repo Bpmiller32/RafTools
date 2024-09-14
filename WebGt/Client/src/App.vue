@@ -5,6 +5,7 @@ import EditorDashboard from "./components/editorDashboard.tsx";
 import LoginPage from "./components/loginPage.tsx";
 import {
   downloadImage,
+  getApiKey,
   startBrowserInstance,
 } from "./components/apiHandler.ts";
 import StatusAlert from "./components/statusAlert.tsx";
@@ -47,6 +48,9 @@ Emitter.on("startApp", async () => {
   if (!image) {
     return;
   }
+
+  // Get Vision API key
+  webglExperience.resources.apiKey = await getApiKey(apiUrl);
 
   // Start image load into webgl scene as a texture, resourceLoader will trigger an event when finished loading
   webglExperience.resources.loadFromApi(image.imageBlob);

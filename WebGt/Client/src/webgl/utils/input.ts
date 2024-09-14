@@ -265,13 +265,9 @@ export default class Input {
       }
       if (event.button === 3) {
         this.isMouseBackPressed = true;
-        Emitter.emit("stitchBoxes");
-        Emitter.emit("screenshotImage");
-        console.log("back mouse button pressed");
       }
       if (event.button === 4) {
         this.isMouseForwardPressed = true;
-        Emitter.emit("fillInForm");
       }
 
       Emitter.emit("mouseDown", event);

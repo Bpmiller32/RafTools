@@ -60,7 +60,7 @@ export async function startBrowser(
   const loginButtonSelector = "#login > input[type=submit]:nth-child(14)";
   await page.click(loginButtonSelector);
 
-  //   Now on: Main app page
+  // Now on: Main app page
   const instructionsExit = "#instructionstextdiv";
   await page.waitForSelector(instructionsExit, { state: "visible" });
 
@@ -176,6 +176,16 @@ export async function saveForm(page: Page) {
 }
 
 export async function gotoNextImage(page: Page) {
+  // Check if the instructions div is present again (happens if instance was afk for a while)
+  const instructionsExitSelector = "#instructionstextdiv";
+  const element = page.locator(instructionsExitSelector);
+
+  if ((await element.count()) > 0) {
+    // If the element is present, click dismiss button
+    await page.waitForSelector(instructionsExitSelector, { state: "visible" });
+    await page.click(instructionsExitSelector);
+  }
+
   // Wait for the element to be visible
   const nextButtonSelector = "#next";
   await page.waitForSelector(nextButtonSelector, { state: "visible" });

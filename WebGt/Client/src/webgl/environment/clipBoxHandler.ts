@@ -10,11 +10,13 @@ import Input from "../utils/input";
 import World from "./world";
 import { CSG } from "three-csg-ts";
 import Emitter from "../utils/eventEmitter";
+import Time from "../utils/time";
 
 export default class ClipBoxHandler {
   private experience: Experience;
   private scene: THREE.Scene;
   private camera: Camera;
+  private time: Time;
   private sizes: Sizes;
   private input: Input;
   private world: World;
@@ -22,14 +24,18 @@ export default class ClipBoxHandler {
   private hasMovedMouseOnce: boolean;
   private worldStartMousePosition: THREE.Vector3;
   private worldEndMousePosition: THREE.Vector3;
-  private activeMesh: THREE.Mesh | null;
+  private activeMesh: THREE.Mesh;
+  private activeVisualCueMesh: THREE.Mesh;
   private clippingBoxes: THREE.Mesh[];
+  private visualCueMeshes: THREE.Mesh[];
+  private boxSizeThreshold: number;
 
   constructor() {
     // Experience fields
     this.experience = Experience.getInstance();
     this.scene = this.experience.scene;
     this.camera = this.experience.camera;
+    this.time = this.experience.time;
     this.sizes = this.experience.sizes;
     this.input = this.experience.input;
     this.world = this.experience.world;
@@ -39,7 +45,10 @@ export default class ClipBoxHandler {
     this.worldStartMousePosition = new THREE.Vector3();
     this.worldEndMousePosition = new THREE.Vector3();
     this.activeMesh = new THREE.Mesh();
+    this.activeVisualCueMesh = new THREE.Mesh();
     this.clippingBoxes = [];
+    this.visualCueMeshes = [];
+    this.boxSizeThreshold = 0.025;
 
     // Events
     Emitter.on("mouseDown", (event) => {
@@ -81,7 +90,7 @@ export default class ClipBoxHandler {
     );
 
     // Create a new mesh at the starting position
-    const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const geometry = new THREE.BoxGeometry(0, 0, 0);
     const material = new THREE.MeshBasicMaterial({
       color: this.getRandomShadeFromBaseColor(new THREE.Color(0x00ff00), 0.1), // Adjust '0.1' for stronger or weaker variation
       wireframe: false,
@@ -89,12 +98,36 @@ export default class ClipBoxHandler {
       opacity: 0.35,
     });
     this.activeMesh = new THREE.Mesh(geometry, material);
+
     this.activeMesh.position.set(
       this.worldStartMousePosition.x,
       this.worldStartMousePosition.y,
       5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
     );
     this.scene.add(this.activeMesh);
+
+    // Create a visual cue on click by making new mesh at the starting position, separate from the activeMesh, that is added to the scene then faded out
+    const visualCueGeometry = new THREE.SphereGeometry(
+      0.2 / this.camera.orthographicCamera.zoom
+    );
+    const visualCueMaterial = material.clone();
+    visualCueMaterial.transparent = true;
+    visualCueMaterial.opacity = 0.35;
+
+    this.activeVisualCueMesh = new THREE.Mesh(
+      visualCueGeometry,
+      visualCueMaterial
+    );
+
+    this.activeVisualCueMesh.position.set(
+      this.worldStartMousePosition.x,
+      this.worldStartMousePosition.y,
+      5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
+    );
+    this.scene.add(this.activeVisualCueMesh);
+
+    // Add to array to keep track, fixes bug where clicking fast means the new Mesh does not lose the old mesh and stop it from having a reference
+    this.visualCueMeshes.push(this.activeVisualCueMesh);
   }
 
   private mouseMove(event: MouseEvent) {
@@ -131,7 +164,12 @@ export default class ClipBoxHandler {
     const size = new THREE.Vector3();
     boundingBox.getSize(size);
 
-    if (size.x < 0.025 || size.y < 0.025 || size.z < 0.025) {
+    // If box is too small, do not add to screen. Reduces misclicked and awkwardly placed boxes
+    if (
+      size.x < this.boxSizeThreshold ||
+      size.y < this.boxSizeThreshold ||
+      size.z < this.boxSizeThreshold
+    ) {
       this.scene.remove(this.activeMesh!);
       return;
     }
@@ -269,14 +307,48 @@ export default class ClipBoxHandler {
   }
 
   /* ------------------------------ Tick methods ------------------------------ */
-  public destroy() {
-    if (this.activeMesh) {
-      this.scene.remove(this.activeMesh);
-      this.activeMesh.geometry.dispose();
-    }
+  public update() {
+    for (let i = 0; i < this.visualCueMeshes.length; i++) {
+      // Fade out visual cue until invisible, then dispose
+      const visualCueMesh = this.visualCueMeshes[i];
+      const visualCueMaterial = visualCueMesh.material as THREE.Material;
 
+      if (visualCueMaterial.opacity < 0) {
+        // Dispose of in three
+        this.scene.remove(this.activeVisualCueMesh);
+        visualCueMaterial.dispose();
+        this.activeVisualCueMesh.geometry.dispose();
+
+        // Remove from references array
+        this.visualCueMeshes.splice(i, 1);
+        continue;
+      }
+
+      if (visualCueMaterial.opacity > -1) {
+        visualCueMaterial.opacity =
+          visualCueMaterial.opacity - 1 * this.time.delta;
+      }
+    }
+  }
+
+  public destroy() {
+    // Remove activeMesh
+    this.scene.remove(this.activeMesh);
+    const material = this.activeMesh.material as THREE.Material;
+    material.dispose();
+    this.activeMesh.geometry.dispose();
+
+    // Remove ActiveVisualCueMesh
+    this.scene.remove(this.activeVisualCueMesh);
+    const visualCueMaterial = this.activeMesh.material as THREE.Material;
+    visualCueMaterial.dispose();
+    this.activeMesh.geometry.dispose();
+
+    // Remove all clipBoxes
     for (let i = 0; i < this.clippingBoxes.length; i++) {
       this.scene.remove(this.clippingBoxes[i]);
+      const material = this.clippingBoxes[i].material as THREE.Material;
+      material.dispose();
       this.clippingBoxes[i].geometry.dispose();
     }
 

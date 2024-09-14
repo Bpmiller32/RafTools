@@ -12,6 +12,16 @@ export async function pingServer(apiUrl: string): Promise<boolean> {
   }
 }
 
+export async function getApiKey(apiUrl: string): Promise<string> {
+  try {
+    return (await axios.get(apiUrl + "/getApiKey")).data;
+  } catch {
+    console.error("Server not available");
+    Emitter.emit("appError");
+    return "";
+  }
+}
+
 export async function startBrowserInstance(apiUrl: string): Promise<boolean> {
   try {
     await axios.get(apiUrl + "/startBrowser");
