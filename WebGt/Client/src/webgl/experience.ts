@@ -6,12 +6,12 @@ import Emitter from "./utils/eventEmitter";
 import * as THREE from "three";
 import Sizes from "./utils/sizes";
 import Time from "./utils/time";
+import Input from "./utils/input";
 import ResourceLoader from "./utils/resourceLoader";
 import Camera from "./camera";
 import Renderer from "./renderer";
 import World from "./environment/world";
 import Debug from "./utils/debug";
-import Input from "./utils/input";
 
 export default class Experience {
   // Class prop instance and "new" blocking constructor for Singleton

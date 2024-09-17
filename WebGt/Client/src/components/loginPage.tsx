@@ -1,9 +1,9 @@
+import Emitter from "../webgl/utils/eventEmitter";
 import { defineComponent, onMounted, ref } from "vue";
 import { pingServer } from "./apiHandler";
 import volarisLogo from "../assets/volarisLogo.svg";
-import Emitter from "../webgl/utils/eventEmitter";
 import { db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 export default defineComponent({
   props: {
@@ -14,14 +14,23 @@ export default defineComponent({
   },
   setup(props) {
     /* ------------------------ Component state and setup ----------------------- */
-    const isServerOnline = ref(false);
-    const isButtonEnabled = ref(true);
-
+    // Template refs
     const usernameRef = ref();
     const passwordRef = ref();
 
+    const isServerOnline = ref(false);
+    const isButtonEnabled = ref(true);
+    const didLoginFail = ref(false);
+    const isDebugEnabled = ref(false);
+
     onMounted(async () => {
+      // Get status of BE server
       isServerOnline.value = await pingServer(props.apiUrl);
+
+      // Check if the URL ends with #debug
+      if (window.location.hash === "#debug") {
+        isDebugEnabled.value = true;
+      }
     });
 
     /* ----------------------------- Template events ---------------------------- */
@@ -44,7 +53,38 @@ export default defineComponent({
         Emitter.emit("startApp");
         isButtonEnabled.value = false;
       } catch {
+        didLoginFail.value = true;
         console.error("Username or password incorrect");
+
+        // Trigger again if already failed one login
+        if (didLoginFail.value === true) {
+          const loginErrorLabelElement =
+            document.getElementById("loginErrorLabel");
+          loginErrorLabelElement?.classList.remove("animate-shake");
+
+          setTimeout(() => {
+            loginErrorLabelElement?.classList.add("animate-shake");
+          }, 100);
+        }
+      }
+    };
+
+    const DebugButtonClicked = async () => {
+      try {
+        // Reference the collection
+        const collectionRef = collection(db, "imageData");
+
+        // Fetch all documents from the collection
+        const querySnapshot = await getDocs(collectionRef);
+
+        // Iterate through each document and inspect the specific property
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const timeOnImage = data["timeOnImage"];
+          console.log(`Document ID: ${doc.id}, TimeOnImage [${timeOnImage}]`);
+        });
+      } catch {
+        console.error("Error fetching documents from firestore");
       }
     };
 
@@ -78,6 +118,39 @@ export default defineComponent({
           >
             <circle cx="3" cy="3" r="3" />
           </svg>
+        );
+      }
+    };
+
+    const DebugButton = () => {
+      if (isDebugEnabled.value) {
+        return (
+          <button
+            onClick={() => DebugButtonClicked()}
+            class="flex items-center w-fit py-2 px-3 rounded-l-xl rounded-r-xl border border-white/50 group hover:border-indigo-600 duration-300"
+          >
+            <p class="text-white text-sm group-hover:text-indigo-200 duration-300">
+              Debug
+            </p>
+          </button>
+        );
+      } else {
+        return <div></div>;
+      }
+    };
+
+    const LoginErrorLabel = () => {
+      if (didLoginFail.value) {
+        return (
+          <div class="justify-self-end flex items-center">
+            <label
+              id="loginErrorLabel"
+              class="text-sm text-red-500 animate-shake"
+            >
+              Login failed
+            </label>
+            ;
+          </div>
         );
       }
     };
@@ -146,8 +219,12 @@ export default defineComponent({
             </div>
           </div>
 
-          {/* Start app button */}
-          <div class="flex justify-center mt-2">{StartAppButton()}</div>
+          {/* Start app button and optional login failed */}
+          <div class="grid grid-cols-3 justify-between mt-2">
+            {DebugButton()}
+            {StartAppButton()}
+            {LoginErrorLabel()}
+          </div>
         </section>
       </article>
     );

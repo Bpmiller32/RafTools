@@ -32,6 +32,9 @@ onUnmounted(() => {
 
 /* --------------------------------- Events --------------------------------- */
 Emitter.on("startApp", async () => {
+  // Show statusAlert for loading in case of long browser initialize and login
+  Emitter.emit("indicateLoading");
+
   // Initialize browser on the server
   const serverInstanceInitialized = await startBrowserInstance(apiUrl);
 

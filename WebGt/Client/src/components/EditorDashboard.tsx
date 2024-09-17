@@ -1,4 +1,7 @@
+import Emitter from "../webgl/utils/eventEmitter";
 import { defineComponent, ref } from "vue";
+import Experience from "../webgl/experience";
+import { fillInForm, gotoNextImage } from "./apiHandler";
 import {
   ArrowUpCircleIcon,
   ArrowUturnLeftIcon,
@@ -6,9 +9,6 @@ import {
   MagnifyingGlassCircleIcon,
   ScissorsIcon,
 } from "@heroicons/vue/16/solid";
-import Experience from "../webgl/experience";
-import { fillInForm, gotoNextImage } from "./apiHandler";
-import Emitter from "../webgl/utils/eventEmitter";
 import { db } from "../firebase";
 import { collection, doc, addDoc, getDoc, updateDoc } from "firebase/firestore";
 
@@ -21,12 +21,13 @@ export default defineComponent({
   },
   setup(props) {
     /* ------------------------ Component state and setup ----------------------- */
+    // Template refs
+    const imageNameRef = ref();
+    const textAreaRef = ref();
+
     const experience = Experience.getInstance();
 
     let haveUpdatedFirebaseOnce = false;
-
-    const imageNameRef = ref();
-    const textAreaRef = ref();
 
     const isMpImage = ref(true); // Make this a default value
     const isHWImage = ref(false);
@@ -228,6 +229,7 @@ export default defineComponent({
             experience.world.clipBoxHandler?.combinedBoundingBox.max.x,
           boundingBoxMaxY:
             experience.world.clipBoxHandler?.combinedBoundingBox.max.y,
+          dateSubmitted: new Date(),
         };
 
         // Add a new document with an auto-generated ID

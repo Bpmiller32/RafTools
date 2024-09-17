@@ -2,22 +2,22 @@
 /*   Handler for creating and joining clipping boxes, cropping to image box   */
 /* -------------------------------------------------------------------------- */
 
+import Emitter from "../utils/eventEmitter";
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera";
-import Time from "../utils/time";
 import Sizes from "../utils/sizes";
+import Time from "../utils/time";
 import Input from "../utils/input";
 import World from "./world";
 import { CSG } from "three-csg-ts";
-import Emitter from "../utils/eventEmitter";
 
 export default class ClipBoxHandler {
   private experience: Experience;
   private scene: THREE.Scene;
   private camera: Camera;
-  private time: Time;
   private sizes: Sizes;
+  private time: Time;
   private input: Input;
   private world: World;
 

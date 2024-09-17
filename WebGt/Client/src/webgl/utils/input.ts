@@ -17,10 +17,14 @@ export default class Input {
   public isQKeyPressed: boolean;
   public isEKeyPressed: boolean;
 
-  public isF10KeyPressed: boolean;
   public isF1KeyPressed: boolean;
   public isF2KeyPressed: boolean;
   public isF3KeyPressed: boolean;
+
+  public isF7KeyPressed: boolean;
+  public isF8KeyPressed: boolean;
+  public isF9KeyPressed: boolean;
+  public isF10KeyPressed: boolean;
 
   public isControlLeftPressed: boolean;
   public isSpacePressed: boolean;
@@ -52,10 +56,14 @@ export default class Input {
     this.isQKeyPressed = false;
     this.isEKeyPressed = false;
 
-    this.isF10KeyPressed = false;
     this.isF1KeyPressed = false;
     this.isF2KeyPressed = false;
     this.isF3KeyPressed = false;
+
+    this.isF7KeyPressed = false;
+    this.isF8KeyPressed = false;
+    this.isF9KeyPressed = false;
+    this.isF10KeyPressed = false;
 
     this.isControlLeftPressed = false;
     this.isSpacePressed = false;
@@ -123,20 +131,11 @@ export default class Input {
 
       // Function keys
       {
-        keyCode: "F10",
-        isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            Emitter.emit("switchCamera");
-          }
-
-          this.isF10KeyPressed = eventResult;
-        },
-      },
-      {
         keyCode: "F1",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
             Emitter.emit("stitchBoxes");
+            Emitter.emit("screenshotImage");
           }
 
           this.isF1KeyPressed = eventResult;
@@ -146,7 +145,7 @@ export default class Input {
         keyCode: "F2",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            Emitter.emit("screenshotImage");
+            Emitter.emit("fillInForm");
           }
 
           this.isF2KeyPressed = eventResult;
@@ -156,10 +155,51 @@ export default class Input {
         keyCode: "F3",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            Emitter.emit("resetImage");
+            Emitter.emit("gotoNextImage");
           }
 
           this.isF3KeyPressed = eventResult;
+        },
+      },
+
+      {
+        keyCode: "F7",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("stitchBoxes");
+          }
+
+          this.isF7KeyPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "F8",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("screenshotImage");
+          }
+
+          this.isF8KeyPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "F9",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("resetImage");
+          }
+
+          this.isF9KeyPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "F10",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("switchCamera");
+          }
+
+          this.isF10KeyPressed = eventResult;
         },
       },
 
@@ -189,9 +229,9 @@ export default class Input {
       {
         keyCode: "ArrowUp",
         isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            Emitter.emit("fillInForm");
-          }
+          // if (eventResult) {
+          //   Emitter.emit("fillInForm");
+          // }
 
           this.isArrowUpPressed = eventResult;
         },
@@ -199,10 +239,10 @@ export default class Input {
       {
         keyCode: "ArrowDown",
         isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            Emitter.emit("stitchBoxes");
-            Emitter.emit("screenshotImage");
-          }
+          // if (eventResult) {
+          //   Emitter.emit("stitchBoxes");
+          //   Emitter.emit("screenshotImage");
+          // }
 
           this.isArrowUpPressed = eventResult;
         },
@@ -210,9 +250,9 @@ export default class Input {
       {
         keyCode: "ArrowLeft",
         isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            Emitter.emit("resetImage");
-          }
+          // if (eventResult) {
+          //   Emitter.emit("resetImage");
+          // }
 
           this.isArrowLeftPressed = eventResult;
         },
@@ -220,9 +260,9 @@ export default class Input {
       {
         keyCode: "ArrowRight",
         isPressed: (eventResult: boolean) => {
-          if (eventResult) {
-            Emitter.emit("gotoNextImage");
-          }
+          // if (eventResult) {
+          //   Emitter.emit("gotoNextImage");
+          // }
 
           this.isArrowRightPressed = eventResult;
         },

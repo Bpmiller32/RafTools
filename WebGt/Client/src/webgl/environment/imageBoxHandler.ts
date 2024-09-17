@@ -2,21 +2,21 @@
 /*   Handler for creating and joining clipping boxes, cropping to image box   */
 /* -------------------------------------------------------------------------- */
 
+import Emitter from "../utils/eventEmitter";
 import * as THREE from "three";
 import Experience from "../experience";
-import Camera from "../camera";
-import Input from "../utils/input";
-import Sizes from "../utils/sizes";
 import ResourceLoader from "../utils/resourceLoader";
 import Renderer from "../renderer";
+import Camera from "../camera";
+import Sizes from "../utils/sizes";
+import Input from "../utils/input";
 import Debug from "../utils/debug";
 import Stopwatch from "../utils/stopWatch";
-import Emitter from "../utils/eventEmitter";
 
 export default class ImageBoxHandler {
   private experience: Experience;
-  private renderer: Renderer;
   private resources: ResourceLoader;
+  private renderer: Renderer;
   private scene: THREE.Scene;
   private camera: Camera;
   private sizes: Sizes;

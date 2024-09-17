@@ -2,13 +2,13 @@
 /*         The "World" in which all resources for the webgl scene live        */
 /* -------------------------------------------------------------------------- */
 
+import Emitter from "../utils/eventEmitter.ts";
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera.ts";
 import Debug from "../utils/debug.ts";
 import ClipBoxHandler from "./clipBoxHandler.ts";
 import ImageBoxHandler from "./imageBoxHandler.ts";
-import Emitter from "../utils/eventEmitter.ts";
 
 export default class World {
   private experience: Experience;

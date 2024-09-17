@@ -1,5 +1,5 @@
-import axios from "axios";
 import Emitter from "../webgl/utils/eventEmitter";
+import axios from "axios";
 
 export async function pingServer(apiUrl: string): Promise<boolean> {
   try {

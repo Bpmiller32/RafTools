@@ -6,16 +6,16 @@ import Emitter from "./utils/eventEmitter";
 import * as THREE from "three";
 import Experience from "./experience";
 import Sizes from "./utils/sizes";
-import Debug from "./utils/debug";
-import Input from "./utils/input";
 import Time from "./utils/time";
+import Input from "./utils/input";
+import Debug from "./utils/debug";
 
 export default class Camera {
   private experience: Experience;
-  private sizes: Sizes;
   private scene: THREE.Scene;
-  private input: Input;
+  private sizes: Sizes;
   private time: Time;
+  private input: Input;
   private debug?: Debug;
 
   public instance: THREE.Camera;

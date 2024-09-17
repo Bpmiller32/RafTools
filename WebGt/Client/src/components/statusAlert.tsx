@@ -1,10 +1,10 @@
+import Emitter from "../webgl/utils/eventEmitter";
 import {
+  ArrowPathIcon,
   CheckCircleIcon,
   ExclamationCircleIcon,
-  ExclamationTriangleIcon,
 } from "@heroicons/vue/16/solid";
 import { defineComponent, ref, Transition } from "vue";
-import Emitter from "../webgl/utils/eventEmitter";
 
 export default defineComponent({
   setup() {
@@ -14,6 +14,12 @@ export default defineComponent({
     const statusAlertColor = ref();
 
     /* --------------------------------- Events --------------------------------- */
+    Emitter.on("indicateLoading", () => {
+      statusAlertText.value = "Loading....";
+      statusAlertColor.value = "yellow";
+      isAlertEnabled.value = true;
+    });
+
     Emitter.on("fillInForm", () => {
       // Cover case where resubmitting, indicate to user with 2nd animation by disabling/enabling
       if (
@@ -33,6 +39,7 @@ export default defineComponent({
       statusAlertColor.value = "green";
       isAlertEnabled.value = true;
     });
+
     Emitter.on("gotoNextImage", () => {
       statusAlertText.value = "Loading next image....";
       statusAlertColor.value = "yellow";
@@ -71,7 +78,7 @@ export default defineComponent({
           <div class="rounded-md bg-yellow-50 p-3">
             <div class="flex">
               <div class="flex-shrink-0">
-                <ExclamationTriangleIcon class="h-5 w-5 text-yellow-400" />
+                <ArrowPathIcon class="h-5 w-5 text-yellow-400 animate-spin" />
               </div>
               <div class="ml-3">
                 <p class="text-sm font-medium text-yellow-800">
