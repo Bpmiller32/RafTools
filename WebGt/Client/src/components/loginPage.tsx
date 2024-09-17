@@ -184,7 +184,7 @@ export default defineComponent({
         <section>
           {/* App logo */}
           <div class="mb-5">
-            <img src={volarisLogo} class="h-5 w-full" />
+            <img src={volarisLogo} class="h-5 w-full" alt="volarisLogo" />
           </div>
 
           {/* Server status */}
