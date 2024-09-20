@@ -7,8 +7,10 @@ import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera.ts";
 import Debug from "../utils/debug.ts";
-import ClipBoxHandler from "./clipBoxHandler.ts";
-import ImageBoxHandler from "./imageBoxHandler.ts";
+// import ClipBoxHandler from "./clipBoxHandler.ts";
+import ClipBoxHandlerTjx from "./clipBoxHandlerTjx.ts";
+// import ImageBoxHandler from "./imageBoxHandler.ts";
+import ImageBoxHandlerTjx from "./imageBoxHandlerTjx.ts";
 
 export default class World {
   private experience: Experience;
@@ -16,8 +18,8 @@ export default class World {
   private scene: THREE.Scene;
   private debug?: Debug;
 
-  public imageBoxHandler?: ImageBoxHandler;
-  public clipBoxHandler?: ClipBoxHandler;
+  public imageBoxHandler?: ImageBoxHandlerTjx;
+  public clipBoxHandler?: ClipBoxHandlerTjx;
 
   constructor() {
     // Experience fields
@@ -27,8 +29,8 @@ export default class World {
 
     // Events
     Emitter.on("appReady", () => {
-      this.imageBoxHandler = new ImageBoxHandler();
-      this.clipBoxHandler = new ClipBoxHandler();
+      this.imageBoxHandler = new ImageBoxHandlerTjx();
+      this.clipBoxHandler = new ClipBoxHandlerTjx();
     });
 
     Emitter.on("loadedFromApi", () => {

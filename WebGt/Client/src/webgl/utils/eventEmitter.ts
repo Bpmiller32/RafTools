@@ -21,10 +21,12 @@ type EventMap = {
   mouseWheel: WheelEvent;
   lockPointer: boolean;
   // world events
+  changeClipBoxGroup: number;
   switchCamera: void;
   stitchBoxes: void;
   screenshotImage: void;
   resetImage: void;
+  badImage: void;
   // api events
   loadedFromApi: void;
   fillInForm: void;

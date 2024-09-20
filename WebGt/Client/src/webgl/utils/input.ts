@@ -17,6 +17,12 @@ export default class Input {
   public isQKeyPressed: boolean;
   public isEKeyPressed: boolean;
 
+  public isBackquotePressed: boolean;
+
+  public is1KeyPressed: boolean;
+  public is2KeyPressed: boolean;
+  public is3KeyPressed: boolean;
+
   public isF1KeyPressed: boolean;
   public isF2KeyPressed: boolean;
   public isF3KeyPressed: boolean;
@@ -55,6 +61,12 @@ export default class Input {
     this.isDKeyPressed = false;
     this.isQKeyPressed = false;
     this.isEKeyPressed = false;
+
+    this.isBackquotePressed = false;
+
+    this.is1KeyPressed = false;
+    this.is2KeyPressed = false;
+    this.is3KeyPressed = false;
 
     this.isF1KeyPressed = false;
     this.isF2KeyPressed = false;
@@ -126,6 +138,50 @@ export default class Input {
         keyCode: "KeyE",
         isPressed: (eventResult: boolean) => {
           this.isEKeyPressed = eventResult;
+        },
+      },
+
+      // Backquote
+      {
+        keyCode: "Backquote",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("badImage");
+          }
+
+          this.isBackquotePressed = eventResult;
+        },
+      },
+
+      // Number keys
+      {
+        keyCode: "Digit1",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("changeClipBoxGroup", 2);
+          }
+
+          this.is1KeyPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "Digit2",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("changeClipBoxGroup", 1);
+          }
+
+          this.is2KeyPressed = eventResult;
+        },
+      },
+      {
+        keyCode: "Digit3",
+        isPressed: (eventResult: boolean) => {
+          if (eventResult) {
+            Emitter.emit("changeClipBoxGroup", 3);
+          }
+
+          this.is3KeyPressed = eventResult;
         },
       },
 

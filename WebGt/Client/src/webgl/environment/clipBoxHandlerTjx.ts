@@ -12,7 +12,7 @@ import Input from "../utils/input";
 import World from "./world";
 import { CSG } from "three-csg-ts";
 
-export default class ClipBoxHandler {
+export default class ClipBoxHandlerTjx {
   private experience: Experience;
   private scene: THREE.Scene;
   private camera: Camera;
@@ -26,7 +26,10 @@ export default class ClipBoxHandler {
   private worldEndMousePosition: THREE.Vector3;
   private activeMesh: THREE.Mesh;
   private visualCueMesh: THREE.Mesh;
-  private clippingBoxes: THREE.Mesh[];
+  private activeClipBoxGroup: number;
+  private clipBoxes0: THREE.Mesh[];
+  private clipBoxes1: THREE.Mesh[];
+  private clipBoxes2: THREE.Mesh[];
   private boxSizeThreshold: number;
 
   public combinedBoundingBox: THREE.Box3;
@@ -47,7 +50,10 @@ export default class ClipBoxHandler {
     this.worldEndMousePosition = new THREE.Vector3();
     this.activeMesh = new THREE.Mesh();
     this.visualCueMesh = new THREE.Mesh();
-    this.clippingBoxes = [];
+    this.activeClipBoxGroup = 2;
+    this.clipBoxes0 = [];
+    this.clipBoxes1 = [];
+    this.clipBoxes2 = [];
     this.boxSizeThreshold = 0.025;
     this.combinedBoundingBox = new THREE.Box3();
 
@@ -62,6 +68,9 @@ export default class ClipBoxHandler {
     });
     Emitter.on("mouseUp", (event) => {
       this.mouseUp(event);
+    });
+    Emitter.on("changeClipBoxGroup", (groupNumber) => {
+      this.changeClipBoxGroup(groupNumber);
     });
     Emitter.on("stitchBoxes", () => {
       this.stitchBoxes();
@@ -92,10 +101,28 @@ export default class ClipBoxHandler {
       event.clientY
     );
 
+    // Change the mesh's base color based on what clipBox group it will be placed in
+    let materialColor: THREE.Color;
+    switch (this.activeClipBoxGroup) {
+      case 0:
+        materialColor = new THREE.Color(0x00ff00);
+        break;
+      case 1:
+        materialColor = new THREE.Color(0xff0000);
+        break;
+      case 2:
+        materialColor = new THREE.Color(0x0000ff);
+        break;
+
+      default:
+        materialColor = new THREE.Color(0xffffff);
+        break;
+    }
+
     // Create a new mesh at the starting position
     const geometry = new THREE.BoxGeometry(0, 0, 0);
     const material = new THREE.MeshBasicMaterial({
-      color: this.getRandomShadeFromBaseColor(new THREE.Color(0x00ff00), 0.1), // Adjust '0.1' for stronger or weaker variation
+      color: this.getRandomShadeFromBaseColor(materialColor, 0.1), // Adjust '0.1' for stronger or weaker variation
       wireframe: false,
       transparent: true,
       opacity: 0.35,
@@ -105,7 +132,7 @@ export default class ClipBoxHandler {
     this.activeMesh.position.set(
       this.worldStartMousePosition.x,
       this.worldStartMousePosition.y,
-      5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
+      5 // z-coodinate of plane to work on, ImageBox is at 0 and clipBoxes are at 5
     );
     this.scene.add(this.activeMesh);
 
@@ -113,7 +140,7 @@ export default class ClipBoxHandler {
     this.visualCueMesh.position.set(
       this.worldStartMousePosition.x,
       this.worldStartMousePosition.y,
-      5 // z-coodinate of plane to work on, ImageBox is at 0 and ClipBoxes are at 5
+      5 // z-coodinate of plane to work on, ImageBox is at 0 and clipBoxes are at 5
     );
 
     // New method teleports the same existing mesh and updates opacity instead of creating new meshes/materials
@@ -124,11 +151,11 @@ export default class ClipBoxHandler {
   private mouseMove(event: MouseEvent) {
     // MoveEvent 1: Handle rotating of all existing clipBoxes when in move mode
     if (this.input.isShiftLeftPressed && !this.input.isRightClickPressed) {
-      this.rotateClipBoxes(event);
+      this.rotateAllClipBoxes(event);
       return;
     }
 
-    // MoveEvent 2: Handle drawing of new ClipBoxes
+    // MoveEvent 2: Handle drawing of new clipBoxes
     if (this.input.isLeftClickPressed) {
       this.drawNewClipBox(event);
       return;
@@ -165,44 +192,136 @@ export default class ClipBoxHandler {
       return;
     }
 
-    // If the activeMesh is large enough, add to the clippingBoxes array here
-    this.clippingBoxes.push(this.activeMesh!);
+    // If the activeMesh is large enough, add to the clipBoxes array here
+    switch (this.activeClipBoxGroup) {
+      case 0:
+        this.clipBoxes0.push(this.activeMesh!);
+        break;
+      case 1:
+        this.clipBoxes1.push(this.activeMesh!);
+        break;
+      case 2:
+        this.clipBoxes2.push(this.activeMesh!);
+        break;
+
+      default:
+        break;
+    }
   }
 
-  private async stitchBoxes() {
-    if (this.clippingBoxes.length === 0) {
+  private changeClipBoxGroup(groupNumber: number) {
+    // Change group number
+    this.activeClipBoxGroup = groupNumber;
+
+    // Change visualCue color
+    const currentMaterial = this.visualCueMesh.material as THREE.Material;
+    currentMaterial.dispose();
+
+    let newMaterial: THREE.MeshBasicMaterial;
+    switch (this.activeClipBoxGroup) {
+      case 0:
+        newMaterial = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0x00ff00),
+          wireframe: false,
+          transparent: true,
+          opacity: 0.35,
+        });
+        break;
+      case 1:
+        newMaterial = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0xff0000),
+          wireframe: false,
+          transparent: true,
+          opacity: 0.35,
+        });
+        break;
+      case 2:
+        newMaterial = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0x0000ff),
+          wireframe: false,
+          transparent: true,
+          opacity: 0.35,
+        });
+        break;
+
+      default:
+        newMaterial = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(0xffffff),
+          wireframe: false,
+          transparent: true,
+          opacity: 0.35,
+        });
+        break;
+    }
+
+    this.visualCueMesh.material = newMaterial;
+  }
+
+  private stitchBoxes() {
+    if (
+      this.clipBoxes0.length === 0 &&
+      this.clipBoxes1.length === 0 &&
+      this.clipBoxes2.length === 0
+    ) {
       return;
     }
 
-    let combinedMesh = this.clippingBoxes[0];
+    const potentialCroppedMeshes = [
+      {
+        clipBoxes: this.clipBoxes0,
+        croppedMesh: new THREE.Mesh(),
+        croppedMeshHeight: 0,
+      },
+      {
+        clipBoxes: this.clipBoxes1,
+        croppedMesh: new THREE.Mesh(),
+        croppedMeshHeight: 0,
+      },
+      {
+        clipBoxes: this.clipBoxes2,
+        croppedMesh: new THREE.Mesh(),
+        croppedMeshHeight: 0,
+      },
+    ];
 
-    for (let i = 0; i < this.clippingBoxes.length; i++) {
-      combinedMesh = CSG.union(combinedMesh, this.clippingBoxes[i]);
-
-      this.scene.remove(this.clippingBoxes[i]);
-      this.clippingBoxes[i].geometry.dispose();
-    }
-
-    // Dispose of the references in clippingBoxes, add the only existing clippingBox in case of further clips
-    this.clippingBoxes.length = 0;
-
-    // Push the combinedMesh back to the same plane as the imageBox mesh, update it's local position matrix for CSG
-    combinedMesh.position.z = 0;
-    combinedMesh.updateMatrix();
-
-    // Store mesh bounding box
-    this.combinedBoundingBox.setFromObject(combinedMesh);
-
-    // Add the new combined mesh to the scene
-    const croppedMesh = CSG.intersect(
-      this.world.imageBoxHandler!.mesh!,
-      combinedMesh
+    // Filter out clipBoxGroups with no clipBoxes
+    const croppedMeshes = potentialCroppedMeshes.filter(
+      (mesh) => mesh.clipBoxes.length > 0
     );
 
-    // Remove the old imageBox so it doesn't overlap with the croppedMesh, set croppedMesh to imageBox
+    // Create a croppedMesh for each clipBoxGroup, determine it's boundingBox height
+    croppedMeshes.forEach((mesh) => {
+      mesh.croppedMesh = this.createCroppedMesh(mesh.clipBoxes);
+      mesh.croppedMeshHeight = this.getMeshHeight(mesh.croppedMesh);
+    });
+
+    // Merge into one combined croppedMesh
+    let combinedCropMesh = croppedMeshes[0].croppedMesh;
+    let totalHeightToAdd = 0;
+
+    croppedMeshes.forEach((mesh) => {
+      // Update the position for each cropped mesh
+      mesh.croppedMesh.position.setY(
+        mesh.croppedMesh.position.y +
+          totalHeightToAdd +
+          mesh.croppedMeshHeight / 2
+      );
+
+      // Update currentY for the next iteration
+      totalHeightToAdd += mesh.croppedMeshHeight;
+
+      // Combine the current croppedMesh into the combinedCropMesh
+      mesh.croppedMesh.updateMatrix();
+      combinedCropMesh = CSG.union(combinedCropMesh, mesh.croppedMesh);
+    });
+
+    // Remove the old imageBox so it doesn't overlap with the combined croppedMesh, set combined croppedMesh to imageBox
     this.scene.remove(this.world.imageBoxHandler!.mesh!);
-    this.world.imageBoxHandler!.mesh = croppedMesh;
-    this.scene.add(croppedMesh);
+    this.world.imageBoxHandler!.mesh = combinedCropMesh;
+    this.scene.add(combinedCropMesh!);
+
+    // Reset clipboxGroup and visual cue
+    this.changeClipBoxGroup(2);
   }
 
   /* ----------------------------- Helper methods ----------------------------- */
@@ -226,26 +345,34 @@ export default class ClipBoxHandler {
     return vector;
   }
 
-  private rotateClipBoxes(event: MouseEvent) {
+  private rotateAllClipBoxes(event: MouseEvent) {
     // Target point and axis around which the mesh will rotate
     const targetPoint = new THREE.Vector3(0, 0, 0);
     const axis = new THREE.Vector3(0, 0, 1);
 
-    for (let i = 0; i < this.clippingBoxes.length; i++) {
+    this.rotateClipBoxGroup(event, this.clipBoxes0, targetPoint, axis);
+    this.rotateClipBoxGroup(event, this.clipBoxes1, targetPoint, axis);
+    this.rotateClipBoxGroup(event, this.clipBoxes2, targetPoint, axis);
+  }
+
+  private rotateClipBoxGroup(
+    event: MouseEvent,
+    clipBoxes: THREE.Mesh[],
+    targetPoint: THREE.Vector3,
+    axis: THREE.Vector3
+  ) {
+    for (let i = 0; i < clipBoxes.length; i++) {
       // Translate object to the point
-      this.clippingBoxes[i].position.sub(targetPoint);
+      clipBoxes[i].position.sub(targetPoint);
 
       // Create rotation matrix
-      this.clippingBoxes[i].position.applyAxisAngle(
-        axis,
-        -event.movementX * 0.005
-      );
+      clipBoxes[i].position.applyAxisAngle(axis, -event.movementX * 0.005);
 
       // Translate back
-      this.clippingBoxes[i].position.add(targetPoint);
+      clipBoxes[i].position.add(targetPoint);
 
       // Apply rotation to the object's orientation
-      this.clippingBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
+      clipBoxes[i].rotateOnAxis(axis, -event.movementX * 0.005);
     }
   }
 
@@ -300,11 +427,70 @@ export default class ClipBoxHandler {
     );
   }
 
+  private createCroppedMesh(clipBoxes: THREE.Mesh[]): THREE.Mesh {
+    let combinedMesh = clipBoxes[0];
+
+    for (let i = 0; i < clipBoxes.length; i++) {
+      combinedMesh = CSG.union(combinedMesh, clipBoxes[i]);
+
+      this.scene.remove(clipBoxes[i]);
+      clipBoxes[i].geometry.dispose();
+    }
+
+    // Dispose of the references in clipBoxes, add the only existing clipBox in case of further clips
+    clipBoxes.length = 0;
+
+    // Push the combinedMesh back to the same plane as the imageBox mesh, update it's local position matrix for CSG
+    combinedMesh.position.z = 0;
+    combinedMesh.updateMatrix();
+
+    // Splice the new combined mesh to the imageBox mesh
+    const croppedMesh = CSG.intersect(
+      this.world.imageBoxHandler!.mesh!,
+      combinedMesh
+    );
+
+    // Compute the bounding box of the resulting mesh
+    croppedMesh.geometry.computeBoundingBox();
+    const boundingBox = croppedMesh.geometry.boundingBox;
+
+    // If the bounding box exists, calculate the center position
+    if (boundingBox) {
+      // Create a new vector for the center
+      const center = new THREE.Vector3();
+
+      // Transform the bounding box into world coordinates
+      const worldBox = new THREE.Box3();
+      worldBox.copy(boundingBox).applyMatrix4(croppedMesh.matrixWorld);
+
+      // Get the center of the transformed bounding box
+      worldBox.getCenter(center);
+
+      // Move the mesh so its center is at the origin
+      croppedMesh.position.sub(center);
+    }
+
+    return croppedMesh;
+  }
+
+  private getMeshHeight(mesh: THREE.Mesh): number {
+    // Ensure the geometry's bounding box is up to date
+    mesh.geometry.computeBoundingBox();
+    const boundingBox = mesh.geometry.boundingBox;
+
+    if (boundingBox) {
+      // Calculate the height by subtracting the min Y from the max Y
+      return boundingBox.max.y - boundingBox.min.y;
+    }
+
+    return 0; // Return 0 if no bounding box is available (unlikely)
+  }
+
   /* ------------------------------ Tick methods ------------------------------ */
   public setVisualCueMesh() {
     const geometry = new THREE.SphereGeometry(0.2);
     const material = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(0x00ff00),
+      color: new THREE.Color(0x0000ff),
       wireframe: false,
       transparent: true,
       opacity: 0.35,
@@ -343,13 +529,17 @@ export default class ClipBoxHandler {
     this.activeMesh.geometry.dispose();
 
     // Remove all clipBoxes
-    for (let i = 0; i < this.clippingBoxes.length; i++) {
-      this.scene.remove(this.clippingBoxes[i]);
-      const material = this.clippingBoxes[i].material as THREE.Material;
-      material.dispose();
-      this.clippingBoxes[i].geometry.dispose();
-    }
+    const clipBoxGroups = [this.clipBoxes0, this.clipBoxes1, this.clipBoxes2];
 
-    this.clippingBoxes.length = 0;
+    clipBoxGroups.forEach((clipBoxGroup) => {
+      clipBoxGroup.forEach((clipBox) => {
+        this.scene.remove(clipBox);
+        const material = clipBox.material as THREE.Material;
+        material.dispose();
+        clipBox.geometry.dispose();
+      });
+
+      clipBoxGroup.length = 0;
+    });
   }
 }

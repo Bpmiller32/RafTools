@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from "vue";
 import Experience from "./webgl/experience.ts";
-import EditorDashboard from "./components/editorDashboard.tsx";
+import EditorDashboard from "./components/editorDashboardTjx.tsx";
 import LoginPage from "./components/loginPage.tsx";
 import {
   downloadImage,

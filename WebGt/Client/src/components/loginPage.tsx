@@ -35,6 +35,10 @@ export default defineComponent({
 
     /* ----------------------------- Template events ---------------------------- */
     const StartAppButtonClicked = async () => {
+      // Debug, TODO: remove
+      Emitter.emit("startApp");
+      return;
+
       // Firebase login check
       try {
         // Get a reference to the document
