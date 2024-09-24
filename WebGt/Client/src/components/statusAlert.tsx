@@ -1,4 +1,4 @@
-import Emitter from "../webgl/utils/eventEmitter";
+import Emitter from "../eventEmitter";
 import {
   ArrowPathIcon,
   CheckCircleIcon,

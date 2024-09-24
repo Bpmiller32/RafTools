@@ -1,9 +1,11 @@
-import Emitter from "../webgl/utils/eventEmitter";
+import Emitter from "../eventEmitter";
 import { defineComponent, onMounted, ref } from "vue";
 import { pingServer } from "./apiHandler";
-import volarisLogo from "../assets/volarisLogo.svg";
 import { db } from "../firebase";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import AppLogo from "./subcomponents/appLogo";
+import ServerStatusBadge from "./subcomponents/serverStatusBadge";
+import UserPassInputs from "./subcomponents/userPassInputs";
 
 export default defineComponent({
   props: {
@@ -15,8 +17,8 @@ export default defineComponent({
   setup(props) {
     /* ------------------------ Component state and setup ----------------------- */
     // Template refs
-    const usernameRef = ref();
-    const passwordRef = ref();
+    const username = ref("");
+    const password = ref("");
 
     const isServerOnline = ref(false);
     const isButtonEnabled = ref(true);
@@ -25,7 +27,11 @@ export default defineComponent({
 
     onMounted(async () => {
       // Get status of BE server
-      isServerOnline.value = await pingServer(props.apiUrl);
+      // TODO: remove
+      setTimeout(() => {
+        isServerOnline.value = true;
+      }, 2000);
+      // isServerOnline.value = await pingServer(props.apiUrl);
 
       // Check if the URL ends with #debug
       if (window.location.hash === "#debug") {
@@ -36,13 +42,14 @@ export default defineComponent({
     /* ----------------------------- Template events ---------------------------- */
     const StartAppButtonClicked = async () => {
       // Debug, TODO: remove
-      Emitter.emit("startApp");
+      // Emitter.emit("startApp");
+      console.log(username.value);
       return;
 
       // Firebase login check
       try {
         // Get a reference to the document
-        const docRef = doc(db, "logins", usernameRef.value.value);
+        const docRef = doc(db, "logins", username.value.value);
 
         // Fetch the document
         const docSnap = await getDoc(docRef);
@@ -50,7 +57,7 @@ export default defineComponent({
         // Check the loginPage password against the firebase value
         const document = docSnap.data()!;
 
-        if (passwordRef.value.value !== document.password) {
+        if (password.value.value !== document.password) {
           throw new Error();
         }
 
@@ -76,55 +83,45 @@ export default defineComponent({
     const DebugButtonClicked = async () => {
       try {
         // Reference the collection
-        const collectionRef = collection(db, "imageData");
+        const collectionRef = collection(db, "tjxImageData");
 
         // Fetch all documents from the collection
         const querySnapshot = await getDocs(collectionRef);
 
         // Iterate through each document and inspect the specific property
+        let totalCount = 0;
+        const times: number[] = [];
+
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const timeOnImage = data["timeOnImage"];
-          console.log(`Document ID: ${doc.id}, TimeOnImage [${timeOnImage}]`);
+
+          totalCount++;
+          times.push(timeOnImage);
         });
+
+        const sortedNumbers = [...times].sort((a, b) => a - b);
+        const n = sortedNumbers.length;
+        const mid = Math.floor(n / 2);
+        let medianTime = 0;
+
+        if (n % 2 === 0) {
+          // If even, average the two middle numbers
+          medianTime = (sortedNumbers[mid - 1] + sortedNumbers[mid]) / 2;
+        } else {
+          // If odd, return the middle number
+          medianTime = sortedNumbers[mid];
+        }
+
+        console.log(
+          `Total images processed: ${totalCount}, Median time: ${medianTime}`
+        );
       } catch {
         console.error("Error fetching documents from firestore");
       }
     };
 
     /* ------------------------------ Subcomponents ----------------------------- */
-    const ServerStatusBadge = () => {
-      return (
-        <span class="mb-2 inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-100 ring-1 ring-inset ring-gray-200">
-          {ServerStatusBadgeIconSelector()}
-          Server status
-        </span>
-      );
-    };
-
-    const ServerStatusBadgeIconSelector = () => {
-      if (isServerOnline.value) {
-        return (
-          <svg
-            class="h-1.5 w-1.5 fill-green-500"
-            viewBox="0 0 6 6"
-            aria-hidden="true"
-          >
-            <circle cx="3" cy="3" r="3" />
-          </svg>
-        );
-      } else {
-        return (
-          <svg
-            class="h-1.5 w-1.5 fill-red-500"
-            viewBox="0 0 6 6"
-            aria-hidden="true"
-          >
-            <circle cx="3" cy="3" r="3" />
-          </svg>
-        );
-      }
-    };
 
     const DebugButton = () => {
       if (isDebugEnabled.value) {
@@ -187,41 +184,22 @@ export default defineComponent({
       <article class="w-screen h-screen flex justify-center items-center">
         <section>
           {/* App logo */}
-          <div class="mb-5">
-            <img src={volarisLogo} class="h-5 w-full" alt="volarisLogo" />
-          </div>
+          <AppLogo />
 
           {/* Server status */}
-          <div class="flex justify-end">{ServerStatusBadge()}</div>
+          <div class="flex justify-end">
+            <ServerStatusBadge isServerOnline={isServerOnline.value} />
+          </div>
 
           {/* Username and pass input fields */}
-          <div class="isolate -space-y-px rounded-md shadow-sm">
-            <div class="relative rounded-md rounded-b-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600 duration-300">
-              <label for="name" class="block text-xs font-medium text-gray-100">
-                Username
-              </label>
-              <input
-                ref={usernameRef}
-                type="text"
-                class="block bg-[#211d20] w-full border-0 p-0 text-gray-100 placeholder:text-gray-400 focus:ring-0"
-                placeholder="billym"
-              />
-            </div>
-            <div class="relative rounded-md rounded-t-none px-3 pb-1.5 pt-2.5 ring-1 ring-inset ring-gray-300 focus-within:z-10 focus-within:ring-2 focus-within:ring-indigo-600 duration-300">
-              <label
-                for="job-title"
-                class="block text-xs font-medium text-gray-100"
-              >
-                Password
-              </label>
-              <input
-                ref={passwordRef}
-                type="password"
-                class="block bg-[#211d20] w-full border-0 p-0 text-gray-100 placeholder:text-gray-400 focus:ring-0"
-                placeholder="**********"
-              />
-            </div>
-          </div>
+          <UserPassInputs
+            setUsername={(newUsername: string) =>
+              (username.value = newUsername)
+            }
+            setPassword={(newPassword: string) => {
+              password.value = newPassword;
+            }}
+          />
 
           {/* Start app button and optional login failed */}
           <div class="grid grid-cols-3 justify-between mt-2">

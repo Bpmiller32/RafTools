@@ -2,7 +2,7 @@
 /*   Handler for creating and joining clipping boxes, cropping to image box   */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "../utils/eventEmitter";
+import Emitter from "../../eventEmitter";
 import * as THREE from "three";
 import Experience from "../experience";
 import ResourceLoader from "../utils/resourceLoader";

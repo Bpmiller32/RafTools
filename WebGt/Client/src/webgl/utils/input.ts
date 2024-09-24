@@ -2,7 +2,7 @@
 /*               Used to handle keyboard and mouse input events               */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "./eventEmitter";
+import Emitter from "../../eventEmitter";
 
 type Key = {
   keyCode: string;
@@ -178,7 +178,7 @@ export default class Input {
         keyCode: "Digit3",
         isPressed: (eventResult: boolean) => {
           if (eventResult) {
-            Emitter.emit("changeClipBoxGroup", 3);
+            Emitter.emit("changeClipBoxGroup", 0);
           }
 
           this.is3KeyPressed = eventResult;

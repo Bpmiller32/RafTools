@@ -27,7 +27,7 @@ type EventMap = {
   screenshotImage: void;
   resetImage: void;
   badImage: void;
-  // api events
+  // api events/template events
   loadedFromApi: void;
   fillInForm: void;
   gotoNextImage: void;

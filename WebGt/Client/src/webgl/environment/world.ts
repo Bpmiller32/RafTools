@@ -2,7 +2,7 @@
 /*         The "World" in which all resources for the webgl scene live        */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "../utils/eventEmitter.ts";
+import Emitter from "../../eventEmitter.ts";
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera.ts";

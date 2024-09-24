@@ -2,7 +2,7 @@
 /*   Handler for creating and joining clipping boxes, cropping to image box   */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "../utils/eventEmitter";
+import Emitter from "../../eventEmitter";
 import * as THREE from "three";
 import Experience from "../experience";
 import ResourceLoader from "../utils/resourceLoader";
@@ -103,8 +103,16 @@ export default class ImageBoxHandler {
       this.resources.items.apiImage.image.height;
 
     const boxHeight = 5;
-    const boxWidth = boxHeight * textureAspectRatio;
+    let boxWidth: number;
     const boxDepth = 1;
+
+    if (textureAspectRatio >= 1) {
+      // Landscape or square image, width is scaled by the aspect ratio
+      boxWidth = boxHeight * textureAspectRatio;
+    } else {
+      // Portrait image, width is scaled down for taller images
+      boxWidth = boxHeight / textureAspectRatio;
+    }
 
     this.geometry = new THREE.BoxGeometry(boxHeight, boxWidth, boxDepth);
   }

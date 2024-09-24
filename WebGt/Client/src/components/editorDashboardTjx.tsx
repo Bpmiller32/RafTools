@@ -1,4 +1,4 @@
-import Emitter from "../webgl/utils/eventEmitter";
+import Emitter from "../eventEmitter";
 import { defineComponent, ref } from "vue";
 import Experience from "../webgl/experience";
 import { fillInForm, gotoNextImage } from "./apiHandler";
@@ -30,8 +30,9 @@ export default defineComponent({
     let haveUpdatedFirebaseOnce = false;
 
     const isMpImage = ref(true); // Make this a default value
-    const isHWImage = ref(false);
     const isBadImage = ref(false);
+
+    const isVendorOnly = ref(false);
 
     /* --------------------------------- Events --------------------------------- */
     Emitter.on("fillInForm", async () => {
@@ -42,7 +43,6 @@ export default defineComponent({
     });
     Emitter.on("badImage", async () => {
       isMpImage.value = false;
-      isHWImage.value = false;
       isBadImage.value = true;
 
       await FormHelper();
@@ -54,20 +54,16 @@ export default defineComponent({
       switch (buttonType) {
         case "MP":
           isMpImage.value = !isMpImage.value;
-          isHWImage.value = false;
-          isBadImage.value = false;
-          break;
-
-        case "HW":
-          isMpImage.value = false;
-          isHWImage.value = !isHWImage.value;
           isBadImage.value = false;
           break;
 
         case "Bad":
           isMpImage.value = false;
-          isHWImage.value = false;
           isBadImage.value = !isBadImage.value;
+          break;
+
+        case "Vendor Only":
+          isVendorOnly.value = !isVendorOnly.value;
           break;
 
         default:
@@ -111,7 +107,7 @@ export default defineComponent({
         address: textAreaRef.value.value,
 
         isMpImage: isMpImage.value,
-        isHwImage: isHWImage.value,
+        isHwImage: false,
         isBadImage: isBadImage.value,
       };
 
@@ -121,14 +117,18 @@ export default defineComponent({
       // Prepend each line with the corresponding prefix
       const prefixes = ["PO:", "VS:", "TS:"];
 
-      const modifiedLines = lines.map(
-        (line: string, index: number) => `${prefixes[index] || ""}${line}`
-      );
+      // Hacky vendor only
+      if (isVendorOnly.value) {
+        data.address = "VS:" + textAreaRef.value.value;
+      } else {
+        const modifiedLines = lines.map(
+          (line: string, index: number) => `${prefixes[index] || ""}${line}`
+        );
 
-      data.address = modifiedLines.join("\n");
+        data.address = modifiedLines.join("\n");
+      }
 
       // Don't prepend if the textArea is blank
-      console.log(lines[0]);
       if (lines.length === 1 && lines[0] === "") {
         data.address = "";
       }
@@ -154,9 +154,6 @@ export default defineComponent({
         document.imagesProcessed++;
         if (isMpImage.value) {
           document.numberOfMpImages++;
-        }
-        if (isHWImage.value) {
-          document.numberOfHwImages++;
         }
         if (isBadImage.value) {
           document.numberOfBadImages++;
@@ -186,9 +183,6 @@ export default defineComponent({
         if (isMpImage.value) {
           imageType = "mp";
         }
-        if (isHWImage.value) {
-          imageType = "hw";
-        }
         if (isBadImage.value) {
           imageType = "bad";
         }
@@ -200,14 +194,6 @@ export default defineComponent({
           timeOnImage: experience.world.imageBoxHandler?.stopwatch.elapsedTime,
           rotation: experience.world.imageBoxHandler?.debugRotation,
           addressSubmitted: data.address,
-          boundingBoxMinX:
-            experience.world.clipBoxHandler?.combinedBoundingBox.min.x,
-          boundingBoxMinY:
-            experience.world.clipBoxHandler?.combinedBoundingBox.min.y,
-          boundingBoxMaxX:
-            experience.world.clipBoxHandler?.combinedBoundingBox.max.x,
-          boundingBoxMaxY:
-            experience.world.clipBoxHandler?.combinedBoundingBox.max.y,
           dateSubmitted: new Date(),
         };
 
@@ -238,8 +224,8 @@ export default defineComponent({
       // Clear all fields for new image, except isMpImage since that should be the default
       textAreaRef.value.value = "";
       isMpImage.value = true;
-      isHWImage.value = false;
       isBadImage.value = false;
+      isVendorOnly.value = false;
     };
 
     /* ------------------------------ Subcomponents ----------------------------- */
@@ -385,13 +371,19 @@ export default defineComponent({
         <section class="mt-2 flex justify-between items-center">
           <div class="flex">
             {MailTypeButton("MP", isMpImage.value, true, false)}
-            {MailTypeButton("HW", isHWImage.value, false, false)}
             {MailTypeButton("Bad", isBadImage.value, false, true)}
           </div>
           <div class="flex">
             {ActionButton("Cut", true, false)}
             {ActionButton("SendToVision", false, false)}
             {ActionButton("Reset", false, true)}
+          </div>
+        </section>
+
+        {/* Special mail designations */}
+        <section class="mt-2 flex items-center">
+          <div class="flex">
+            {MailTypeButton("Vendor Only", isVendorOnly.value, true, true)}
           </div>
         </section>
       </article>

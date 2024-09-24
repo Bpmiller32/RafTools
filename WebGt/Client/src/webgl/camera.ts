@@ -2,7 +2,7 @@
 /*             The camera and camera controls for the webgl scene             */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "./utils/eventEmitter";
+import Emitter from "../eventEmitter";
 import * as THREE from "three";
 import Experience from "./experience";
 import Sizes from "./utils/sizes";

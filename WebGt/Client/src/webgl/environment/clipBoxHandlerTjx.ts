@@ -2,7 +2,7 @@
 /*   Handler for creating and joining clipping boxes, cropping to image box   */
 /* -------------------------------------------------------------------------- */
 
-import Emitter from "../utils/eventEmitter";
+import Emitter from "../../eventEmitter";
 import * as THREE from "three";
 import Experience from "../experience";
 import Camera from "../camera";
@@ -307,6 +307,9 @@ export default class ClipBoxHandlerTjx {
           mesh.croppedMeshHeight / 2
       );
 
+      // const boundingBox = new THREE.BoxHelper(mesh.croppedMesh, 0xff0000); // Red bounding box
+      // this.scene.add(boundingBox);
+
       // Update currentY for the next iteration
       totalHeightToAdd += mesh.croppedMeshHeight;
 
@@ -353,6 +356,8 @@ export default class ClipBoxHandlerTjx {
     this.rotateClipBoxGroup(event, this.clipBoxes0, targetPoint, axis);
     this.rotateClipBoxGroup(event, this.clipBoxes1, targetPoint, axis);
     this.rotateClipBoxGroup(event, this.clipBoxes2, targetPoint, axis);
+
+    this.world.imageBoxHandler!.mesh!.updateMatrix();
   }
 
   private rotateClipBoxGroup(
