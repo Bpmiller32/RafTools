@@ -8,7 +8,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/IoMDirectoryBuilder.App/bin/Debug/net6.0-windows/IoMDirectoryBuilder.App.dll",
+            "program": "${workspaceFolder}/IoMDirectoryBuilder.Application/bin/Debug/net6.0-windows/IoMDirectoryBuilder.Application.dll",
         },
         {
             "name": "Launch Console",

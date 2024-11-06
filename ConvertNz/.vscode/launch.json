@@ -8,7 +8,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/ConvertNz.App/bin/Debug/net6.0/ConvertNz.App.dll",
+            "program": "${workspaceFolder}/ConvertNz.Application/bin/Debug/net6.0/ConvertNz.Application.dll",
             "args": ["C:\\Users\\billy\\Desktop\\ConvertNz\\addressDb.csv", "C:\\Users\\billy\\Desktop\\addressDbConverted.csv"],
         },
     ]

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoMDirectoryBuilder.App", "IoMDirectoryBuilder.App\IoMDirectoryBuilder.App.csproj", "{9075FB22-7C43-4696-8A67-4300D96C6725}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoMDirectoryBuilder.Application", "IoMDirectoryBuilder.Application\IoMDirectoryBuilder.Application.csproj", "{9075FB22-7C43-4696-8A67-4300D96C6725}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IoMDirectoryBuilder.Console", "IoMDirectoryBuilder.Console\IoMDirectoryBuilder.Console.csproj", "{CD180D64-1526-41F0-8F70-26D5B7337644}"
 EndProject
